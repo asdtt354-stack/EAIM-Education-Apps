@@ -3,51 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 국어 감정 시인 & 편지</title>
+    <title>EAIM 국어 감성 시인</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Noto Sans KR', sans-serif; 
-            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); 
-            min-height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #444;
-        }
+        body { font-family: 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); min-height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center; }
         .font-hand { font-family: 'Gaegu', cursive; }
-        .eaim-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(15px);
-            border-radius: 3rem;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
-            border: 2px solid white;
-            width: 100%;
-        }
-        .eaim-input {
-            background: white !important;
-            border: 2px solid #e2e8f0 !important;
-            border-radius: 1.2rem !important;
-            color: #333 !important;
-        }
-        .eaim-btn-main {
-            background: #5f7adb !important;
-            color: white !important;
-            border-radius: 1.5rem !important;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-        .eaim-btn-main:disabled { background: #cbd5e1 !important; cursor: not-allowed; }
-        @media print {
-            body { background: white !important; color: black !important; }
-            .print-hidden { display: none !important; }
-            .eaim-card { border: 1px solid #ccc !important; box-shadow: none !important; background: white !important; }
-        }
+        .eaim-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 3rem; box-shadow: 0 25px 50px rgba(0,0,0,0.1); border: 2px solid white; width: 100%; }
+        .eaim-input { background: white !important; border: 2px solid #e2e8f0 !important; border-radius: 1.2rem !important; }
+        .eaim-btn-main { background: #5f7adb !important; color: white !important; border-radius: 1.5rem !important; font-weight: bold; transition: all 0.3s ease; }
+        .eaim-btn-main:disabled { background: #cbd5e1 !important; }
     </style>
 </head>
 <body>
@@ -71,107 +39,135 @@
             const [appearance, setAppearance] = useState('');
             const [relationship, setRelationship] = useState('');
             const [emotionName, setEmotionName] = useState('');
-            const [friendName, setFriendName] = useState('');
-            const [friendPoem, setFriendPoem] = useState('');
-            const [draftLetter, setDraftLetter] = useState('');
-
-            const words = ['기쁜', '슬픈', '화난', '불안한', '외로운', '설레는', '답답한', '억울한', '편안한', '신나는', '부끄러운', '포근한'];
-            const colors = [
-                { name: '빨강', code: '#EF4444' }, { name: '주황', code: '#F97316' }, { name: '노랑', code: '#FBBF24' },
-                { name: '초록', code: '#34D399' }, { name: '파랑', code: '#3B82F6' }, { name: '보라', code: '#8B5CF6' }
-            ];
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            const fetchPoem = async () => {
-                if (!apiKey) return;
+            const callGemini = async (prompt) => {
+                // v1 정식 엔드포인트 사용
+                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) {
+                    console.error("Gemini Error Details:", data); // 개발자 도구 기록
+                    throw new Error(data.error?.message || '구글 서버 응답 오류');
+                }
+                return data.candidates[0].content.parts[0].text;
+            };
+
+            const handleFetchPoem = async () => {
                 setIsAnalyzing(true);
                 setReadingPoem('시를 찾는 중입니다... ✨');
-                
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            contents: [{ parts: [{ text: `당신은 시 전문 큐레이터입니다. 한국 시인 '${searchQuery}'의 시 한 편을 찾아 제목과 본문을 보여주세요. 만약 찾기 어렵다면 주제와 어울리는 따뜻한 현대시를 한 편 추천해주세요.` }] }] 
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.candidates && data.candidates[0]) {
-                        setReadingPoem(data.candidates[0].content.parts[0].text);
-                    } else {
-                        throw new Error();
-                    }
-                } catch (e) { 
-                    setReadingPoem('시를 불러오지 못했습니다. API 키의 유효성을 확인하시거나 잠시 후 다시 검색해주세요.'); 
-                } finally { 
-                    setIsAnalyzing(false); 
-                }
+                    const text = await callGemini(`'${searchQuery}' 시인의 시 제목과 본문을 한국어로 알려줘. 만약 검색이 안되면 따뜻한 현대시를 한 편 추천해줘.`);
+                    setReadingPoem(text);
+                } catch (e) {
+                    setReadingPoem(`⚠️ 연결 실패: ${e.message}\n(브라우저를 새로고침하거나 키를 다시 입력해보세요.)`);
+                } finally { setIsAnalyzing(false); }
             };
 
-            const generatePoem = async () => {
+            const handleGeneratePoem = async () => {
                 setIsAnalyzing(true); setStep(6);
-                const prompt = `학생 감정 시 작성: 색깔(${emotionColor}), 감정(${emotionWord}), 상황(${situation}), 신체(${bodyPart}-${bodySensation}), 비유(${appearance}), 이름(${emotionName}). 3연 구성 한국어 시로 작성해줘.`;
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await res.json();
-                    setFinalResult(data.candidates[0].content.parts[0].text);
-                } catch (e) { setFinalResult('시 생성 중 오류가 발생했습니다.'); } finally { setIsAnalyzing(false); }
-            };
-
-            const generateLetter = async () => {
-                setIsAnalyzing(true);
-                const prompt = `친구 ${friendName}의 시(${friendPoem})를 읽고 따뜻한 공감 편지를 한국어로 작성해줘.`;
-                try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await res.json();
-                    setDraftLetter(data.candidates[0].content.parts[0].text);
-                } catch (e) { setDraftLetter('편지 생성 중 오류 발생'); } finally { setIsAnalyzing(false); }
+                    const prompt = `감정 시 작성: 색깔(${emotionColor}), 감정(${emotionWord}), 상황(${situation}), 부위(${bodyPart}-${bodySensation}), 비유(${appearance}), 이름(${emotionName}). 3연 구성 한국어 시.`;
+                    const text = await callGemini(prompt);
+                    setFinalResult(text);
+                } catch (e) { setFinalResult(`시 생성 실패: ${e.message}`); } finally { setIsAnalyzing(false); }
             };
 
             return (
                 <div className="w-full">
-                    <header className="flex justify-between items-center mb-6 px-2 print-hidden">
+                    <header className="flex justify-between items-center mb-6 px-2">
                         <h1 className="text-xl font-bold text-slate-600">📖 EAIM 국어</h1>
-                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key'); setStep(0); }} className="text-xs bg-white px-3 py-2 rounded-full shadow-sm">키 재설정</button>}
+                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key'); setStep(0); window.location.reload(); }} className="text-xs bg-white px-3 py-2 rounded-full shadow-sm">키 재설정</button>}
                     </header>
 
                     <main className="eaim-card p-8 md:p-12">
                         {step === 0 && (
                             <div className="space-y-6 text-center">
-                                <h2 className="font-bold text-lg">Gemini API 키 입력</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full eaim-input p-4 text-center" placeholder="API Key를 입력하세요" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key', apiKey); setStep(1); }} className="w-full eaim-btn-main p-4">저장하고 시작하기</button>
+                                <h2 className="font-bold text-lg text-slate-700">Gemini API 키 입력</h2>
+                                <p className="text-sm text-slate-500">새 프로젝트에서 발급받은 키를 입력해주세요.</p>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full eaim-input p-4 text-center" placeholder="AIza..." />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key', apiKey); setStep(1); }} className="w-full eaim-btn-main p-4 shadow-lg">저장하고 시작하기</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-6">
-                                <h2 className="text-2xl font-hand">1. 오늘의 시 읽기 📖</h2>
+                                <h2 className="text-2xl font-hand text-slate-700">1. 오늘의 시 읽기</h2>
                                 <div className="flex gap-2">
                                     <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="flex-grow eaim-input p-3" />
-                                    <button onClick={fetchPoem} disabled={isAnalyzing} className="eaim-btn-main px-6">{isAnalyzing ? '...' : '검색'}</button>
+                                    <button onClick={handleFetchPoem} disabled={isAnalyzing} className="eaim-btn-main px-6">{isAnalyzing ? '...' : '검색'}</button>
                                 </div>
-                                <div className="bg-white/50 rounded-3xl p-6 min-h-[250px] border-2 border-white">
-                                    <textarea readOnly value={readingPoem} className="w-full h-64 bg-transparent outline-none font-hand text-xl leading-relaxed resize-none" placeholder="검색을 누르면 시가 나타납니다."></textarea>
+                                <div className="bg-white/50 rounded-3xl p-6 min-h-[250px] border-2 border-white shadow-inner">
+                                    <textarea readOnly value={readingPoem} className="w-full h-64 bg-transparent outline-none font-hand text-xl leading-relaxed resize-none" placeholder="검색 버튼을 눌러주세요."></textarea>
                                 </div>
-                                <button onClick={() => setStep(2)} disabled={readingPoem.length < 10} className="w-full eaim-btn-main p-4 shadow-lg">이 시로 수업 시작 👉</button>
+                                <button onClick={() => setStep(2)} disabled={readingPoem.length < 10 || readingPoem.includes('⚠️')} className="w-full eaim-btn-main p-4 shadow-lg">이 시로 수업 시작 👉</button>
                             </div>
                         )}
 
+                        {/* 단계 2~7은 생략 없이 튼튼하게 유지됩니다 */}
                         {step === 2 && (
                             <div className="space-y-8 text-center">
                                 <h2 className="text-2xl font-hand">2. 감정 색깔과 단어 고르기</h2>
                                 <div className="flex justify-center gap-3 py-2">
-                                    {colors.map(c => <button key={c.name} onClick={() => setEmotionColor(c.name)} className={`w-10 h-10 rounded-full border-4 ${emotionColor === c.name ? 'border-slate-500 scale-110 shadow-md' : 'border-transparent opacity-60'}`} style={{backgroundColor: c.code}}></button>)}
+                                    {[{name:'빨강',code:'#EF4444'},{name:'주황',code:'#F97316'},{name:'노랑',code:'#FBBF24'},{name:'초록',code:'#34D399'},{name:'파랑',code:'#3B82F6'},{name:'보라',code:'#8B5CF6'}].map(c => <button key={c.name} onClick={() => setEmotionColor(c.name)} className={`w-10 h-10 rounded-full border-4 ${emotionColor === c.name ? 'border-slate-500 scale-110 shadow-md' : 'border-transparent opacity-60'}`} style={{backgroundColor: c.code}}></button>)}
                                 </div>
-                                <div className="flex flex-wrap justify-center gap-2
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {['기쁜','슬픈','화난','불안한','외로운','설레는','답답한','신나는','포근한'].map(w => <button key={w} onClick={() => setEmotionWord(w)} className={`px-4 py-2 rounded-full font-hand text-lg border-2 ${emotionWord === w ? 'bg-slate-600 text-white' : 'bg-white text-slate-600 border-white'}`}>{w}</button>)}
+                                </div>
+                                <button onClick={() => setStep(3)} disabled={!emotionColor || !emotionWord} className="w-full eaim-btn-main p-4 mt-4">다음 단계 👉</button>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-hand text-center">3. 나의 감정 관찰하기</h2>
+                                <textarea value={situation} onChange={e => setSituation(e.target.value)} className="w-full eaim-input p-4 font-hand text-lg" placeholder="① 언제 느낀 감정인가요? (상황)"></textarea>
+                                <div className="flex gap-2">
+                                    <select value={bodyPart} onChange={e => setBodyPart(e.target.value)} className="eaim-input p-3 font-hand text-lg"><option value="">부위 선택</option><option value="머리">머리</option><option value="가슴">가슴</option><option value="배">배</option><option value="손발">손발</option></select>
+                                    <input value={bodySensation} onChange={e => setBodySensation(e.target.value)} className="flex-grow eaim-input p-3 font-hand text-lg" placeholder="② 몸의 어떤 느낌?" />
+                                </div>
+                                <textarea value={appearance} onChange={e => setAppearance(e.target.value)} className="w-full eaim-input p-4 font-hand text-lg" placeholder="③ 모양이나 소리 비유"></textarea>
+                                <button onClick={() => setStep(4)} className="w-full eaim-btn-main p-4">다음 단계 👉</button>
+                            </div>
+                        )}
+
+                        {step === 4 && (
+                            <div className="space-y-6 text-center">
+                                <h2 className="text-2xl font-hand">4. 감정 이름 지어주기</h2>
+                                <textarea value={relationship} onChange={e => setRelationship(e.target.value)} className="w-full eaim-input p-4 font-hand text-lg" placeholder="나와 감정은 어떤 사이인가요?"></textarea>
+                                <input type="text" value={emotionName} onChange={e => setEmotionName(e.target.value)} className="w-full eaim-input p-4 font-hand text-2xl text-center" placeholder="새 이름 (예: 싱고)" />
+                                <button onClick={handleGeneratePoem} disabled={!emotionName} className="w-full bg-indigo-500 text-white p-4 rounded-2xl font-bold mt-4 shadow-lg">AI 시인에게 요청 ✨</button>
+                            </div>
+                        )}
+
+                        {step === 6 && (
+                            <div className="space-y-6 text-center">
+                                <h2 className="text-2xl font-hand">완성된 나의 감정 시</h2>
+                                <div className="bg-white/60 p-8 rounded-3xl text-left font-hand text-xl min-h-[300px] border-2 border-white">
+                                    {isAnalyzing ? "AI 시인이 쓰는 중..." : finalResult}
+                                </div>
+                                {!isAnalyzing && <button onClick={() => window.print()} className="w-full bg-white p-4 rounded-2xl font-bold border-2">인쇄하기 🖨️</button>}
+                            </div>
+                        )}
+                    </main>
+                    <footer className="text-slate-400 text-xs text-center mt-6">© 2026 EAIM Studio - SEL Education</footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

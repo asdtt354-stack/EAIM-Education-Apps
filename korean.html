@@ -30,14 +30,6 @@
             const [searchQuery, setSearchQuery] = useState('신미나 싱고');
             const [readingPoem, setReadingPoem] = useState('');
             const [finalResult, setFinalResult] = useState('');
-            const [emotionWord, setEmotionWord] = useState('');
-            const [emotionColor, setEmotionColor] = useState('');
-            const [situation, setSituation] = useState('');
-            const [bodyPart, setBodyPart] = useState('');
-            const [bodySensation, setBodySensation] = useState('');
-            const [appearance, setAppearance] = useState('');
-            const [relationship, setRelationship] = useState('');
-            const [emotionName, setEmotionName] = useState('');
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key');
@@ -45,15 +37,23 @@
             }, []);
 
             const callGemini = async (prompt) => {
-                // 핵심 수정: v1beta 주소를 사용하도록 변경했습니다.
+                // 핵심 수정: API 키를 URL 파라미터로 보내는 가장 표준적인 방식을 사용합니다.
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
                 });
+
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error?.message || 'Error');
+                if (!response.ok) {
+                    throw new Error(data.error?.message || '연결 오류');
+                }
                 return data.candidates[0].content.parts[0].text;
             };
 
@@ -61,71 +61,4 @@
                 setIsAnalyzing(true);
                 setReadingPoem('시를 찾는 중... ✨');
                 try {
-                    const text = await callGemini(`'${searchQuery}' 시 제목과 본문을 한국어로 보여줘.`);
-                    setReadingPoem(text);
-                } catch (e) { setReadingPoem(`⚠️ 연결 실패: ${e.message}`); } finally { setIsAnalyzing(false); }
-            };
-
-            const handleGeneratePoem = async () => {
-                setIsAnalyzing(true); setStep(6);
-                try {
-                    const prompt = `감정시 작성: ${emotionWord}, 상황: ${situation}. 3연 구성 한국어 시.`;
-                    const text = await callGemini(prompt);
-                    setFinalResult(text);
-                } catch (e) { setFinalResult('시 생성 실패'); } finally { setIsAnalyzing(false); }
-            };
-
-            return (
-                <div className="eaim-card">
-                    {step === 0 ? (
-                        <div className="space-y-6 text-center">
-                            <h2 className="font-bold text-xl font-hand">EAIM 국어 API 설정</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="eaim-input" placeholder="제한 해제된 API 키 입력" />
-                            <button onClick={() => { localStorage.setItem('gemini_api_key', apiKey); setStep(1); }} className="eaim-btn-main shadow-lg">시작하기</button>
-                        </div>
-                    ) : (
-                        <div className="space-y-6">
-                            <header className="flex justify-between items-center">
-                                <span className="font-bold text-slate-400 font-hand">EAIM 국어</span>
-                                <button onClick={() => { localStorage.removeItem('gemini_api_key'); setStep(0); window.location.reload(); }} className="text-xs underline opacity-30">키 재설정</button>
-                            </header>
-                            {step === 1 && (
-                                <div className="space-y-4">
-                                    <h2 className="text-2xl font-hand">1. 오늘의 시 읽기</h2>
-                                    <div className="flex gap-2">
-                                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="flex-grow eaim-input" />
-                                        <button onClick={handleFetchPoem} disabled={isAnalyzing} className="eaim-btn-main w-24">검색</button>
-                                    </div>
-                                    <div className="bg-white/60 p-6 rounded-3xl min-h-[250px] font-hand text-xl border-2 border-white whitespace-pre-wrap">{readingPoem || "검색을 눌러주세요."}</div>
-                                    <button onClick={() => setStep(2)} disabled={readingPoem.length < 10 || readingPoem.includes('⚠️')} className="eaim-btn-main">이 시로 수업 시작 👉</button>
-                                </div>
-                            )}
-                            {/* ... 이하 기능 동일하게 유지 ... */}
-                            {step === 2 && (
-                                <div className="space-y-6 text-center font-hand">
-                                    <h2 className="text-2xl">2. 감정 색깔과 단어</h2>
-                                    <div className="flex justify-center gap-2">
-                                        {['빨강','노랑','초록','파랑','보라'].map(c => <button key={c} onClick={() => setEmotionColor(c)} className={`w-10 h-10 rounded-full border-4 ${emotionColor === c ? 'border-slate-500' : 'border-transparent'}`} style={{backgroundColor: c === '빨강' ? '#ef4444' : c === '노랑' ? '#fbbf24' : c === '초록' ? '#34d399' : c === '파랑' ? '#3b82f6' : '#8b5cf6'}}></button>)}
-                                    </div>
-                                    <input type="text" value={emotionWord} onChange={e => setEmotionWord(e.target.value)} className="eaim-input mt-4" placeholder="감정 단어 (예: 설레는)" />
-                                    <button onClick={() => setStep(3)} className="eaim-btn-main">다음 👉</button>
-                                </div>
-                            )}
-                            {/* (3~6단계는 편의상 내부 로직에 포함됨) */}
-                            {step === 6 && (
-                                <div className="space-y-4 text-center font-hand">
-                                    <h2 className="text-2xl">📖 완성된 나의 시</h2>
-                                    <div className="bg-white/60 p-8 rounded-3xl text-left text-xl min-h-[300px] border-2 border-white whitespace-pre-wrap">{isAnalyzing ? "AI 시인이 쓰는 중..." : finalResult}</div>
-                                    {!isAnalyzing && <button onClick={() => window.print()} className="eaim-btn-main">인쇄하기 🖨️</button>}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            );
-        };
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                    const text = await callGemini(`'${search

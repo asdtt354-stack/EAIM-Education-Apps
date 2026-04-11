@@ -53,8 +53,8 @@
 
             const callGemini = async (prompt) => {
                 const cleanKey = apiKey.trim();
-                // 💡 핵심 수정: 모델 이름표를 가장 정확한 풀네임(-latest)으로 바꿨습니다!
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${cleanKey}`;
+                // 💡 여기서 군더더기를 빼고 가장 정확한 표준 모델명으로 복구했습니다!
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',

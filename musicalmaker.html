@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>창작 뮤지컬 메이커</title>
+    <style>
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: white;
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-size: 16px;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .flex-row {
+            display: flex;
+            gap: 15px;
+        }
+        .flex-row .input-group {
+            flex: 1;
+        }
+        .btn-main {
+            width: 100%;
+            padding: 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-main:hover {
+            background-color: #2980b9;
+        }
+        .result-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .card {
+            background-color: #f8fafc;
+            border-left: 5px solid #3498db;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .card.music { border-left-color: #9b59b6; }
+        .card.image { border-left-color: #e67e22; }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: white;
+            padding: 15px;
+            border: 1px solid #e0e6ed;
+            border-radius: 5px;
+            font-family: inherit;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        
+        /* 복사, 다운로드 버튼 스타일 */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .btn-action {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-copy {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .btn-copy:hover {
+            background-color: #cbd5e1;
+        }
+        .btn-download {
+            background-color: #2c3e50;
+            color: white;
+        }
+        .btn-download:hover {
+            background-color: #1a252f;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎭 창작 뮤지컬 메이커</h1>
+    
+    <div class="input-group">
+        <label for="musicalTheme">💡 뮤지컬의 핵심 주제를 적어주세요</label>
+        <input type="text" id="musicalTheme" placeholder="예: 무인도에 갇힌 친구들, 미래 도시의 비밀 등">
+    </div>
+
+    <div class="input-group">
+        <label for="characterCount">👥 등장인물 수는 몇 명인가요?</label>
+        <input type="number" id="characterCount" placeholder="예: 5" min="1" max="30">
+    </div>
+
+    <div class="flex-row">
+        <div class="input-group">
+            <label for="musicalMood">✨ 전체적인 분위기</label>
+            <select id="musicalMood">
+                <option value="밝고 쾌활하고 코믹한">😆 밝고 쾌활한 (코믹)</option>
+                <option value="웅장하고 감동적인">🥺 웅장하고 감동적인</option>
+                <option value="어둡고 긴장감 넘치는">😨 어둡고 긴장감 넘치는</option>
+                <option value="신비롭고 환상적인">🧚 신비롭고 환상적인</option>
+                <option value="역동적이고 에너지 넘치는">🔥 역동적이고 에너지 넘치는</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="musicalGenre">🎵 음악 장르 (Suno용)</label>
+            <select id="musicalGenre">
+                <option value="auto">🤖 대본에 맞춰 AI가 알아서 추천</option>
+                <option value="Broadway Musical">정통 브로드웨이 뮤지컬</option>
+                <option value="K-Pop, Dance">K-Pop / 댄스</option>
+                <option value="Rock, Band sound">강렬한 락 밴드</option>
+                <option value="Hip-hop, Rap">힙합 / 랩</option>
+                <option value="Disney style, Orchestral">디즈니 애니메이션 스타일</option>
+                <option value="Acoustic, Calm Indie">잔잔한 어쿠스틱 / 인디</option>
+            </select>
+        </div>
+    </div>
+
+    <button class="btn-main" onclick="generatePlan()">뮤지컬 기획 시작하기</button>
+
+    <div class="result-section" id="resultArea">
+        <div class="card">
+            <div class="card-title">📖 1단계: 스토리 및 대본 프롬프트</div>
+            <pre id="storyPrompt"></pre>
+            <div class="action-buttons">
+                <button class="btn-action btn-copy" onclick="copyText('storyPrompt')">📋 복사하기</button>
+                <button class="btn-action btn-download" onclick="downloadText('storyPrompt', '1_스토리_대본_프롬프트.txt')">💾 다운로드</button>
+            </div>
+        </div>
+
+        <div class="card music">
+            <div class="card-title">🎵 2단계: Suno 음악 프롬프트</div>
+            <pre id="musicPrompt"></pre>
+            <div class="action-buttons">
+                <button class="btn-action btn-copy" onclick="copyText('musicPrompt')">📋 복사하기</button>
+                <button class="btn-action btn-download" onclick="downloadText('musicPrompt', '2_Suno_음악_프롬프트.txt')">💾 다운로드</button>
+            </div>
+        </div>
+
+        <div class="card image">
+            <div class="card-title">🎨 3단계: 무대 배경 (Midjourney) 프롬프트</div>
+            <pre id="imagePrompt"></pre>
+            <div class="action-buttons">
+                <button class="btn-action btn-copy" onclick="copyText('imagePrompt')">📋 복사하기</button>
+                <button class="btn-action btn-download" onclick="downloadText('imagePrompt', '3_무대배경_이미지_프롬프트.txt')">💾 다운로드</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function generatePlan() {
+        const theme = document.getElementById('musicalTheme').value.trim();
+        const count = document.getElementById('characterCount').value.trim();
+        const mood = document.getElementById('musicalMood').value;
+        const genre = document.getElementById('musicalGenre').value;
+        const genreText = document.getElementById('musicalGenre').options[document.getElementById('musicalGenre').selectedIndex].text;
+
+        if (!theme || !count) {
+            alert("주제와 등장인물 수를 꼭 입력해 주세요!");
+            return;
+        }
+
+        document.getElementById('resultArea').style.display = 'block';
+
+        // 1. 스토리 프롬프트
+        const storyText = 
+`다음 조건에 맞춰 짧은 창작 뮤지컬 스토리와 대본을 작성해 줘.
+
+[기본 조건]
+- 주제: ${theme}
+- 분위기: ${mood} 분위기
+- 등장인물 수: 정확히 ${count}명 (모든 캐릭터의 이름과 특징을 먼저 짧게 소개할 것)
+
+[요구 사항]
+1. 위 분위기에 맞춰 전체적인 줄거리(기승전결)를 요약해 줘.
+2. 이야기 중 가장 감정이 고조되는 하이라이트 장면의 대본(대사와 무대 지문 포함)을 작성해 줘. ${count}명의 인물이 모두 한 번씩은 대사나 행동으로 참여해야 해.`;
+        document.getElementById('storyPrompt').textContent = storyText;
+
+        // 2. 음악 프롬프트
+        let musicStyleInstruction = "";
+        let lyricsInstruction = "";
+
+        if (genre === "auto") {
+            musicStyleInstruction = "1. Style of Music: 위에서 작성된 대본의 서사와 하이라이트 장면의 감정선에 가장 잘 어울리는 음악 장르를 네가 분석해서 결정해 줘. 결정한 장르와 무드를 나타내는 영어 영문 태그 5~7개를 쉼표로 적어줘. (예: Broadway musical, dramatic, orchestral 등)";
+            lyricsInstruction = "2. Lyrics: 이 장면에 어울리는 1절 분량의 가사(한국어)를 작성해 줘. 네가 추천한 음악 장르의 특징(예: 랩, 코러스, 독백 형태 등)이 잘 드러나게 구성해 줘.";
+        } else {
+            musicStyleInstruction = `1. Style of Music: ${genre}, ${mood} mood, dramatic, clear vocal (이 키워드들을 포함하여 장르와 분위기를 나타내는 영어 영문 태그 5~7개를 쉼표로 적어줘.)`;
+            lyricsInstruction = `2. Lyrics: 이 장면에 어울리는 1절 분량의 가사(한국어)를 작성해 줘. 랩이나 코러스([Chorus]) 등 ${genreText} 장르의 특징이 잘 드러나게 구성해 줘.`;
+        }
+
+        const musicText = 
+`위에서 작성한 하이라이트 장면에 부를 뮤지컬 넘버(노래)를 만들 거야. 
+Suno AI에 입력할 수 있도록 다음 두 가지를 작성해 줘.
+
+${musicStyleInstruction}
+${lyricsInstruction}`;
+        document.getElementById('musicPrompt').textContent = musicText;
+
+        // 3. 이미지 프롬프트
+        const imageText = 
+`이 뮤지컬의 하이라이트 장면을 무대 배경 화면(LED 스크린 등)으로 띄울 거야.
+이미지 생성 AI에 바로 입력할 수 있도록 영어 프롬프트로 작성해 줘.
+
+- 조건: ${mood} 분위기가 시각적으로 잘 나타나야 함. 무대 세트, 배경의 풍경, 조명의 색상 등을 생생하게 묘사할 것. 인물은 제외하고 온전히 '무대 배경'만 묘사할 것.
+- 형식: 쉼표로 구분된 영문 키워드 나열 (마지막에 --ar 16:9 추가)`;
+        document.getElementById('imagePrompt').textContent = imageText;
+    }
+
+    // 텍스트 복사 기능
+    function copyText(elementId) {
+        const textToCopy = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert('복사되었습니다! AI 플랫폼 입력창에 붙여넣기(Ctrl+V) 해주세요.');
+        }).catch(err => {
+            alert('복사에 실패했습니다. 브라우저 설정을 확인해 주세요.');
+            console.error('Copy failed:', err);
+        });
+    }
+
+    // 텍스트 다운로드 기능
+    function downloadText(elementId, filename) {
+        const textToDownload = document.getElementById(elementId).innerText;
+        const blob = new Blob([textToDownload], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        
+        // 링크를 DOM에 추가한 뒤 클릭 이벤트 발생 (호환성 목적)
+        document.body.appendChild(link);
+        link.click();
+        
+        // 작업 완료 후 링크 제거
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    }
+</script>
+
+</body>
+</html>

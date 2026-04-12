@@ -3,29 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM UNIVERSAL ENSEMBLE</title>
+    <title>EAIM POWER-CHORD ENSEMBLE</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
         .font-title { font-family: 'Black Han Sans', sans-serif; }
-        /* 💡 범용 색깔 음표 디자인 */
-        .note-card { height: 120px; border-radius: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; border: 2px solid rgba(255,255,255,0.1); }
-        .active-note { transform: scale(1.05); box-shadow: 0 0 30px currentColor; border-color: white; }
+        .station-card { background: rgba(30, 41, 59, 0.4); border: 2px solid #1e293b; border-radius: 1.5rem; padding: 1.2rem; transition: 0.3s; }
+        .active-station { border-color: #f43f5e; box-shadow: 0 0 20px rgba(244, 63, 94, 0.2); background: rgba(244, 63, 94, 0.05); }
         
-        /* 음별 고유 색상 (도:빨, 레:주, 미:노...) */
-        .note-도 { background-color: #ef4444; color: white; }
-        .note-레 { background-color: #f97316; color: white; }
-        .note-미 { background-color: #facc15; color: black; }
-        .note-파 { background-color: #4ade80; color: black; }
-        .note-솔 { background-color: #3b82f6; color: white; }
-        .note-라 { background-color: #6366f1; color: white; }
-        .note-시 { background-color: #a855f7; color: white; }
+        /* 💡 파워코드 전용 듀얼 버블 */
+        .power-bubble { width: 55px; height: 55px; border-radius: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .note-1 { background-color: #f43f5e; color: white; } /* 근음 */
+        .note-5 { background-color: #3b82f6; color: white; } /* 5음 */
 
-        .youtube-box { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; border-radius: 1rem; overflow: hidden; background: #000; }
+        .youtube-box { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; border-radius: 1.5rem; overflow: hidden; background: #000; border: 2px solid #334155; }
         .youtube-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     </style>
 </head>
@@ -42,7 +37,6 @@
             const [videoUrl, setVideoUrl] = useState('');
             const [currentTime, setCurrentTime] = useState(0);
             const [timeline, setTimeline] = useState([]);
-            const [viewMode, setViewMode] = useState('Universal'); // Universal, Piano, Rhythm
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_ensemble');
@@ -53,13 +47,9 @@
                 if (!searchQuery) return alert("곡 제목을 입력하세요!");
                 setStep(2);
                 
-                // 💡 임베딩 차단을 피하기 위해 'Backing Track' 키워드 자동 추가 제안
-                const searchKeyword = searchQuery.includes('backing') ? searchQuery : searchQuery + " backing track";
-
-                const prompt = `곡 '${searchKeyword}'의 화성을 분석해 JSON으로 출력하세요. 
-                1. 0초부터 4초 간격으로 10개 마디를 구성하세요.
-                2. 각 마디의 코드명(chord), 근음(root), 3음(third), 5음(fifth)을 한글 계이름으로 추출하세요.
-                [{"time": 0, "chord": "C", "root": "도", "third": "미", "fifth": "솔"}, ...] 형식만 출력하세요.`;
+                const prompt = `곡 '${searchQuery}'을 분석하여 [부는악기/기타/건반]용 JSON을 만드세요.
+                1. 기타는 '파워코드(근음+5음)' 구성음만 추출하세요.
+                [{"time":0, "chord":"C5", "wind":"도", "guitar":["도","솔"], "key":["도","미","솔"], "drum":"쿵 팍"} , ...] 형식만 출력.`;
 
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
@@ -71,11 +61,10 @@
                     const data = await response.json();
                     const jsonStr = data.candidates[0].content.parts[0].text.match(/\[.*\]/s)[0];
                     setTimeline(JSON.parse(jsonStr));
-                    
-                    setVideoUrl(`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(searchKeyword)}`);
+                    setVideoUrl(`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(searchQuery + " 가사")}`);
                     setStep(3);
                 } catch (e) {
-                    setTimeline([{time:0, chord:"C", root:"도", third:"미", fifth:"솔"}]);
+                    setTimeline([{time:0, chord:"C5", wind:"도", guitar:["도","솔"], key:["도","미","솔"], drum:"쿵 팍"}]);
                     setStep(3);
                 }
             };
@@ -83,85 +72,60 @@
             const currentData = timeline.find((item, index) => {
                 const nextItem = timeline[index + 1];
                 return currentTime >= item.time && (!nextItem || currentTime < nextItem.time);
-            }) || { chord: '-', root: '-', third: '-', fifth: '-' };
+            }) || { chord: '-', wind: '-', guitar:['-','-'], key:['-','-','-'], drum: '-' };
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col p-6">
+                <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col p-5">
                     {step === 0 && (
                         <div className="flex-grow flex flex-col justify-center text-center">
-                            <h2 className="text-2xl font-bold text-cyan-400 mb-6 font-title tracking-widest">EAIM UNIVERSAL</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="bg-slate-900 border border-slate-700 p-4 rounded-xl text-center mb-4" />
-                            <button onClick={() => { localStorage.setItem('gemini_api_key_ensemble', apiKey.trim()); setStep(1); }} className="bg-cyan-600 p-4 rounded-xl font-bold">시스템 접속</button>
+                            <h2 className="text-2xl font-bold text-rose-500 mb-6 font-title tracking-widest uppercase">Power Chord Engine</h2>
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center mb-4" />
+                            <button onClick={() => { localStorage.setItem('gemini_api_key_ensemble', apiKey.trim()); setStep(1); }} className="bg-rose-600 p-4 rounded-xl font-bold">합주 시스템 가동</button>
                         </div>
                     )}
 
                     {step === 1 && (
                         <div className="flex-grow flex flex-col justify-center space-y-8 animate-fadeIn">
                             <div className="text-center">
-                                <div className="text-6xl mb-4">🌈</div>
-                                <h2 className="text-2xl font-bold font-title">범용 합주 검색</h2>
-                                <p className="text-slate-500 text-sm mt-2">곡 제목을 넣으면 모든 악기가 함께 보는<br/>'색깔 악보'가 생성됩니다.</p>
+                                <div className="text-6xl mb-4">🎸</div>
+                                <h2 className="text-2xl font-bold font-title">EAIM 퀵 밴드</h2>
+                                <p className="text-slate-500 text-sm mt-2 font-bold">파워코드로 원곡 정복하기</p>
                             </div>
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center font-bold text-xl" placeholder="가수 - 곡명 입력" />
-                            <button onClick={handleAnalyze} className="w-full bg-indigo-600 p-5 rounded-2xl font-bold text-lg shadow-xl">분석 시작 🔍</button>
+                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center font-bold text-xl" placeholder="곡 제목을 적어주세요" />
+                            <button onClick={handleAnalyze} className="w-full bg-rose-600 p-5 rounded-2xl font-bold text-lg shadow-xl">분석 시작 🔍</button>
                         </div>
                     )}
 
                     {step === 3 && (
-                        <div className="flex-grow flex flex-col animate-fadeIn">
-                            <header className="flex justify-between items-center mb-4 font-title text-indigo-400">
-                                <span>EAIM SCORE</span>
+                        <div className="flex-grow flex flex-col animate-fadeIn space-y-3">
+                            <header className="flex justify-between items-center font-title text-rose-500">
+                                <span className="text-xl">{currentData.chord}</span>
                                 <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">EXIT</button>
                             </header>
 
-                            <div className="youtube-box mb-6">
+                            <div className="youtube-box">
                                 <iframe src={videoUrl} frameBorder="0" allowFullScreen></iframe>
                             </div>
 
-                            <div className="flex-grow flex flex-col space-y-6">
-                                <div className="text-center">
-                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Chord</span>
-                                    <div className="text-4xl font-black text-white">{currentData.chord}</div>
-                                </div>
-
-                                {/* 💡 범용 색깔 음표 가이드 (기타 지판을 대체) */}
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] text-slate-500 font-bold ml-1 uppercase tracking-tighter">Essential Notes (1+3+5)</p>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div className={`note-card active-note note-${currentData.root.charAt(0)}`}>
-                                                <span className="text-[10px] opacity-70 mb-1">근음</span>
-                                                <span className="text-2xl font-black">{currentData.root}</span>
-                                            </div>
-                                            <div className={`note-card note-${currentData.third.charAt(0)}`}>
-                                                <span className="text-[10px] opacity-70 mb-1">3음</span>
-                                                <span className="text-2xl font-black">{currentData.third}</span>
-                                            </div>
-                                            <div className={`note-card note-${currentData.fifth.charAt(0)}`}>
-                                                <span className="text-[10px] opacity-70 mb-1">5음</span>
-                                                <span className="text-2xl font-black">{currentData.fifth}</span>
-                                            </div>
-                                        </div>
+                            <div className="grid grid-cols-1 gap-2">
+                                {/* 1. 기타 파워코드 스테이션 (집중 강화!) */}
+                                <div className="station-card active-station flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-rose-500 uppercase">Guitar (파워코드)</span>
+                                        <span className="text-[9px] text-slate-500 italic">검지와 약지로 짚으세요!</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="power-bubble note-1 animate-pulse"><span className="text-[8px] opacity-70">근음</span>{currentData.guitar[0]}</div>
+                                        <div className="power-bubble note-5"><span className="text-[8px] opacity-70">5음</span>{currentData.guitar[1]}</div>
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-                                    <p className="text-[10px] text-center text-slate-500 font-bold">👩‍🏫 선생님 가이드</p>
-                                    <p className="text-xs text-center text-slate-300 mt-1 italic">"낮은 악기는 '근음'에, 화음 악기는 '전체'에 집중하세요!"</p>
+                                {/* 2. 부는 악기 스테이션 */}
+                                <div className="station-card flex items-center justify-between py-2">
+                                    <span className="text-[10px] font-bold text-indigo-400 uppercase">Wind (근음)</span>
+                                    <div className="text-xl font-black text-indigo-400 border-2 border-indigo-900 px-4 py-1 rounded-full">{currentData.wind}</div>
                                 </div>
-                            </div>
 
-                            <div className="mt-auto pt-4">
-                                <input type="range" min="0" max="40" step="1" value={currentTime} onChange={(e) => setCurrentTime(parseFloat(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                {/* 3. 건반 스테이션 */}
+                                <div className="station-card flex items-center justify-between py-2">
+                                    <span className="text-

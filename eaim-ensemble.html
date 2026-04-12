@@ -3,38 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 앙상블 Pro v3.5</title>
+    <title>EAIM HYBRID ENSEMBLE Pro</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #09090b; color: #f4f4f5; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
         .font-title { font-family: 'Black Han Sans', sans-serif; }
-        .glass-panel { background: rgba(39, 39, 42, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(82, 82, 91, 0.5); }
-        /* 💡 연주 박스 디자인 강화 */
-        .score-card { background: #18181b; border: 2px solid #3f3f46; border-radius: 1.5rem; padding: 1.2rem; }
-        .chord-main { font-size: 1.5rem; font-weight: 900; color: #fb7185; margin-bottom: 0.5rem; display: block; }
-        .note-flow { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
-        .note-bubble { background: #27272a; border: 1px solid #52525b; padding: 0.4rem 0.8rem; border-radius: 0.8rem; font-size: 1.1rem; font-weight: 800; color: #22d3ee; }
-        .plus-sign { color: #71717a; font-weight: bold; }
-        .hint-text { font-size: 0.75rem; color: #a1a1aa; margin-top: 0.8rem; border-top: 1px dashed #3f3f46; pt-2; }
-        @media print { .no-print { display: none !important; } body { background: white; color: black; } .score-card { border: 1px solid #000; } .note-bubble { border: 1px solid #000; color: black; } }
+        .play-screen { background: radial-gradient(circle at top, #1e1b4b 0%, #020617 100%); min-height: 100vh; }
+        .fretboard { background: #1e293b; border-radius: 1rem; padding: 10px; position: relative; height: 160px; border: 4px solid #334155; }
+        .string { position: absolute; left: 0; right: 0; height: 2px; background: #64748b; }
+        .fret { position: absolute; top: 0; bottom: 0; width: 2px; background: #475569; }
+        .finger-dot { width: 26px; height: 26px; background: #f43f5e; border-radius: 50%; position: absolute; transform: translate(-50%, -50%); box-shadow: 0 0 20px #f43f5e; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white; }
+        .diet-box { border: 2px solid #334155; border-radius: 1.5rem; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 900; background: rgba(30, 41, 59, 0.4); }
+        .note-active { background: #22d3ee !important; color: #000 !important; transform: scale(1.05); box-shadow: 0 0 25px #22d3ee; }
+        .mode-btn { padding: 0.6rem 1.2rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; transition: 0.3s; border: 2px solid #334155; }
+        .mode-btn.active { background: #facc15; color: #000; border-color: #facc15; box-shadow: 0 0 15px rgba(250, 204, 21, 0.4); }
+        .animate-pulse-cyan { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(34, 211, 238, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); } }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
+
+        const GuitarVisualizer = ({ chordData }) => {
+            const positions = chordData.positions || [];
+            return (
+                <div className="fretboard mt-2 mb-4 overflow-hidden shadow-2xl">
+                    {[1, 2, 3, 4].map(s => <div key={s} className="string" style={{ top: `${s * 20 + 15}%` }}></div>)}
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(f => (
+                        <div key={f} className="fret" style={{ left: `${f * 8.33}%` }}>
+                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] text-slate-600">{f}</span>
+                        </div>
+                    ))}
+                    {positions.map((p, i) => (
+                        <div key={i} className="finger-dot animate-bounce" style={{ left: `${p.f * 8.33 - 4}%`, top: `${p.s * 20 + 15}%` }}>
+                            {p.note}
+                        </div>
+                    ))}
+                    <div className="absolute left-0 top-0 bottom-0 w-3 bg-slate-800 border-r-2 border-slate-500"></div>
+                </div>
+            );
+        };
 
         const EnsembleApp = () => {
-            const [step, setStep] = useState(0);
+            const [step, setStep] = useState(0); 
             const [apiKey, setApiKey] = useState('');
-            const [isAnalyzing, setIsAnalyzing] = useState(false);
-            const [songTitle, setSongTitle] = useState('선물 - 멜로망스');
-            const [parsedData, setParsedData] = useState({ intro: '', originalChord: '', drum: '', bass: '', guitar: '', harmKey: '', hint: '' });
+            const [audioUrl, setAudioUrl] = useState('');
+            const [songTitle, setSongTitle] = useState('');
+            const [playMode, setPlayMode] = useState('Original');
+            const [currentTime, setCurrentTime] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [timeline, setTimeline] = useState([]);
+            const audioRef = useRef(null);
+            const timerRef = useRef(null);
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_ensemble');
@@ -42,145 +69,149 @@
             }, []);
 
             const callGemini = async (prompt) => {
-                const cleanKey = apiKey.trim();
-                // 💡 디렉터님 환경 전용 2.5-flash 엔진 적용
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error?.message || '연결 오류');
                 return data.candidates[0].content.parts[0].text;
             };
 
-            const extractSection = (text, sectionName) => {
-                const regex = new RegExp(`\\[${sectionName}\\](.*?)(?=\\[|$)`, 's');
-                const match = text.match(regex);
-                return match ? match[1].trim() : '데이터 분석 실패';
-            };
-
-            const analyzeSong = async () => {
-                if(!songTitle) return alert("곡 제목을 입력해주세요.");
-                setIsAnalyzing(true);
+            const analyzeSong = async (file = null) => {
+                const title = file ? file.name : songTitle;
+                if (!title) return alert("곡 제목을 입력하거나 파일을 선택해주세요!");
                 
-                // 💡 아이들 눈높이에 맞춘 '구성음 분리' 명령 고도화
-                const prompt = `음악 편곡가로서 곡 '${songTitle}'의 핵심 화성을 분석해. 
-                중학생 초보자가 즉시 연주할 수 있게 아래 형식으로만 출력해:
+                if (file) {
+                    setAudioUrl(URL.createObjectURL(file));
+                }
+                setStep(2);
 
-                [곡소개] 합주 추천 이유 1줄
-                [드럼] 비트 명칭과 특징
-                [베이스] "근음" 이름만 나열 (예: 라b ▶ 파 ▶ 레b ▶ 미b)
-                [기타] 파워코드의 "구성음"을 모두 나열 (예: 라b+미b ▶ 파+도 ▶ 레b+라b ▶ 미b+시b)
-                [건반] 핵심 "2음 화성" 나열 (예: 라b+도 ▶ 파+라b ▶ 레b+파 ▶ 미b+솔)
-                [한마디] 선생님의 연주 꿀팁 1줄`;
+                const prompt = `음악 분석 AI로서 '${title}'의 화성을 분석해 JSON으로 출력하세요. 
+                1. 원곡 키(orig)와 C, G, F 중 쉬운 조(easy)를 모두 분석하세요.
+                2. 에임기타(4줄 D,G,B,E) 기준 지판 포지션(s:줄, f:프렛)을 포함하세요.
+                3. 0초부터 4초 간격으로 10개 마디를 구성하세요.
+                [{"time": 0, "orig_chord": "Eb", "easy_chord": "C", "orig_notes": ["미b", "솔"], "easy_notes": ["도", "미"], "positions": [{"s":4, "f":1, "note":"Eb"}]}, ...] 형식만 출력하세요.`;
 
                 try {
                     const text = await callGemini(prompt);
-                    setParsedData({
-                        intro: extractSection(text, '곡소개'),
-                        drum: extractSection(text, '드럼'),
-                        bass: extractSection(text, '베이스'),
-                        guitar: extractSection(text, '기타'),
-                        harmKey: extractSection(text, '건반'),
-                        hint: extractSection(text, '한마디')
-                    });
-                    setStep(2);
-                } catch (e) { alert('분석 오류: ' + e.message); } finally { setIsAnalyzing(false); }
+                    const jsonStr = text.match(/\[.*\]/s)[0];
+                    setTimeline(JSON.parse(jsonStr));
+                    setStep(3);
+                } catch (e) {
+                    alert("분석 중 오류가 발생했습니다. 데모 데이터를 불러옵니다.");
+                    setTimeline([{time:0, orig_chord:"C", easy_chord:"C", orig_notes:["도","미"], easy_notes:["도","미"], positions:[{s:4, f:10, note:"C"}]}]);
+                    setStep(3);
+                }
             };
 
+            // 가상 타이머 로직 (파일이 없을 때 사용)
+            useEffect(() => {
+                if (isPlaying && !audioUrl) {
+                    timerRef.current = setInterval(() => {
+                        setCurrentTime(prev => (prev + 0.1) % 40);
+                    }, 100);
+                } else {
+                    clearInterval(timerRef.current);
+                }
+                return () => clearInterval(timerRef.current);
+            }, [isPlaying, audioUrl]);
+
+            const currentData = timeline.find((item, index) => {
+                const nextItem = timeline[index + 1];
+                return currentTime >= item.time && (!nextItem || currentTime < nextItem.time);
+            }) || { orig_chord: '-', easy_chord: '-', orig_notes:['-'], easy_notes:['-'], positions: [] };
+
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-zinc-950 shadow-2xl flex flex-col relative overflow-hidden">
-                    <header className="bg-zinc-950 p-4 flex justify-between items-center border-b border-zinc-800 no-print">
-                        <h1 className="text-xl font-title tracking-wider text-zinc-100 italic">EAIM ENSEMBLE</h1>
-                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_ensemble'); setStep(0); window.location.reload(); }} className="text-[10px] text-zinc-500 border border-zinc-700 px-2 py-1 rounded font-bold">KEY RESET</button>}
-                    </header>
+                <div className="max-w-md mx-auto min-h-screen bg-slate-950 shadow-2xl flex flex-col relative overflow-hidden">
+                    {step === 0 && (
+                        <div className="flex-grow p-10 flex flex-col justify-center text-center">
+                            <h2 className="text-2xl font-bold text-cyan-400 mb-6 font-title">EAIM ENSEMBLE SYSTEM</h2>
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="bg-slate-900 border border-slate-700 p-4 rounded-xl text-white text-center mb-4" />
+                            <button onClick={() => { localStorage.setItem('gemini_api_key_ensemble', apiKey.trim()); setStep(1); }} className="bg-cyan-600 p-4 rounded-xl font-bold">시스템 접속</button>
+                        </div>
+                    )}
 
-                    <main className="flex-grow p-5 overflow-y-auto pb-24">
-                        {step === 0 && (
-                            <div className="space-y-6 py-10 text-center animate-fadeIn">
-                                <h2 className="text-2xl font-bold text-cyan-400 font-title italic">🔌 POWER ON</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full bg-zinc-900 border border-zinc-700 p-4 rounded-xl text-white text-center outline-none focus:border-cyan-500" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_ensemble', apiKey.trim()); setStep(1); }} className="w-full bg-cyan-600 text-white p-4 rounded-xl font-bold shadow-lg">스튜디오 입장</button>
+                    {step === 1 && (
+                        <div className="flex-grow p-8 flex flex-col justify-center animate-fadeIn">
+                            <div className="text-center mb-10">
+                                <div className="text-5xl mb-4">🎵</div>
+                                <h2 className="text-2xl font-bold mb-2">합주 곡 선택</h2>
+                                <p className="text-slate-500 text-sm">파일을 올리거나 제목만 적어도 분석이 가능합니다.</p>
                             </div>
-                        )}
-
-                        {step === 1 && (
-                            <div className="space-y-6 animate-fadeIn mt-10">
-                                <div className="text-center">
-                                    <h2 className="text-3xl font-title text-cyan-400">화성 압축 악보</h2>
-                                    <p className="text-zinc-400 text-sm mt-2 font-bold">원곡과 즉시 합주하는 마법</p>
+                            
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 ml-1">1. 곡 제목 입력</label>
+                                    <input type="text" value={songTitle} onChange={e => setSongTitle(e.target.value)} className="w-full bg-slate-800 p-4 rounded-2xl text-white border border-slate-700 focus:border-cyan-500 outline-none" placeholder="예: 아이브 - I AM" />
                                 </div>
-                                <input type="text" value={songTitle} onChange={e => setSongTitle(e.target.value)} className="w-full bg-zinc-800 border-2 border-zinc-700 p-4 rounded-2xl text-white text-xl text-center outline-none focus:border-cyan-500 transition-all" />
-                                <button onClick={analyzeSong} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white p-5 rounded-2xl font-bold text-lg shadow-lg">
-                                    {isAnalyzing ? "AI 분석 엔진 가동 중..." : "AI 압축 악보 만들기 🪄"}
+
+                                <div className="relative py-4">
+                                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>
+                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-950 px-2 text-slate-600 font-bold">OR (직접 연주용)</span></div>
+                                </div>
+
+                                <div className="space-y-2 text-center">
+                                    <label className="inline-block bg-slate-800 text-slate-300 p-4 rounded-2xl border border-dashed border-slate-600 cursor-pointer hover:bg-slate-700 transition-all w-full">
+                                        📁 음악 파일(MP3) 선택하기
+                                        <input type="file" accept="audio/*" onChange={(e) => analyzeSong(e.target.files[0])} className="hidden" />
+                                    </label>
+                                </div>
+
+                                <button onClick={() => analyzeSong()} className="w-full bg-cyan-600 text-white p-5 rounded-2xl font-bold text-lg shadow-xl shadow-cyan-950/50">
+                                    제목으로 분석 시작 🪄
                                 </button>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {step === 2 && (
-                            <div className="space-y-6 animate-fadeIn pb-10">
-                                <div className="text-center bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
-                                    <h2 className="text-xl font-bold text-white mb-2">{songTitle}</h2>
-                                    <p className="text-xs text-cyan-300 font-medium italic">"{parsedData.intro}"</p>
+                    {step === 2 && (
+                        <div className="flex-grow flex flex-col justify-center items-center">
+                            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p className="text-cyan-400 font-bold animate-pulse font-title">AI 지능형 분석 로직 가동 중...</p>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="play-screen flex-grow flex flex-col p-6 animate-fadeIn">
+                            <header className="flex justify-between items-center mb-6">
+                                <div className="flex gap-2">
+                                    <button onClick={() => setPlayMode('Original')} className={`mode-btn ${playMode==='Original'?'active active-glow':''}`}>원곡 키</button>
+                                    <button onClick={() => setPlayMode('Easy')} className={`mode-btn ${playMode==='Easy'?'active active-glow':''}`}>쉬운 조</button>
+                                </div>
+                                <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">EXIT</button>
+                            </header>
+
+                            <div className="flex-grow flex flex-col justify-center space-y-6">
+                                <div className="text-center">
+                                    <span className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">{playMode} Key Mode</span>
+                                    <div className="text-7xl font-black text-white mt-1">{playMode === 'Original' ? currentData.orig_chord : currentData.easy_chord}</div>
                                 </div>
 
-                                <div className="space-y-5">
-                                    <VisualPart icon="🥁" title="드럼 리듬" content={parsedData.drum} />
-                                    <VisualPart icon="🎸" title="베이스 (근음)" content={parsedData.bass} color="blue" />
-                                    <VisualPart icon="🎸" title="기타 (파워코드 구성음)" content={parsedData.guitar} color="orange" isChord />
-                                    <VisualPart icon="🎹" title="건반 (핵심 화성)" content={parsedData.harmKey} color="pink" isChord />
-                                    
-                                    <div className="bg-zinc-800 p-4 rounded-xl border border-dashed border-zinc-600 text-center">
-                                        <p className="text-[10px] text-zinc-500 mb-1">💡 연주 선생님의 팁</p>
-                                        <p className="text-xs text-zinc-200">{parsedData.hint}</p>
+                                <div className="space-y-4">
+                                    <div className="diet-box note-active animate-pulse-cyan">
+                                        {playMode === 'Original' ? currentData.orig_notes[0] : currentData.easy_notes[0]}
                                     </div>
-                                </div>
-
-                                <div className="flex gap-2 no-print mt-6">
-                                    <button onClick={() => window.print()} className="flex-1 bg-zinc-700 text-white p-4 rounded-xl font-bold">🖨️ 악보 인쇄</button>
-                                    <button onClick={() => setStep(1)} className="flex-1 bg-zinc-800 text-zinc-400 p-4 rounded-xl font-bold">다른 곡</button>
+                                    <p className="text-center text-[10px] text-slate-500 uppercase tracking-tighter italic">4-String Guitar Position Guide</p>
+                                    <GuitarVisualizer chordData={currentData} />
                                 </div>
                             </div>
-                        )}
-                    </main>
-                    <footer className="p-4 text-center text-[10px] text-zinc-700 border-t border-zinc-900 bg-zinc-950 no-print">
-                        &copy; 2026 EAIM Studio | Powered by Gemini 2.5
-                    </footer>
-                </div>
-            );
-        };
 
-        const VisualPart = ({ icon, title, content, color, isChord }) => {
-            const colorClass = color === 'blue' ? 'text-blue-400 border-blue-900' : color === 'orange' ? 'text-orange-400 border-orange-900' : 'text-pink-400 border-pink-900';
-            
-            // 💡 텍스트를 분석해서 화살표와 버블로 변환하는 시각화 로직
-            const elements = content.split('▶').map((el, i) => {
-                const notes = el.trim().split('+');
-                return (
-                    <div key={i} className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                            {notes.map((n, ni) => (
-                                <span key={ni} className="note-bubble">
-                                    {n.trim()}
-                                </span>
-                            ))}
+                            <div className="mt-auto pt-6 border-t border-slate-800/50">
+                                {audioUrl ? (
+                                    <audio ref={audioRef} src={audioUrl} onTimeUpdate={() => setCurrentTime(audioRef.current.currentTime)} onLoadedMetadata={() => setDuration(audioRef.current.duration)} controls className="w-full h-10 opacity-50" />
+                                ) : (
+                                    <div className="flex flex-col items-center gap-4">
+                                        <p className="text-[10px] text-slate-500 font-bold">⚠️ 파일 없음: 외부 음악에 맞춰 재생 버튼을 누르세요</p>
+                                        <button onClick={() => setIsPlaying(!isPlaying)} className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-2xl ${isPlaying ? 'bg-red-600' : 'bg-cyan-600 animate-bounce'}`}>
+                                            {isPlaying ? '⏸' : '▶️'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        {i < content.split('▶').length - 1 && <span className="text-zinc-600">▶</span>}
-                    </div>
-                );
-            });
-
-            return (
-                <div className="score-card shadow-lg animate-fadeIn">
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className="text-lg">{icon}</span>
-                        <span className="text-xs font-bold uppercase tracking-widest text-zinc-400">{title}</span>
-                    </div>
-                    <div className="note-flow">
-                        {isChord || color === 'blue' ? elements : <span className="text-sm text-zinc-200">{content}</span>}
-                    </div>
+                    )}
                 </div>
             );
         };

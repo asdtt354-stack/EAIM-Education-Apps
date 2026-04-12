@@ -3,23 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 우주 탐험대</title>
+    <title>EAIM 우주 탐험대 Pro</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #0B0F19; color: #E2E8F0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #E2E8F0; margin: 0; overflow-x: hidden; }
         .font-serif { font-family: 'Gowun Dodum', serif; }
-        .iframe-container { position: relative; width: 100%; padding-bottom: 75%; height: 0; overflow: hidden; border-radius: 1rem; border: 2px solid #334155; }
+        
+        /* 🚀 태양계 시뮬레이터 스타일 (CSS Animation 기반) */
+        .solar-system { position: relative; width: 100%; height: 350px; background: radial-gradient(circle, #1e1b4b 0%, #020617 100%); border-radius: 2rem; overflow: hidden; display: flex; justify-content: center; align-items: center; border: 2px solid #1e293b; }
+        .sun { width: 40px; height: 40px; background: #fbbf24; border-radius: 50%; box-shadow: 0 0 50px #fbbf24; z-index: 10; position: absolute; }
+        
+        .orbit { position: absolute; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .planet-wrap { position: absolute; width: 100%; height: 100%; animation: rotate linear infinite; }
+        .planet { border-radius: 50%; position: absolute; top: 0; left: 50%; transform: translateX(-50%); animation: self-rotate linear infinite; }
+        
+        /* 공전(Rotation around Sun) 애니메이션 */
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        /* 자전(Self Rotation) 애니메이션 */
+        @keyframes self-rotate { from { transform: translateX(-50%) rotate(0deg); } to { transform: translateX(-50%) rotate(360deg); } }
+
+        /* 행성별 개성 설정 */
+        .earth-orbit { width: 160px; height: 160px; animation-duration: 10s; }
+        .earth { width: 14px; height: 14px; background: #3b82f6; box-shadow: 0 0 10px #3b82f6; animation-duration: 2s; }
+        
+        .mars-orbit { width: 230px; height: 230px; animation-duration: 18s; }
+        .mars { width: 12px; height: 12px; background: #ef4444; box-shadow: 0 0 10px #ef4444; animation-duration: 3s; }
+        
+        .jupiter-orbit { width: 310px; height: 310px; animation-duration: 30s; }
+        .jupiter { width: 22px; height: 22px; background: #d97706; box-shadow: 0 0 10px #d97706; animation-duration: 5s; }
+
+        .iframe-container { position: relative; width: 100%; padding-bottom: 75%; height: 0; overflow: hidden; border-radius: 1.5rem; border: 2px solid #334155; }
         .iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        @media print {
-            body { background-color: white; color: black; }
-            .print-hidden { display: none !important; }
-            .print-area { border: none !important; box-shadow: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            .print-text { color: black !important; }
-        }
+        
+        .btn-space { background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%); transition: 0.3s; border: none; }
+        .btn-space:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(67, 56, 202, 0.5); }
     </style>
 </head>
 <body>
@@ -28,149 +49,165 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const SpaceEAIMApp = () => {
+        const SpaceAppPro = () => {
             const [step, setStep] = useState(0);
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
-            const [obsDate, setObsDate] = useState('');
-            const [obsTarget, setObsTarget] = useState('');
+            const [obsTarget, setObsTarget] = useState('태양계 전체');
             const [skyGuide, setSkyGuide] = useState('');
             const [scienceLog, setScienceLog] = useState('');
             const [emotionLog, setEmotionLog] = useState('');
             const [teacherFeedback, setTeacherFeedback] = useState('');
-            const [imagePreview, setImagePreview] = useState(null);
-            const [uploadedImage, setUploadedImage] = useState(null);
 
             const targets = [
+                { id: '태양계 전체', icon: '🌌', subtitle: '조화와 질서' },
                 { id: '달', icon: '🌕', subtitle: '변화와 수용' },
-                { id: '화성', icon: '🔴', subtitle: '열정과 용기' },
-                { id: '목성', icon: '🌪️', subtitle: '거대한 포용력' },
-                { id: '토성', icon: '🪐', subtitle: '나만의 아름다움' },
-                { id: '계절별 별자리', icon: '✨', subtitle: '의미와 연결' }
+                { id: '화성', icon: '🔴', subtitle: '열정과 도전' },
+                { id: '목성', icon: '🌪️', subtitle: '포용과 리더십' },
+                { id: '밤하늘 지도', icon: '✨', subtitle: '연결과 의미' }
             ];
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_space');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
-                setObsDate(new Date().toISOString().split('T')[0]);
             }, []);
 
-            const callGemini = async (prompt, imageData = null) => {
-                const cleanKey = apiKey.trim();
-                // 💡 디렉터님 환경 전용 2.5-flash 엔진 적용
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
-                
-                const contents = [{ parts: [{ text: prompt }] }];
-                if (imageData) {
-                    contents[0].parts.push({ inlineData: { data: imageData.data, mimeType: imageData.mimeType } });
-                }
-
+            const callGemini = async (prompt) => {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error?.message || '연결 오류');
                 return data.candidates[0].content.parts[0].text;
             };
 
-            const generateSkyGuide = async () => {
+            const startExploration = async () => {
                 setIsAnalyzing(true);
+                const prompt = obsTarget === '태양계 전체' 
+                    ? `태양계 행성들의 자전과 공전 원리를 중학생이 이해하기 쉽게 설명해줘. 특히 '모두가 자신만의 속도로 돌고 있다'는 SEL 관점을 포함해서 3문장으로 써줘.`
+                    : `${obsTarget}의 특징과 관찰 포인트, 그리고 이 천체가 우리에게 주는 감정적 의미를 3문장으로 설명해줘.`;
+                
                 try {
-                    const text = await callGemini(`당신은 천문학 교사입니다. ${obsDate} 밤하늘의 '${obsTarget}'에 대한 과학적 특징과 관찰 팁을 중학생에게 다정하게 3문장으로 설명해주세요.`);
+                    const text = await callGemini(prompt);
                     setSkyGuide(text);
                     setStep(2);
-                } catch (e) { alert('오류: ' + e.message); } finally { setIsAnalyzing(false); }
+                } catch (e) { alert('분석 실패'); } finally { setIsAnalyzing(false); }
             };
 
-            const generateFeedback = async () => {
+            const submitLog = async () => {
                 setIsAnalyzing(true);
                 setStep(4);
                 try {
-                    const text = await callGemini(`학생이 '${obsTarget}' 관찰 후 쓴 일지입니다.\n과학관찰: ${scienceLog}\n감정: ${emotionLog}\n따뜻한 과학 선생님으로서 관찰력 칭찬과 정서적 공감이 담긴 답장을 써주세요.`, uploadedImage);
+                    const text = await callGemini(`학생이 우주 탐사 후 일지를 썼어. [과학적 발견: ${scienceLog}, 느낀점: ${emotionLog}]. 따뜻한 천문학 선생님으로서 아이의 호기심을 격려하고 정서적으로 공감하는 답장을 4문장으로 써줘.`);
                     setTeacherFeedback(text);
-                } catch (e) { setTeacherFeedback('오류 발생: ' + e.message); } finally { setIsAnalyzing(false); }
+                } catch (e) { setTeacherFeedback('오류 발생'); } finally { setIsAnalyzing(false); }
             };
 
-            const virtualSkyUrl = `https://virtualsky.lco.global/embed/index.html?longitude=128.5&latitude=36.0&projection=polar&constellations=true&constellationlabels=true&planets=true&color=dark&keyboard=false&clock=${obsDate}T20:00:00`;
-
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-gray-900 shadow-2xl flex flex-col relative print-area">
-                    <header className="bg-indigo-950 p-4 text-indigo-200 flex justify-between items-center print-hidden">
-                        <h1 className="text-xl font-bold font-serif tracking-widest">✨ EAIM 우주 탐험대</h1>
-                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_space'); setStep(0); window.location.reload(); }} className="text-xs underline">키 재설정</button>}
+                <div className="max-w-md mx-auto min-h-screen shadow-2xl flex flex-col relative bg-slate-950 pb-10">
+                    <header className="p-6 flex justify-between items-center border-b border-white/5">
+                        <h1 className="text-xl font-bold font-serif text-indigo-300 tracking-tighter">EAIM SPACE EXPLORER</h1>
+                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_space'); window.location.reload(); }} className="text-[10px] text-slate-500 underline">KEY RESET</button>}
                     </header>
 
-                    <main className="flex-grow p-6 overflow-y-auto pb-24">
+                    <main className="flex-grow p-6 overflow-y-auto">
                         {step === 0 && (
-                            <div className="space-y-4 py-10 text-center">
-                                <h2 className="text-xl font-bold text-indigo-300">⚙️ AI 망원경 연결</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full bg-gray-800 border p-3 rounded-lg text-white outline-none text-center" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_space', apiKey.trim()); setStep(1); }} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">시스템 가동</button>
+                            <div className="space-y-6 py-10 text-center animate-fadeIn">
+                                <div className="text-6xl mb-4">🔭</div>
+                                <h2 className="text-2xl font-bold text-white">AI 우주센터 연결</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key 입력" className="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 text-center outline-none focus:border-indigo-500" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_space', apiKey.trim()); setStep(1); }} className="w-full btn-space p-4 rounded-2xl font-bold shadow-lg">관제 센터 입장</button>
                             </div>
                         )}
 
                         {step === 1 && (
-                            <div className="space-y-6 animate-fade-in">
-                                <h2 className="text-2xl font-serif text-indigo-300 text-center">관찰 대상 선택</h2>
-                                <input type="date" value={obsDate} onChange={e => setObsDate(e.target.value)} className="w-full bg-gray-800 border-indigo-500 p-4 rounded-xl text-white text-center" />
+                            <div className="space-y-6 animate-fadeIn">
+                                <h2 className="text-xl font-bold text-center text-indigo-200">어떤 우주를 탐험할까요?</h2>
                                 <div className="grid grid-cols-2 gap-3">
                                     {targets.map(t => (
-                                        <button key={t.id} onClick={() => setObsTarget(t.id)} className={`p-4 rounded-xl border-2 transition-all ${obsTarget === t.id ? 'bg-indigo-600 border-indigo-400' : 'bg-gray-800 border-gray-700'}`}>
-                                            <div className="text-3xl">{t.icon}</div>
-                                            <div className="font-bold">{t.id}</div>
+                                        <button key={t.id} onClick={() => setObsTarget(t.id)} className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${obsTarget === t.id ? 'bg-indigo-600 border-indigo-400' : 'bg-slate-900 border-slate-800'}`}>
+                                            <span className="text-3xl">{t.icon}</span>
+                                            <span className="text-sm font-bold">{t.id}</span>
+                                            <span className="text-[9px] opacity-60">{t.subtitle}</span>
                                         </button>
                                     ))}
                                 </div>
-                                <button onClick={generateSkyGuide} disabled={!obsTarget || isAnalyzing} className="w-full bg-yellow-500 text-gray-900 p-4 rounded-xl font-bold">
-                                    {isAnalyzing ? "탐사 준비 중..." : "우주로 출발 🚀"}
+                                <button onClick={startExploration} disabled={isAnalyzing} className="w-full btn-space p-5 rounded-2xl font-black text-lg">
+                                    {isAnalyzing ? "우주선 연료 주입 중..." : "탐사 엔진 가동 🚀"}
                                 </button>
                             </div>
                         )}
 
                         {step === 2 && (
-                            <div className="space-y-6 animate-fade-in">
-                                <div className="bg-indigo-900/50 p-4 rounded-xl border border-indigo-500/30">
-                                    <h3 className="text-sm font-bold text-indigo-300 mb-2">🔭 가이드 ({obsTarget})</h3>
-                                    <p className="text-md font-serif text-indigo-100">{skyGuide}</p>
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="bg-indigo-900/30 p-5 rounded-3xl border border-indigo-500/30">
+                                    <h3 className="text-xs font-bold text-indigo-400 mb-2 uppercase">ASTRONOMY GUIDE</h3>
+                                    <p className="text-sm leading-relaxed font-serif">{skyGuide}</p>
                                 </div>
-                                <div className="iframe-container bg-black"><iframe src={virtualSkyUrl} frameBorder="0"></iframe></div>
-                                <button onClick={() => setStep(3)} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">캡처 완료! 일지 쓰기 👉</button>
+
+                                {/* 💡 핵심: 자전과 공전을 보여주는 시각화 영역 */}
+                                {obsTarget === '태양계 전체' ? (
+                                    <div className="solar-system shadow-inner">
+                                        <div className="sun"></div>
+                                        <div className="orbit earth-orbit"><div className="planet-wrap"><div className="planet earth"></div></div></div>
+                                        <div className="orbit mars-orbit"><div className="planet-wrap"><div className="planet mars"></div></div></div>
+                                        <div className="orbit jupiter-orbit"><div className="planet-wrap"><div className="planet jupiter"></div></div></div>
+                                        <p className="absolute bottom-4 text-[10px] text-white/30 uppercase tracking-widest">Self-Rotation & Revolution Sim</p>
+                                    </div>
+                                ) : (
+                                    <div className="iframe-container shadow-2xl">
+                                        <iframe src={`https://virtualsky.lco.global/embed/index.html?projection=polar&planets=true&clock=${new Date().toISOString().split('T')[0]}T21:00:00`} frameBorder="0"></iframe>
+                                    </div>
+                                )}
+
+                                <button onClick={() => setStep(3)} className="w-full bg-slate-800 p-4 rounded-xl font-bold border border-slate-700">탐사 기록하기 👉</button>
                             </div>
                         )}
 
                         {step === 3 && (
-                            <div className="space-y-4 animate-fade-in">
-                                <h2 className="text-2xl font-serif text-indigo-300 text-center">우주 관찰 일지</h2>
-                                <textarea value={scienceLog} onChange={e => setScienceLog(e.target.value)} className="w-full bg-gray-800 p-3 rounded-xl text-white h-24" placeholder="발견한 과학적 특징"></textarea>
-                                <textarea value={emotionLog} onChange={e => setEmotionLog(e.target.value)} className="w-full bg-gray-800 p-3 rounded-xl text-white h-24" placeholder="우주를 보며 느낀 감정"></textarea>
-                                <button onClick={generateFeedback} disabled={!scienceLog || isAnalyzing} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-xl font-bold">
-                                    {isAnalyzing ? "제출 중..." : "일지 제출 💌"}
-                                </button>
+                            <div className="space-y-4 animate-fadeIn">
+                                <h2 className="text-xl font-bold text-center text-indigo-300">나의 우주 탐사 일지</h2>
+                                <textarea value={scienceLog} onChange={e => setScienceLog(e.target.value)} className="w-full bg-slate-900 p-4 rounded-2xl h-24 text-sm" placeholder="오늘 발견한 과학적 사실은?"></textarea>
+                                <textarea value={emotionLog} onChange={e => setEmotionLog(e.target.value)} className="w-full bg-slate-900 p-4 rounded-2xl h-24 text-sm" placeholder="우주를 보며 나에 대해 느낀 점은?"></textarea>
+                                <button onClick={submitLog} disabled={!scienceLog || isAnalyzing} className="w-full btn-space p-5 rounded-2xl font-bold shadow-xl">AI 선생님께 일지 전송 🛸</button>
                             </div>
                         )}
 
                         {step === 4 && (
-                            <div className="space-y-6 animate-fade-in print-area">
-                                <h2 className="text-2xl font-serif text-center text-pink-300 print-text">💌 선생님의 답장</h2>
-                                <div className="bg-gray-800 p-6 rounded-3xl border-2 border-indigo-500/50 min-h-[300px] print-text">
-                                    {isAnalyzing ? "작성 중..." : <div className="whitespace-pre-wrap font-serif">{teacherFeedback}</div>}
+                            <div className="space-y-6 animate-fadeIn">
+                                <h2 className="text-xl font-bold text-center text-pink-400">우주에서 온 답장</h2>
+                                <div className="bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-500/30 min-h-[250px] shadow-2xl relative">
+                                    <div className="absolute top-4 left-6 text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Teacher's Feedback</div>
+                                    {isAnalyzing ? (
+                                        <div className="flex flex-col items-center justify-center pt-10">
+                                            <div className="w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                            <p className="text-slate-500 text-xs">일지를 정성껏 읽고 계십니다...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="whitespace-pre-wrap font-serif text-lg leading-relaxed pt-4 italic">
+                                            {teacherFeedback}
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="flex gap-3 print-hidden">
-                                    <button onClick={() => window.print()} className="flex-1 bg-emerald-600 text-white p-3 rounded-xl font-bold">인쇄</button>
-                                    <button onClick={() => setStep(1)} className="flex-1 bg-gray-700 text-white p-3 rounded-xl font-bold">다른 탐사</button>
+                                <div className="flex gap-2">
+                                    <button onClick={() => window.print()} className="flex-1 bg-slate-800 p-4 rounded-xl font-bold">기록 인쇄</button>
+                                    <button onClick={() => setStep(1)} className="flex-1 btn-space p-4 rounded-xl font-bold">새로운 탐사</button>
                                 </div>
                             </div>
                         )}
                     </main>
+                    
+                    <footer className="p-4 text-center text-[10px] text-slate-700 tracking-tighter uppercase font-bold">
+                        &copy; 2026 EAIM Studio | Space Intelligence Engine Pro
+                    </footer>
                 </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<SpaceEAIMApp />);
+        root.render(<SpaceAppPro />);
     </script>
 </body>
 </html>

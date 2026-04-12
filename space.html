@@ -12,7 +12,6 @@
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #0B0F19; color: #E2E8F0; }
         .font-serif { font-family: 'Gowun Dodum', serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
         .iframe-container { position: relative; width: 100%; padding-bottom: 75%; height: 0; overflow: hidden; border-radius: 1rem; border: 2px solid #334155; }
         .iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         @media print {
@@ -33,15 +32,12 @@
             const [step, setStep] = useState(0);
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
-            
             const [obsDate, setObsDate] = useState('');
             const [obsTarget, setObsTarget] = useState('');
             const [skyGuide, setSkyGuide] = useState('');
-            
             const [scienceLog, setScienceLog] = useState('');
             const [emotionLog, setEmotionLog] = useState('');
             const [teacherFeedback, setTeacherFeedback] = useState('');
-            
             const [imagePreview, setImagePreview] = useState(null);
             const [uploadedImage, setUploadedImage] = useState(null);
 
@@ -56,31 +52,23 @@
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_space');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
-                
-                const today = new Date().toISOString().split('T')[0];
-                setObsDate(today);
+                setObsDate(new Date().toISOString().split('T')[0]);
             }, []);
-
-            const saveApiKey = () => {
-                if (apiKey.length < 10) return alert('API 키를 입력해주세요.');
-                localStorage.setItem('gemini_api_key_space', apiKey.trim());
-                setStep(1);
-            };
 
             const callGemini = async (prompt, imageData = null) => {
                 const cleanKey = apiKey.trim();
-                // 💡 최신 2.0 엔진 + v1beta 통신망 적용
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`;
+                // 💡 디렉터님 환경 전용 2.5-flash 엔진 적용
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
                 
-                const parts = [{ text: prompt }];
+                const contents = [{ parts: [{ text: prompt }] }];
                 if (imageData) {
-                    parts.push({ inlineData: { data: imageData.data, mimeType: imageData.mimeType } });
+                    contents[0].parts.push({ inlineData: { data: imageData.data, mimeType: imageData.mimeType } });
                 }
 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts }] })
+                    body: JSON.stringify({ contents })
                 });
 
                 const data = await response.json();
@@ -89,140 +77,90 @@
             };
 
             const generateSkyGuide = async () => {
-                if(!obsDate || !obsTarget) return alert("날짜와 관찰 대상을 모두 선택해주세요.");
                 setIsAnalyzing(true);
-                
-                const prompt = `당신은 중학교 천문학 교사입니다. ${obsDate} 시기에 밤하늘에서 '${obsTarget}'을(를) 관찰하려고 합니다. 
-                이 천체의 과학적 특징과 오늘 밤 어떻게 보일지 예상하여 중학생에게 다정하게 3문장으로 설명해주세요.`;
-
                 try {
-                    const text = await callGemini(prompt);
+                    const text = await callGemini(`당신은 천문학 교사입니다. ${obsDate} 밤하늘의 '${obsTarget}'에 대한 과학적 특징과 관찰 팁을 중학생에게 다정하게 3문장으로 설명해주세요.`);
                     setSkyGuide(text);
                     setStep(2);
-                } catch (e) { alert('가이드 생성 오류: ' + e.message); } finally { setIsAnalyzing(false); }
-            };
-
-            const handleImageUpload = (e) => {
-                const file = e.target.files[0];
-                if(file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64Data = reader.result.split(',')[1];
-                        setUploadedImage({ data: base64Data, mimeType: file.type });
-                        setImagePreview(reader.result);
-                    };
-                    reader.readAsDataURL(file);
-                }
+                } catch (e) { alert('오류: ' + e.message); } finally { setIsAnalyzing(false); }
             };
 
             const generateFeedback = async () => {
                 setIsAnalyzing(true);
                 setStep(4);
-                
-                const prompt = `당신은 학생의 마음을 잘 알아주는 따뜻한 과학 교사입니다. 
-                학생이 밤하늘의 '${obsTarget}'을(를) 관찰하고 다음과 같이 일지를 썼습니다.
-                - 과학적 관찰: ${scienceLog}
-                - 우주를 보며 느낀 감정: ${emotionLog}
-                
-                이 학생에게 1) 과학적 관찰력(및 첨부 사진이 있다면 사진 속 별자리 특징)에 대한 칭찬, 2) ${obsTarget}의 특징을 학생의 감정과 연결하여 깊이 공감해 주는 따뜻한 편지 형식의 피드백을 작성해주세요. (중학생 말투에 맞춰 다정하게)`;
-
                 try {
-                    const text = await callGemini(prompt, uploadedImage);
+                    const text = await callGemini(`학생이 '${obsTarget}' 관찰 후 쓴 일지입니다.\n과학관찰: ${scienceLog}\n감정: ${emotionLog}\n따뜻한 과학 선생님으로서 관찰력 칭찬과 정서적 공감이 담긴 답장을 써주세요.`, uploadedImage);
                     setTeacherFeedback(text);
-                } catch (e) { setTeacherFeedback('피드백 생성 오류: ' + e.message); } finally { setIsAnalyzing(false); }
+                } catch (e) { setTeacherFeedback('오류 발생: ' + e.message); } finally { setIsAnalyzing(false); }
             };
 
-            const printContent = () => window.print();
             const virtualSkyUrl = `https://virtualsky.lco.global/embed/index.html?longitude=128.5&latitude=36.0&projection=polar&constellations=true&constellationlabels=true&planets=true&color=dark&keyboard=false&clock=${obsDate}T20:00:00`;
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-gray-900 shadow-2xl flex flex-col relative print-area overflow-hidden">
-                    <header className="bg-indigo-950 p-4 text-indigo-200 flex justify-between items-center shadow-md border-b border-indigo-900 print-hidden">
+                <div className="max-w-md mx-auto min-h-screen bg-gray-900 shadow-2xl flex flex-col relative print-area">
+                    <header className="bg-indigo-950 p-4 text-indigo-200 flex justify-between items-center print-hidden">
                         <h1 className="text-xl font-bold font-serif tracking-widest">✨ EAIM 우주 탐험대</h1>
-                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_space'); setStep(0); window.location.reload(); }} className="text-xs bg-indigo-800 text-indigo-100 px-2 py-1 rounded underline">키 재설정</button>}
+                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_space'); setStep(0); window.location.reload(); }} className="text-xs underline">키 재설정</button>}
                     </header>
 
-                    <main className="flex-grow p-6 overflow-y-auto pb-24 text-gray-200 print-area">
+                    <main className="flex-grow p-6 overflow-y-auto pb-24">
                         {step === 0 && (
-                            <div className="space-y-4 py-10 print-hidden text-center">
-                                <h2 className="text-xl font-bold text-indigo-300">⚙️ AI 천체망원경 연결</h2>
-                                <p className="text-sm text-gray-400">탐험을 위해 API 키를 입력해주세요.</p>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full bg-gray-800 border border-gray-600 p-3 rounded-lg text-white outline-none focus:border-indigo-500" />
-                                <button onClick={saveApiKey} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-500">시스템 가동</button>
+                            <div className="space-y-4 py-10 text-center">
+                                <h2 className="text-xl font-bold text-indigo-300">⚙️ AI 망원경 연결</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full bg-gray-800 border p-3 rounded-lg text-white outline-none text-center" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_space', apiKey.trim()); setStep(1); }} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">시스템 가동</button>
                             </div>
                         )}
 
                         {step === 1 && (
-                            <div className="space-y-6 animate-fade-in print-hidden">
-                                <h2 className="text-2xl font-serif text-indigo-300">1. 망원경 초점 맞추기</h2>
-                                <input type="date" value={obsDate} onChange={e => setObsDate(e.target.value)} className="w-full bg-gray-800 border border-indigo-500 p-4 rounded-xl text-white text-xl text-center" />
-                                <div className="grid grid-cols-2 gap-3 mt-4">
+                            <div className="space-y-6 animate-fade-in">
+                                <h2 className="text-2xl font-serif text-indigo-300 text-center">관찰 대상 선택</h2>
+                                <input type="date" value={obsDate} onChange={e => setObsDate(e.target.value)} className="w-full bg-gray-800 border-indigo-500 p-4 rounded-xl text-white text-center" />
+                                <div className="grid grid-cols-2 gap-3">
                                     {targets.map(t => (
-                                        <button key={t.id} onClick={() => setObsTarget(t.id)} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${obsTarget === t.id ? 'bg-indigo-600 border-indigo-400 scale-105' : 'bg-gray-800 border-gray-700'}`}>
-                                            <span className="text-3xl">{t.icon}</span>
-                                            <span className="font-bold">{t.id}</span>
-                                            <span className="text-xs text-indigo-200 text-center">{t.subtitle}</span>
+                                        <button key={t.id} onClick={() => setObsTarget(t.id)} className={`p-4 rounded-xl border-2 transition-all ${obsTarget === t.id ? 'bg-indigo-600 border-indigo-400' : 'bg-gray-800 border-gray-700'}`}>
+                                            <div className="text-3xl">{t.icon}</div>
+                                            <div className="font-bold">{t.id}</div>
                                         </button>
                                     ))}
                                 </div>
-                                <button onClick={generateSkyGuide} disabled={!obsTarget || isAnalyzing} className="w-full bg-yellow-500 text-gray-900 p-4 rounded-xl font-bold flex justify-center items-center gap-2 mt-6">
-                                    {isAnalyzing ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div> : <span>우주로 출발 🚀</span>}
+                                <button onClick={generateSkyGuide} disabled={!obsTarget || isAnalyzing} className="w-full bg-yellow-500 text-gray-900 p-4 rounded-xl font-bold">
+                                    {isAnalyzing ? "탐사 준비 중..." : "우주로 출발 🚀"}
                                 </button>
                             </div>
                         )}
 
                         {step === 2 && (
-                            <div className="space-y-6 animate-fade-in print-hidden">
-                                <div className="bg-indigo-900/50 border border-indigo-500/30 p-4 rounded-xl">
-                                    <h3 className="text-sm font-bold text-indigo-300 mb-2">🔭 AI 탐사 가이드 ({obsTarget})</h3>
-                                    <p className="text-md leading-relaxed font-serif text-indigo-100">{skyGuide}</p>
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="bg-indigo-900/50 p-4 rounded-xl border border-indigo-500/30">
+                                    <h3 className="text-sm font-bold text-indigo-300 mb-2">🔭 가이드 ({obsTarget})</h3>
+                                    <p className="text-md font-serif text-indigo-100">{skyGuide}</p>
                                 </div>
-                                <h2 className="text-2xl font-serif text-yellow-300">2. 3D 밤하늘 탐험하기</h2>
-                                <div className="iframe-container bg-black">
-                                    <iframe src={virtualSkyUrl} frameBorder="0" scrolling="no" title="Virtual Sky"></iframe>
-                                </div>
-                                <button onClick={() => setStep(3)} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold mt-4">캡처 완료! 일지 쓰기 👉</button>
+                                <div className="iframe-container bg-black"><iframe src={virtualSkyUrl} frameBorder="0"></iframe></div>
+                                <button onClick={() => setStep(3)} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">캡처 완료! 일지 쓰기 👉</button>
                             </div>
                         )}
 
                         {step === 3 && (
-                            <div className="space-y-6 animate-fade-in print-hidden">
-                                <h2 className="text-2xl font-serif text-indigo-300">3. 우주 관찰 일지 작성</h2>
-                                <div className="space-y-3 p-4 bg-gray-800 rounded-xl border border-gray-700">
-                                    <label className="text-sm font-bold text-indigo-300">📸 밤하늘 사진 첨부 (선택)</label>
-                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="text-xs text-gray-400 w-full" />
-                                    {imagePreview && <img src={imagePreview} className="mt-2 rounded-lg border border-indigo-500 w-full max-h-48 object-cover" />}
-                                </div>
-                                <textarea value={scienceLog} onChange={e => setScienceLog(e.target.value)} className="w-full bg-gray-800 border border-gray-600 p-3 rounded-xl text-white h-24" placeholder="어떤 특징을 발견했나요?"></textarea>
-                                <textarea value={emotionLog} onChange={e => setEmotionLog(e.target.value)} className="w-full bg-gray-800 border border-gray-600 p-3 rounded-xl text-white h-24" placeholder="어떤 기분이 들었나요?"></textarea>
+                            <div className="space-y-4 animate-fade-in">
+                                <h2 className="text-2xl font-serif text-indigo-300 text-center">우주 관찰 일지</h2>
+                                <textarea value={scienceLog} onChange={e => setScienceLog(e.target.value)} className="w-full bg-gray-800 p-3 rounded-xl text-white h-24" placeholder="발견한 과학적 특징"></textarea>
+                                <textarea value={emotionLog} onChange={e => setEmotionLog(e.target.value)} className="w-full bg-gray-800 p-3 rounded-xl text-white h-24" placeholder="우주를 보며 느낀 감정"></textarea>
                                 <button onClick={generateFeedback} disabled={!scienceLog || isAnalyzing} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-xl font-bold">
-                                    {isAnalyzing ? "선생님이 읽는 중..." : "일지 제출하기 💌"}
+                                    {isAnalyzing ? "제출 중..." : "일지 제출 💌"}
                                 </button>
                             </div>
                         )}
 
                         {step === 4 && (
                             <div className="space-y-6 animate-fade-in print-area">
-                                <h2 className="text-2xl font-serif text-center text-pink-300 print-text">💌 선생님의 별빛 답장</h2>
+                                <h2 className="text-2xl font-serif text-center text-pink-300 print-text">💌 선생님의 답장</h2>
                                 <div className="bg-gray-800 p-6 rounded-3xl border-2 border-indigo-500/50 min-h-[300px] print-text">
-                                    {isAnalyzing ? (
-                                        <div className="text-center py-20 print-hidden">
-                                            <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-indigo-500 mx-auto"></div>
-                                            <p className="mt-4 text-indigo-300">답장을 쓰고 계십니다...</p>
-                                        </div>
-                                    ) : (
-                                        <div className="whitespace-pre-wrap text-indigo-100 text-lg leading-relaxed font-serif print-text">{teacherFeedback}</div>
-                                    )}
+                                    {isAnalyzing ? "작성 중..." : <div className="whitespace-pre-wrap font-serif">{teacherFeedback}</div>}
                                 </div>
-                                {!isAnalyzing && imagePreview && (
-                                    <div className="mt-4 print-area text-center">
-                                        <p className="text-sm text-gray-400 mb-2 print-text">내가 관찰한 밤하늘 📸</p>
-                                        <img src={imagePreview} className="rounded-xl border border-gray-700 w-full max-h-64 object-cover mx-auto" />
-                                    </div>
-                                )}
-                                <div className="flex gap-3 print-hidden mt-6">
-                                    <button onClick={printContent} className="flex-1 bg-emerald-600 text-white p-3 rounded-xl font-bold">🖨️ 인쇄</button>
-                                    <button onClick={() => { setStep(1); setScienceLog(''); setEmotionLog(''); setTeacherFeedback(''); setObsTarget(''); setImagePreview(null); }} className="flex-1 bg-gray-700 text-gray-300 p-3 rounded-xl font-bold">다른 탐사</button>
+                                <div className="flex gap-3 print-hidden">
+                                    <button onClick={() => window.print()} className="flex-1 bg-emerald-600 text-white p-3 rounded-xl font-bold">인쇄</button>
+                                    <button onClick={() => setStep(1)} className="flex-1 bg-gray-700 text-white p-3 rounded-xl font-bold">다른 탐사</button>
                                 </div>
                             </div>
                         )}

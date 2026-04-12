@@ -2,58 +2,57 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EAIM 뮤지컬 메이커 Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EAIM 뮤지컬 메이커 v5.0</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; }
-        .font-script { font-family: 'Gowun Batang', serif; }
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
-        .animate-fadeIn { animation: fadeIn 0.7s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        pre { white-space: pre-wrap; word-wrap: break-word; line-height: 1.8; }
-        .act-card { border-left: 6px solid #3b82f6; margin-bottom: 2rem; padding-left: 1.5rem; }
-        @media print { .print-hidden { display: none !important; } .eaim-card { box-shadow: none !important; border: none !important; } }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #2D0A14; color: #FFF; margin: 0; padding: 0; overflow-x: hidden; }
+        .font-drama { font-family: 'Gowun Batang', serif; }
+        .font-show { font-family: 'Black Han Sans', sans-serif; }
+        .stage-curtain { background: linear-gradient(to bottom, #9F1239, #881337); border-bottom: 4px solid #FCD34D; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .ticket-input { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; transition: all 0.3s; outline: none; }
+        .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.15); }
+        .cast-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        pre { white-space: pre-wrap; word-wrap: break-word; line-height: 1.8; color: #FDE68A; }
+        .cue-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; color: #333; margin-top: 10px; }
+        .cue-table th { background: #881337; color: #FCD34D; border: 1px solid #4a0410; padding: 8px; }
+        .cue-table td { background: #FFF; border: 1px solid #DDD; padding: 8px; }
+        @media print { .no-print { display: none !important; } .print-area { background: white !important; color: black !important; padding: 0 !important; width: 100% !important; } pre { color: black !important; } }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const MusicalMaker = () => {
-            const [step, setStep] = useState(0); 
+        const App = () => {
+            const [step, setStep] = useState(0); // 0: API Key, 1: Setting, 2: Casting, 3: Script Result
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-            const [theme, setTheme] = useState('');
-            const [charCount, setCharCount] = useState('5');
-            const [mood, setMood] = useState('밝고 쾌활하고 코믹한');
-            const [genre, setGenre] = useState('auto');
-
-            const [result, setResult] = useState('');
+            const [topic, setTopic] = useState('');
+            const [place, setPlace] = useState('');
+            const [title, setTitle] = useState('');
+            const [castList, setCastList] = useState([{ role: '주인공', desc: '밝고 용감함' }, { role: '친구', desc: '다정하고 사려 깊음' }]);
+            const [finalScript, setFinalScript] = useState('');
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_musical');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            const saveApiKey = () => {
-                if (apiKey.length < 10) return alert('API 키를 정확히 입력해주세요.');
-                localStorage.setItem('gemini_api_key_musical', apiKey.trim());
-                setStep(1);
-            };
-
             const callGemini = async (prompt) => {
                 const cleanKey = apiKey.trim();
-                // 💡 디렉터님 환경 전용 2.5-flash 엔진 적용
+                // 💡 디렉터님 환경 전용 2.5-flash 엔진 고정
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
-                
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -64,32 +63,27 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            const generateMusical = async () => {
-                if (!theme || !charCount) return alert("주제와 인원수를 입력해주세요!");
+            const generateAIScript = async () => {
+                if (!topic || !place || !title) return alert("주제, 장소, 제목을 모두 입력해주세요!");
                 setIsAnalyzing(true);
-                setStep(2);
+                setStep(3);
 
-                // 💡 1막~4막 구조 및 넘버 포함 초고도화 프롬프트
-                const prompt = `당신은 25년 경력의 베테랑 뮤지컬 연출가이자 작가입니다. 다음 조건을 바탕으로 [1막-도입, 2막-전개, 3막-위기/절정, 4막-결말] 구조의 완벽한 뮤지컬 대본을 작성하세요.
+                const prompt = `당신은 25년 경력의 뮤지컬 연출가입니다. 다음 조건으로 [1막-도입, 2막-전개, 3막-위기/절정, 4막-결말] 구조의 뮤지컬 극본을 집필하세요.
+                - 제목: ${title} / 주제: ${topic} / 배경: ${place}
+                - 인원: ${castList.length}명 (${castList.map(c=>c.role + '('+c.desc+')').join(', ')})
                 
-                [조건]
-                - 주제: ${theme}
-                - 인원: 정확히 ${charCount}명 (각 캐릭터의 이름과 특징을 처음에 짧게 소개)
-                - 분위기: ${mood}
-                - 음악 스타일: ${genre === 'auto' ? '대본 흐름에 최적화된 장르' : genre}
-
-                [구성 필수 항목 - 각 막(Act)마다 작성]
-                1. [배경 설명]: 무대 세트, 조명, 분위기 묘사
-                2. [대사]: 인물들 간의 갈등과 감정이 드러나는 핵심 대본
-                3. [뮤지컬 넘버]: 각 막의 감정을 폭발시키는 노래 (제목, Suno AI용 영문 스타일 태그 5개, 한글 가사 포함)
-
-                형식: "제1막: 제목" 형식으로 시작하여 제4막까지 상세히 집필해주세요.`;
+                [막별 필수 구성]
+                1. 배경설명: 무대 분위기와 조명 연출
+                2. 대사: 캐릭터별 성격이 드러나는 핵심 대본
+                3. 넘버: 해당 막의 주제곡 (제목, Suno AI 스타일 태그, 한국어 가사 포함)
+                
+                사회정서학습(SEL) 요소를 담아 감동적으로 작성해줘.`;
 
                 try {
                     const text = await callGemini(prompt);
-                    setResult(text);
+                    setFinalScript(text);
                 } catch (e) {
-                    alert('대본 생성 중 오류: ' + e.message);
+                    alert('집필 중 오류: ' + e.message);
                     setStep(1);
                 } finally {
                     setIsAnalyzing(false);
@@ -97,107 +91,104 @@
             };
 
             return (
-                <div className="max-w-4xl mx-auto">
-                    <header className="text-center mb-10 print-hidden">
-                        <h1 className="text-4xl font-bold text-slate-800 tracking-tight">🎭 EAIM 뮤지컬 메이커 <span className="text-blue-600 text-2xl">PRO</span></h1>
-                        <p className="text-slate-500 mt-3 font-medium">사회정서학습(SEL) 기반의 예술 융합 대본 생성기</p>
-                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_musical'); setStep(0); window.location.reload(); }} className="text-xs text-slate-400 underline mt-4 hover:text-red-400 transition-colors">API 키 재설정</button>}
+                <div className="max-w-md mx-auto min-h-screen bg-[#1a0509] shadow-2xl flex flex-col relative border-x-4 border-[#4a0410] animate-fadeIn pb-10">
+                    {/* Header */}
+                    <header className="stage-curtain p-6 flex justify-between items-center no-print">
+                        <div onClick={() => { localStorage.removeItem('eaimData_v4_7_Final'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer"><i className="fa-solid fa-house"></i></div>
+                        <h1 className="text-xl text-[#FCD34D] font-show tracking-tighter">EAIM 뮤지컬 v5.0</h1>
+                        <div onClick={() => { localStorage.removeItem('gemini_api_key_musical'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer text-[10px] font-bold border border-[#FCD34D] px-2 py-1 rounded">KEY RESET</div>
                     </header>
 
-                    {step === 0 && (
-                        <div className="glass-panel p-10 rounded-[3rem] shadow-2xl space-y-6 animate-fadeIn max-w-md mx-auto text-center">
-                            <div className="text-5xl mb-4">🖋️</div>
-                            <h2 className="text-2xl font-bold text-slate-700">창작 스튜디오 입장</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl text-center outline-none focus:border-blue-400 transition-all bg-slate-50" placeholder="Gemini API 키를 입력하세요" />
-                            <button onClick={saveApiKey} className="w-full bg-slate-800 text-white p-4 rounded-2xl font-bold hover:bg-black transition-all shadow-lg">작가 등록하기</button>
-                        </div>
-                    )}
-
-                    {step === 1 && (
-                        <div className="glass-panel p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 animate-fadeIn">
-                            <div className="space-y-3">
-                                <label className="text-lg font-bold text-slate-700 ml-1">💡 작품의 핵심 주제</label>
-                                <input type="text" value={theme} onChange={e => setTheme(e.target.value)} className="w-full p-5 border-2 border-slate-100 rounded-2xl shadow-sm outline-none focus:border-blue-500 transition-all text-lg" placeholder="예: 인공지능과 인간의 우정, 조선시대로 간 중학생 등" />
+                    <main className="flex-grow p-5 overflow-y-auto">
+                        {/* Step 0: API 연결 */}
+                        {step === 0 && (
+                            <div className="space-y-6 py-10 text-center animate-fadeIn">
+                                <div className="text-5xl mb-4">🎭</div>
+                                <h2 className="text-xl font-bold text-[#FCD34D]">AI 작가실 입장</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key 입력" className="w-full p-4 rounded-xl ticket-input text-center" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-4 rounded-xl font-bold shadow-lg">작가 등록</button>
                             </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-3">
-                                    <label className="text-lg font-bold text-slate-700 ml-1">👥 등장인물 수</label>
-                                    <input type="number" value={charCount} onChange={e => setCharCount(e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500" />
+                        )}
+
+                        {/* Step 1: 기획 설정 */}
+                        {step === 1 && (
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="space-y-4 bg-white/5 p-6 rounded-2xl border border-white/10">
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-amber-300 font-bold">💡 작품의 주제</label>
+                                        <input className="w-full p-3 rounded-xl ticket-input text-sm" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 우정, 환경보호, 나눔" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-amber-300 font-bold">📍 공간 배경</label>
+                                        <input className="w-full p-3 rounded-xl ticket-input text-sm" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 미래 학교, 마법의 숲" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-amber-300 font-bold">📜 최종 작품 제목</label>
+                                        <input className="w-full p-3 rounded-xl ticket-input text-sm border-yellow-500/30" value={title} onChange={e=>setTitle(e.target.value)} placeholder="작품의 멋진 제목을 정해주세요" />
+                                    </div>
                                 </div>
-                                <div className="space-y-3">
-                                    <label className="text-lg font-bold text-slate-700 ml-1">🎵 음악 장르</label>
-                                    <select value={genre} onChange={e => setGenre(e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl bg-white outline-none focus:border-blue-500">
-                                        <option value="auto">✨ AI 자동 맞춤 설계</option>
-                                        <option>정통 브로드웨이 (Orchestral)</option>
-                                        <option>신나는 K-Pop (Dance/Pop)</option>
-                                        <option>서정적인 발라드 (Acoustic)</option>
-                                        <option>디즈니 스타일 (Cinematic)</option>
-                                    </select>
+                                <button onClick={()=>setStep(2)} className="w-full bg-[#9F1239] py-4 rounded-xl font-bold shadow-lg">캐스팅 설정 👉</button>
+                            </div>
+                        )}
+
+                        {/* Step 2: 캐스팅 설정 */}
+                        {step === 2 && (
+                            <div className="space-y-4 animate-fadeIn">
+                                <h2 className="text-center font-bold text-[#FCD34D]">배역 리스트</h2>
+                                {castList.map((c, i) => (
+                                    <div key={i} className="cast-card p-3 rounded-xl flex gap-2">
+                                        <input className="w-1/3 bg-transparent border-b border-gray-600 text-yellow-300 font-bold text-sm outline-none" value={c.role} placeholder="역할" onChange={e=>{const n=[...castList]; n[i].role=e.target.value; setCastList(n);}} />
+                                        <input className="flex-1 bg-transparent border-b border-gray-600 text-xs text-white outline-none" value={c.desc} placeholder="성격/특징" onChange={e=>{const n=[...castList]; n[i].desc=e.target.value; setCastList(n);}} />
+                                        <button onClick={()=>setCastList(castList.filter((_,idx)=>idx!==i))} className="text-gray-500"><i className="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                ))}
+                                <button onClick={()=>setCastList([...castList, {role:'', desc:''}])} className="w-full py-2 border-2 border-dashed border-gray-600 text-gray-500 text-xs">+ 배역 추가</button>
+                                <div className="flex gap-2 pt-4">
+                                    <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-3 rounded-xl text-xs">이전</button>
+                                    <button onClick={generateAIScript} className="flex-[2] bg-[#9F1239] py-3 rounded-xl font-bold text-sm shadow-xl">AI 대본 집필 시작 ✨</button>
                                 </div>
                             </div>
+                        )}
 
-                            <div className="space-y-3">
-                                <label className="text-lg font-bold text-slate-700 ml-1">✨ 전체적인 무드</label>
-                                <select value={mood} onChange={e => setMood(e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl bg-white outline-none focus:border-blue-500">
-                                    <option>밝고 쾌활하고 코믹한</option>
-                                    <option>웅장하고 감동적인</option>
-                                    <option>신비롭고 몽환적인</option>
-                                    <option>긴장감 넘치는 미스터리</option>
-                                </select>
-                            </div>
-
-                            <button onClick={generateMusical} disabled={isAnalyzing} className="w-full bg-blue-600 text-white p-6 rounded-[2rem] font-bold text-xl hover:bg-blue-700 transition-all shadow-xl active:scale-95">
-                                {isAnalyzing ? "AI 감독님이 대본을 집필 중입니다..." : "전체 대본 및 넘버 생성하기 🪄"}
-                            </button>
-                        </div>
-                    )}
-
-                    {step === 2 && (
-                        <div className="space-y-8 animate-fadeIn pb-20">
-                            {isAnalyzing ? (
-                                <div className="text-center p-20 glass-panel rounded-[3rem] shadow-xl">
-                                    <div className="inline-block animate-bounce text-6xl mb-6">🎭</div>
-                                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
-                                    <h2 className="text-2xl font-bold text-slate-700 mb-2">작품을 구성하고 있습니다</h2>
-                                    <p className="text-slate-400 italic">"훌륭한 서사와 선율이 만들어지고 있어요..."</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    <div className="glass-panel p-8 md:p-12 rounded-[3rem] shadow-2xl border-t-8 border-blue-600">
-                                        <div className="flex justify-between items-center mb-8 border-b pb-6 print-hidden">
-                                            <div>
-                                                <h2 className="text-2xl font-bold text-slate-800">📜 완성이 된 뮤지컬 극본</h2>
-                                                <p className="text-sm text-slate-400 mt-1">주제: {theme} / {charCount}인극</p>
+                        {/* Step 3: 집필 결과 */}
+                        {step === 3 && (
+                            <div className="space-y-6 animate-fadeIn pb-10">
+                                {isAnalyzing ? (
+                                    <div className="text-center py-20">
+                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FCD34D] mx-auto mb-4"></div>
+                                        <p className="text-[#FCD34D] font-drama animate-pulse italic">디렉터님을 위해 AI가 4막 구조의<br/>작품을 집필하고 있습니다...</p>
+                                    </div>
+                                ) : (
+                                    <div className="print-area space-y-6">
+                                        <div className="bg-white/5 p-6 rounded-2xl border border-white/20 shadow-inner">
+                                            <div className="flex justify-between items-center mb-6 no-print">
+                                                <span className="text-[#FCD34D] font-bold text-lg underline underline-offset-8">극본 완료</span>
+                                                <button onClick={() => window.print()} className="bg-[#FCD34D] text-black px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-yellow-400">인쇄하기</button>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => { navigator.clipboard.writeText(result); alert('전체 대본이 복사되었습니다!'); }} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-bold hover:bg-blue-100 hover:text-blue-600 transition-all text-sm">대본 복사</button>
-                                                <button onClick={() => window.print()} className="bg-slate-800 text-white px-4 py-2 rounded-xl font-bold hover:bg-black transition-all text-sm">🖨️ 대본 인쇄</button>
-                                            </div>
-                                        </div>
-
-                                        <div className="font-script text-slate-800 text-lg leading-relaxed">
-                                            <pre className="font-script">{result}</pre>
+                                            <pre className="font-drama text-sm leading-loose">
+                                                {finalScript}
+                                            </pre>
                                         </div>
                                         
-                                        <div className="mt-12 pt-8 border-t text-center print-hidden">
-                                            <button onClick={() => setStep(1)} className="text-blue-600 font-bold hover:underline">🔄 새로운 주제로 다시 기획하기</button>
+                                        <div className="flex gap-2 no-print">
+                                            <button onClick={()=>setStep(1)} className="flex-1 bg-gray-700 py-3 rounded-xl text-xs font-bold">다시 기획하기</button>
+                                            <button onClick={()=>{ navigator.clipboard.writeText(finalScript); alert('전체 대본이 복사되었습니다!'); }} className="flex-1 bg-green-700 py-3 rounded-xl text-xs font-bold">대본 전체 복사</button>
                                         </div>
                                     </div>
-                                    
-                                    <div className="text-center text-slate-400 text-xs print-hidden">
-                                        &copy; 2026 EAIM Studio. Powered by Gemini 2.5 Flash
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                )}
+                            </div>
+                        )}
+                    </main>
+                    
+                    <footer className="p-4 text-center text-[10px] text-gray-600 border-t border-white/5 no-print">
+                        &copy; 2026 EAIM Studio | Creative Musical AI Engine v5.0
+                    </footer>
                 </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<MusicalMaker />);
+        root.render(<App />);
     </script>
 </body>
 </html>

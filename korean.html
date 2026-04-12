@@ -53,8 +53,8 @@
 
             const callGemini = async (prompt) => {
                 const cleanKey = apiKey.trim();
-                // 💡 모델을 더 강력한 gemini-1.5-pro 로 변경했습니다!
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${cleanKey}`;
+                // 💡 핵심 수정: 구글의 최신 2.5 모델과 안정적인 정식 버전(v1) 통신망으로 전면 교체했습니다!
+                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',

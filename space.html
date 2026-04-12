@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 우주 관찰 일지 V2</title>
+    <title>EAIM 우주 탐험대</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -76,8 +76,8 @@
 
                 try {
                     const cleanKey = apiKey.trim();
-                    // 💡 구글 최신 2.5 모델 안정화 버전(v1beta)으로 완벽 교체 완료!
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`, {
+                    // 💡 진짜 최신 2.0 엔진 + v1beta 통신망 적용!
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
@@ -123,8 +123,8 @@
 
                 try {
                     const cleanKey = apiKey.trim();
-                    // 💡 구글 최신 2.5 모델 안정화 버전(v1beta)으로 완벽 교체 완료!
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`, {
+                    // 💡 진짜 최신 2.0 엔진 + v1beta 통신망 적용!
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts }] })
                     });
@@ -140,7 +140,7 @@
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-gray-900 shadow-2xl flex flex-col relative print-area overflow-hidden">
                     <header className="bg-indigo-950 p-4 text-indigo-200 flex justify-between items-center shadow-md border-b border-indigo-900 print-hidden">
-                        <h1 className="text-xl font-bold font-serif tracking-widest">✨ 별 헤는 밤</h1>
+                        <h1 className="text-xl font-bold font-serif tracking-widest">✨ EAIM 우주 탐험대</h1>
                         {step > 0 && <button onClick={() => setStep(0)} className="text-xs bg-indigo-800 text-indigo-100 px-2 py-1 rounded">설정</button>}
                     </header>
 
@@ -233,42 +233,4 @@
                             <div className="space-y-6 animate-fade-in print-area">
                                 <h2 className="text-2xl font-serif text-center text-pink-300 print-title print-text">💌 선생님의 별빛 답장</h2>
                                 
-                                <div className="bg-gray-800 p-6 rounded-3xl border-2 border-indigo-500/50 min-h-[300px] print-area print-text">
-                                    {isAnalyzing ? (
-                                        <div className="flex flex-col items-center justify-center h-48 space-y-4 print-hidden">
-                                            <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-indigo-500"></div>
-                                            <p className="text-sm text-indigo-300 font-bold">선생님이 사진과 일지를 보며 답장을 쓰시는 중...</p>
-                                        </div>
-                                    ) : (
-                                        <div className="whitespace-pre-wrap text-indigo-100 text-lg leading-relaxed font-serif print-text">
-                                            {teacherFeedback}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {!isAnalyzing && imagePreview && (
-                                    <div className="mt-4 print-area">
-                                        <p className="text-sm text-gray-400 mb-2 font-bold print-text">내가 관찰한 밤하늘 📸</p>
-                                        <img src={imagePreview} alt="관찰 캡처" className="rounded-xl border border-gray-700 w-full max-h-64 object-cover" />
-                                    </div>
-                                )}
-
-                                {!isAnalyzing && (
-                                    <div className="flex justify-center print-hidden mt-6">
-                                        <button onClick={printContent} className="w-full bg-emerald-600 text-white p-3 rounded-xl font-bold hover:bg-emerald-500">🖨️ 일지 인쇄하기</button>
-                                    </div>
-                                )}
-
-                                <button onClick={() => { setStep(1); setScienceLog(''); setEmotionLog(''); setTeacherFeedback(''); setObsTarget(''); setImagePreview(null); setUploadedImage(null); }} className="w-full bg-gray-700 text-gray-300 p-3 rounded-xl font-bold hover:bg-gray-600 mt-4 print-hidden">다른 천체 관찰하기</button>
-                            </div>
-                        )}
-                    </main>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<SpaceEAIMApp />);
-    </script>
-</body>
-</html>
+                                <div className="bg-gray-800 p-6 rounded-3xl border-2 border-indigo-500

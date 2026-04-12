@@ -43,13 +43,11 @@
             const sports = ['농구 🏀', '배구 🏐', '축구 ⚽', '짐볼 🔵'];
             const beats = ['힙합 (Boom Bap) 🎧', '빠른 댄스 (EDM) ⚡', '펑키 리듬 (Funky) 🎸', '응원가 비트 (March) 🥁'];
 
-            // 💡 앱을 켤 때 이전에 저장한 키가 있는지 확인합니다.
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_beat');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // 💡 키를 로컬 스토리지에 안전하게 저장합니다.
             const saveApiKey = () => {
                 if (apiKey.length < 10) return alert('API 키를 입력해주세요.');
                 localStorage.setItem('gemini_api_key_beat', apiKey.trim());
@@ -160,4 +158,110 @@
                                 <div className="space-y-3">
                                     <label className="text-sm font-bold text-gray-300 ml-1">🏀 구기 종목 선택</label>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {sports.map(
+                                        {sports.map(s => (
+                                            <button key={s} onClick={() => setSport(s)} className={`p-3 rounded-xl font-bold transition-all border ${sport === s ? 'bg-orange-600 text-white neon-border' : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-orange-500'}`}>
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 mt-6">
+                                    <label className="text-sm font-bold text-gray-300 ml-1">🎵 비트 스타일 선택</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {beats.map(b => (
+                                            <button key={b} onClick={() => setBeatStyle(b)} className={`p-3 rounded-xl font-bold transition-all border ${beatStyle === b ? 'bg-orange-600 text-white neon-border' : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-orange-500'}`}>
+                                                {b}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button onClick={generateBeatMatrix} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform flex justify-center items-center gap-2 mt-8">
+                                    {isAnalyzing ? <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div> : <span className="text-lg">AI 비트 생성하기 ⚡</span>}
+                                </button>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="space-y-5 animate-fade-in print-hidden">
+                                <div className="text-center bg-gray-800 p-6 rounded-3xl border border-gray-700">
+                                    <h2 className="text-xl font-bold text-white mb-2">{sport} X {beatStyle}</h2>
+                                    <p className="text-sm text-orange-400 font-medium italic">"{parsedData.intro}"</p>
+                                </div>
+
+                                <div className="space-y-3 mt-6">
+                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-l-orange-500">
+                                        <h3 className="font-bold text-orange-400 mb-2">🅰️ A팀 리듬 (베이스)</h3>
+                                        <p className="text-gray-200">{parsedData.teamA}</p>
+                                    </div>
+                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-l-blue-500">
+                                        <h3 className="font-bold text-blue-400 mb-2">🅱️ B팀 리듬 (스네어)</h3>
+                                        <p className="text-gray-200">{parsedData.teamB}</p>
+                                    </div>
+                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-l-emerald-500">
+                                        <h3 className="font-bold text-emerald-400 mb-2">🅲 C팀 리듬 (하이햇/기교)</h3>
+                                        <p className="text-gray-200">{parsedData.teamC}</p>
+                                    </div>
+                                </div>
+
+                                <button onClick={() => setStep(3)} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-lg hover:bg-indigo-500 mt-6">땀 흘린 후 일지 쓰기 ✍️</button>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="space-y-6 animate-fade-in print-hidden">
+                                <h2 className="text-2xl font-title text-white text-center">바디 퍼커션 일지</h2>
+                                
+                                <div className="space-y-3 p-4 bg-gray-800 rounded-xl border border-gray-700">
+                                    <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
+                                        <span>📸 합주 성공 인증샷 (선택)</span>
+                                    </label>
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900 file:text-orange-300 hover:file:bg-orange-800 w-full" />
+                                    {imagePreview && <img src={imagePreview} alt="인증샷" className="mt-2 rounded-lg border border-orange-500 w-full object-cover max-h-48" />}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-300 block">💓 내 마음의 바운스 (느낀 점)</label>
+                                    <textarea value={journal} onChange={e => setJournal(e.target.value)} className="w-full bg-gray-800 border border-gray-700 p-3 rounded-xl text-white h-32" placeholder="예: 처음엔 박자가 안 맞아서 답답했지만, 마지막에 다 같이 쿵짝이 맞을 때 진짜 짜릿했다!"></textarea>
+                                </div>
+
+                                <button onClick={generateFeedback} disabled={!journal || isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-xl font-bold flex justify-center items-center gap-2 mt-8 disabled:opacity-50">
+                                    {isAnalyzing ? "코치님이 읽고 계십니다..." : "AI 코치님께 제출하기 📝"}
+                                </button>
+                            </div>
+                        )}
+
+                        {step === 4 && (
+                            <div className="space-y-6 animate-fade-in">
+                                <h2 className="text-2xl font-title text-center text-orange-400">🔥 AI 코치님의 라커룸 톡</h2>
+                                
+                                <div className="bg-gray-800 p-6 rounded-3xl border-2 border-orange-500/50 min-h-[300px]">
+                                    <div className="whitespace-pre-wrap text-gray-200 text-lg leading-relaxed">
+                                        {teacherFeedback}
+                                    </div>
+                                </div>
+
+                                {!isAnalyzing && imagePreview && (
+                                    <div className="mt-4">
+                                        <p className="text-sm text-gray-400 mb-2 font-bold">우리 팀의 멋진 순간 📸</p>
+                                        <img src={imagePreview} alt="인증샷" className="rounded-xl border border-gray-700 w-full max-h-64 object-cover" />
+                                    </div>
+                                )}
+
+                                <div className="flex gap-3 print-hidden mt-6">
+                                    <button onClick={() => window.print()} className="flex-1 bg-gray-600 text-white p-3 rounded-xl font-bold hover:bg-gray-500">🖨️ 인쇄</button>
+                                    <button onClick={() => { setStep(1); setJournal(''); setTeacherFeedback(''); setImagePreview(null); setUploadedImage(null); }} className="flex-1 bg-orange-600 text-white p-3 rounded-xl font-bold hover:bg-orange-500">새 비트 짜기</button>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BeatAndBallApp />);
+    </script>
+</body>
+</html>

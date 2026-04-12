@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 감정 시인 & 아티스트 v8.6</title>
+    <title>EAIM 감정 시인 & 아티스트 v8.7</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -19,7 +19,7 @@
         .eaim-btn { background: #be185d; color: white; border-radius: 1rem; padding: 1rem; font-weight: bold; width: 100%; border: none; cursor: pointer; transition: 0.3s; }
         .genre-btn { border: 1px solid #be185d; color: #be185d; border-radius: 99px; padding: 6px 14px; font-size: 0.75rem; font-weight: bold; transition: 0.2s; }
         .genre-active { background: #be185d; color: white; }
-        .prompt-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 1rem; border-radius: 1rem; font-family: monospace; font-size: 0.65rem; color: #334155; line-height: 1.6; }
+        .prompt-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 1rem; border-radius: 1rem; font-family: monospace; font-size: 0.65rem; color: #334155; }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -32,18 +32,26 @@
 
         const App = () => {
             const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v8') || '');
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v8_7') || '');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
+            // 데이터 설정
+            const emotionWords = ['기쁜', '슬픈', '화난', '불안한', '외로운', '설레는', '답답한', '신나는', '포근한'];
+            const colorPalette = [
+                {name:'빨강', code:'#EF4444'}, {name:'주황', code:'#F97316'}, {name:'노랑', code:'#FBBF24'}, 
+                {name:'초록', code:'#34D399'}, {name:'파랑', code:'#3B82F6'}, {name:'보라', code:'#8B5CF6'},
+                {name:'분홍', code:'#F472B6'}, {name:'검정', code:'#1F2937'}, {name:'하양', code:'#F9FAFB'}
+            ];
+
             const [userName, setUserName] = useState('');
-            const [searchQuery, setSearchQuery] = useState(''); // 💡 제목+시인 혹은 주제어
+            const [searchQuery, setSearchQuery] = useState('');
             const [foundPoem, setFoundPoem] = useState('');
             const [poemImpression, setPoemImpression] = useState('');
-            const [dissect, setDissect] = useState({ emotion: '', color: '', newName: '' });
+            const [dissect, setDissect] = useState({ emotion: '', color: '', newName: '', situation: '', body: '' });
             const [finalPoem, setFinalPoem] = useState('');
             const [teacherFeedback, setTeacherFeedback] = useState('');
 
-            const genres = ['감성 발라드', '어쿠스틱 팝', '신나는 K-Pop', '로파이', '뮤지컬', '재즈'];
+            const genres = ['감성 발라드', '어쿠스틱 팝', 'K-Pop', '로파이', '뮤지컬', '재즈'];
             const [selectedGenre, setSelectedGenre] = useState('');
             const [sunoPrompt, setSunoPrompt] = useState('');
             const [imagePrompt, setImagePrompt] = useState('');
@@ -57,125 +65,135 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            // 💡 정밀 검색 로직: 제목+시인이면 '확정', 주제어면 '추천'
             const handleSearchPoem = async () => {
                 if(!searchQuery) return alert("제목이나 주제를 입력하세요!");
                 setIsAnalyzing(true);
                 try {
-                    const prompt = `'${searchQuery}'에 해당하는 시를 찾아주세요. 
-                    1. 만약 입력값에 시 제목과 시인이 함께 있다면(예: 윤동주 서시), 반드시 해당 시의 전문을 정확하게 출력하세요.
-                    2. 만약 입력값이 주제어(예: 우정, 도전)라면, 그 주제와 가장 잘 어울리는 유명한 한국 시 한 편을 선정하여 전문을 보여주세요.
-                    3. 출력 시 반드시 [제목 / 시인 이름]을 상단에 명시해 주세요.`;
-                    const text = await callGemini(prompt);
-                    setFoundPoem(text); 
-                    setStep(2);
-                } catch (e) { alert('시 검색 중 오류가 발생했습니다.'); } finally { setIsAnalyzing(false); }
+                    const text = await callGemini(`'${searchQuery}'에 해당하는 시를 찾아줘. 제목+시인이면 그 시의 전문을, 주제어면 그와 어울리는 명시를 추천해줘. [제목 / 시인]을 꼭 포함해줘.`);
+                    setFoundPoem(text); setStep(2);
+                } catch (e) { alert('시 검색 오류'); } finally { setIsAnalyzing(false); }
             };
 
             const handleCreatePoem = async () => {
+                if(!dissect.emotion || !dissect.color || !dissect.newName) return alert('감정과 색깔, 새 이름을 모두 정해주세요!');
                 setIsAnalyzing(true); setStep(4);
                 try {
-                    const pText = await callGemini(`학생 '${userName}'이 읽은 시의 느낌('${poemImpression}')과 감정(단어:${dissect.emotion}, 색깔:${dissect.color})을 융합한 짧은 시를 지어줘. 새 이름 '${dissect.newName}'을 강조해줘.`);
+                    const pText = await callGemini(`학생 '${userName}'이 읽은 시의 느낌('${poemImpression}')과 학생의 감정(단어:${dissect.emotion}, 색깔:${dissect.color}, 상황:${dissect.situation}, 신체:${dissect.body})을 융합한 시를 지어줘. '${dissect.newName}'을 강조해줘.`);
                     setFinalPoem(pText);
-                    const fText = await callGemini(`시를 쓴 학생에게 SEL 교사로서 따뜻한 응원을 3문장 써줘.`);
+                    const fText = await callGemini(`SEL 교사로서 '${dissect.emotion}'을 느낀 학생에게 따뜻한 응원 3문장 써줘.`);
                     setTeacherFeedback(fText);
                 } catch (e) { alert('창작 오류'); } finally { setIsAnalyzing(false); }
             };
 
-            const generateMultimediaPrompts = async (genre) => {
-                setSelectedGenre(genre);
-                setIsAnalyzing(true);
+            const generateMultimedia = async (genre) => {
+                setSelectedGenre(genre); setIsAnalyzing(true);
                 try {
-                    const musicReq = callGemini(`시 [${finalPoem}]를 바탕으로 Suno AI용 영문 음악 스타일 프롬프트를 작성해줘. 장르: ${genre}.`);
-                    const imageReq = callGemini(`시 [${finalPoem}]와 장르 '${genre}'를 반영한 앨범 커버용 이미지 영문 프롬프트를 작성해줘.`);
-                    const [mRes, iRes] = await Promise.all([musicReq, imageReq]);
+                    const mReq = callGemini(`시 [${finalPoem}]를 Suno AI용 영문 프롬프트로. 장르: ${genre}`);
+                    const iReq = callGemini(`시 [${finalPoem}]를 DALL-E용 앨범 커버 영문 프롬프트로.`);
+                    const [mRes, iRes] = await Promise.all([mReq, iReq]);
                     setSunoPrompt(mRes); setImagePrompt(iRes);
-                } catch (e) { alert('프롬프트 생성 오류'); } finally { setIsAnalyzing(false); }
+                } catch (e) { alert('오류'); } finally { setIsAnalyzing(false); }
             };
 
             return (
                 <div className="p-4 max-w-lg mx-auto">
                     <header className="flex justify-between items-center mb-4 px-2">
-                        <h1 className="font-hand text-2xl text-pink-800 font-bold">EAIM 감정 시인 v8.6</h1>
+                        <h1 className="font-hand text-2xl text-pink-800 font-bold">EAIM 감정 시인 v8.7</h1>
                         {step > 0 && <button onClick={() => window.location.reload()} className="text-[10px] text-gray-400 underline">RESET</button>}
                     </header>
 
-                    <div className="eaim-card animate-fadeIn">
+                    <div className="eaim-card animate-fadeIn shadow-2xl">
                         {step === 0 && (
                             <div className="space-y-6 text-center py-10">
                                 <h2 className="text-xl font-bold">감정 작가실 입장</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="eaim-input text-center" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_v8', apiKey.trim()); setStep(1); }} className="eaim-btn">접속하기</button>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="eaim-input text-center" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_v8_7', apiKey.trim()); setStep(1); }} className="eaim-btn">입장하기</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-6">
                                 <div className="text-center space-y-1">
-                                    <h3 className="font-bold text-lg">1. 영감 검색하기</h3>
-                                    <p className="text-[11px] text-slate-400 italic">제목+시인(예: 윤동주 서시)을 적거나,<br/>좋아하는 주제(예: 우정, 바다)를 적어보세요.</p>
+                                    <h3 className="font-bold text-lg">1. 영감 얻기</h3>
+                                    <p className="text-[11px] text-slate-400">제목+시인 혹은 '우정', '꿈' 같은 주제를 적으세요.</p>
                                 </div>
                                 <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="eaim-input" placeholder="어떤 시를 찾을까요?" />
-                                <button onClick={handleSearchPoem} className="eaim-btn">{isAnalyzing ? "AI가 시를 찾는 중..." : "시 불러오기 🔍"}</button>
+                                <button onClick={handleSearchPoem} className="eaim-btn">{isAnalyzing ? "AI 검색 중..." : "영감 불러오기 ✨"}</button>
                             </div>
                         )}
 
                         {step === 2 && (
                             <div className="space-y-5 animate-fadeIn">
-                                <div className="bg-stone-50 p-6 rounded-2xl text-sm font-serif leading-relaxed max-h-60 overflow-y-auto border border-stone-200">
+                                <div className="bg-stone-50 p-6 rounded-2xl text-sm font-serif max-h-60 overflow-y-auto border border-stone-100 shadow-inner">
                                     <pre className="whitespace-pre-wrap">{foundPoem}</pre>
                                 </div>
-                                <textarea value={poemImpression} onChange={e => setPoemImpression(e.target.value)} className="eaim-input h-24 text-xs" placeholder="이 시를 읽고 어떤 기분이 들었나요?"></textarea>
-                                <button onClick={() => setStep(3)} className="eaim-btn">내 마음 분석 시작 👉</button>
+                                <label className="text-xs font-bold text-pink-800 ml-1 italic">💬 이 시를 읽고 어떤 느낌이 들었나요?</label>
+                                <textarea value={poemImpression} onChange={e => setPoemImpression(e.target.value)} className="eaim-input h-20 text-xs" placeholder="느낌을 자유롭게 적어보세요."></textarea>
+                                <button onClick={() => setStep(3)} className="eaim-btn">마음 분석하기 👉</button>
                             </div>
                         )}
 
                         {step === 3 && (
-                            <div className="space-y-4">
+                            <div className="space-y-6 animate-fadeIn">
                                 <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="eaim-input font-bold" placeholder="작가님의 이름" />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <input type="text" placeholder="지금 내 감정" className="eaim-input" onChange={e => setDissect({...dissect, emotion: e.target.value})} />
-                                    <input type="text" placeholder="마음의 색깔" className="eaim-input" onChange={e => setDissect({...dissect, color: e.target.value})} />
+                                
+                                {/* 💡 복구된 감정 단어 선택 버튼 */}
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">지금 내 감정은?</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {emotionWords.map(w => (
+                                            <button key={w} onClick={() => setDissect({...dissect, emotion: w})} className={`px-3 py-1.5 rounded-full text-xs transition-all ${dissect.emotion === w ? 'bg-pink-600 text-white shadow-md scale-105' : 'bg-white border border-gray-200 text-gray-500'}`}>{w}</button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <input type="text" placeholder="이 감정의 새로운 이름" className="eaim-input font-bold text-pink-600 border-pink-200" onChange={e => setDissect({...dissect, newName: e.target.value})} />
-                                <button onClick={handleCreatePoem} className="eaim-btn bg-pink-800">나만의 시 완성하기 🪄</button>
+
+                                {/* 💡 복구된 감정 색깔 팔레트 */}
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">이 감정의 색깔은?</label>
+                                    <div className="flex flex-wrap gap-3">
+                                        {colorPalette.map(c => (
+                                            <button key={c.name} onClick={() => setDissect({...dissect, color: c.name})} style={{backgroundColor: c.code}} className={`w-8 h-8 rounded-full border-2 transition-all ${dissect.color === c.name ? 'ring-4 ring-pink-200 border-pink-600 scale-110' : 'border-white shadow-sm'}`} title={c.name}></button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 pt-2">
+                                    <input type="text" className="eaim-input text-xs" placeholder="언제 이런 마음이 드나요? (상황)" onChange={e => setDissect({...dissect, situation: e.target.value})} />
+                                    <input type="text" className="eaim-input text-xs" placeholder="그때 내 몸의 느낌은? (예: 가슴이 콩닥)" onChange={e => setDissect({...dissect, body: e.target.value})} />
+                                    <input type="text" className="eaim-input font-bold text-pink-600 border-pink-200" placeholder="✨ 이 감정에게 지어줄 새로운 이름" onChange={e => setDissect({...dissect, newName: e.target.value})} />
+                                </div>
+                                <button onClick={handleCreatePoem} className="eaim-btn bg-pink-800 shadow-xl">시 완성하기 🪄</button>
                             </div>
                         )}
 
                         {step === 4 && (
                             <div className="space-y-6">
-                                {isAnalyzing && !sunoPrompt ? <div className="py-20 text-center animate-pulse text-pink-700">작품을 완성하고 있습니다...</div> : (
+                                {isAnalyzing && !sunoPrompt ? <div className="py-20 text-center animate-pulse text-pink-700">마음을 시로 엮고 있습니다...</div> : (
                                     <>
-                                        <div className="bg-white p-7 rounded-[2rem] border-2 border-pink-50 text-center shadow-sm">
-                                            <h4 className="font-hand text-xl text-pink-800 mb-4">{userName} 작가의 시</h4>
+                                        <div className="bg-white p-7 rounded-[2rem] border-2 border-pink-50 text-center shadow-sm relative">
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-pink-600 text-white text-[9px] px-3 py-1 rounded-full font-bold">MY POEM</div>
+                                            <h4 className="font-hand text-xl text-pink-800 mb-4">{userName} 작가</h4>
                                             <pre className="font-serif text-sm leading-relaxed whitespace-pre-wrap">{finalPoem}</pre>
                                         </div>
                                         
-                                        <div className="space-y-4 border-t pt-4">
-                                            <p className="text-[10px] font-black text-center text-slate-500 uppercase">음악 및 이미지 가이드 생성</p>
+                                        <div className="space-y-3 pt-4 border-t border-dashed">
+                                            <p className="text-[10px] font-black text-center text-slate-400 uppercase tracking-widest">음악 및 이미지 가이드</p>
                                             <div className="flex flex-wrap justify-center gap-2">
                                                 {genres.map(g => (
-                                                    <button key={g} onClick={() => generateMultimediaPrompts(g)} className={`genre-btn ${selectedGenre === g ? 'genre-active' : ''}`}>{g}</button>
+                                                    <button key={g} onClick={() => generateMultimedia(g)} className={`genre-btn ${selectedGenre === g ? 'genre-active' : ''}`}>{g}</button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {sunoPrompt && (
+                                        {(sunoPrompt || imagePrompt) && (
                                             <div className="space-y-4 animate-fadeIn">
-                                                <div className="space-y-1">
-                                                    <p className="text-[10px] font-bold text-blue-600">Suno AI 음악 스타일</p>
-                                                    <div className="prompt-box">{sunoPrompt}</div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-[10px] font-bold text-emerald-600">DALL-E 이미지 스타일</p>
-                                                    <div className="prompt-box text-emerald-900 border-emerald-100 bg-emerald-50/30">{imagePrompt}</div>
-                                                </div>
-                                                <button onClick={() => {navigator.clipboard.writeText(`${sunoPrompt}\n\n${imagePrompt}`); alert('복사되었습니다!');}} className="w-full text-[10px] bg-slate-200 py-2 rounded-xl font-bold">전체 프롬프트 복사 📋</button>
+                                                <div className="space-y-1"><p className="text-[10px] font-bold text-blue-600">Suno AI Style</p><div className="prompt-box">{sunoPrompt}</div></div>
+                                                <div className="space-y-1"><p className="text-[10px] font-bold text-emerald-600">DALL-E Style</p><div className="prompt-box text-emerald-900 border-emerald-100 bg-emerald-50/20">{imagePrompt}</div></div>
                                             </div>
                                         )}
 
-                                        <div className="bg-pink-50 p-4 rounded-xl text-xs text-pink-900 border-l-4 border-pink-400">
-                                            <span className="font-bold">👩‍🏫 선생님:</span> {teacherFeedback}
+                                        <div className="bg-pink-50 p-5 rounded-2xl text-xs text-pink-900 border-l-4 border-pink-400 italic font-hand text-lg">
+                                            <span className="font-bold font-sans text-xs not-italic">👩‍🏫 선생님의 편지:</span><br/>{teacherFeedback}
                                         </div>
                                     </>
                                 )}

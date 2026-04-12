@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: screen; }
-        .app-card { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.2); }
-        .app-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.2); }
+        body { font-family: 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; margin: 0; }
+        .app-card { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.2); text-decoration: none; display: block; }
+        .app-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.2); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body class="text-white py-12 px-4">
@@ -22,8 +22,20 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <a href="korean.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
                 <div class="text-4xl mb-3">📖</div>
-                <h2 class="text-xl font-bold mb-2">EAIM 감정시</h2>
-                <p class="text-sm text-indigo-100">감정 시 & 공감 편지</p>
+                <h2 class="text-xl font-bold mb-2">EAIM 감정 시인</h2>
+                <p class="text-sm text-indigo-100">내 마음을 읊는 시간</p>
+            </a>
+
+            <a href="science.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
+                <div class="text-4xl mb-3">🕵️‍♂️</div>
+                <h2 class="text-xl font-bold mb-2">EAIM 과학 탐정대</h2>
+                <p class="text-sm text-indigo-100">이성과 감성의 추리</p>
+            </a>
+
+            <a href="space.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
+                <div class="text-4xl mb-3">🚀</div>
+                <h2 class="text-xl font-bold mb-2">EAIM 우주 탐험대</h2>
+                <p class="text-sm text-indigo-100">3D 우주 관찰 일지</p>
             </a>
 
             <a href="musicalmaker.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
@@ -33,27 +45,15 @@
             </a>
 
             <a href="musicconcert.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
-                <div class="text-4xl mb-3">🎵</div>
-                <h2 class="text-xl font-bold mb-2">EAIM 앙상</h2>
-                <p class="text-sm text-indigo-100">지능형 화성 분석 합주</p>
-            </a>
-
-            <a href="science.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
-                <div class="text-4xl mb-3">🧪</div>
-                <h2 class="text-xl font-bold mb-2">EAIM 과학 탐정대</h2>
-                <p class="text-sm text-indigo-100">원리 탐구 & 예술 융합</p>
-            </a>
-
-            <a href="space.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
-                <div class="text-4xl mb-3">🚀</div>
-                <h2 class="text-xl font-bold mb-2">EAIM 우주 탐험</h2>
-                <p class="text-sm text-indigo-100">광활한 정서 확장 학습</p>
+                <div class="text-4xl mb-3">🎸</div>
+                <h2 class="text-xl font-bold mb-2">EAIM 앙상블</h2>
+                <p class="text-sm text-indigo-100">화성압축 연주</p>
             </a>
 
             <a href="sports.html" class="app-card bg-white/10 backdrop-blur-md p-6 rounded-3xl text-center">
-                <div class="text-4xl mb-3">⚽</div>
-                <h2 class="text-xl font-bold mb-2">EAIM 바트&볼</h2>
-                <p class="text-sm text-indigo-100">신체 활동 & 감정 조절</p>
+                <div class="text-4xl mb-3">🏀</div>
+                <h2 class="text-xl font-bold mb-2">EAIM 비트 & 볼</h2>
+                <p class="text-sm text-indigo-100">다 함께 바디 퍼커션</p>
             </a>
         </div>
 

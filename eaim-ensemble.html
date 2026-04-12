@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM HYBRID ENSEMBLE Pro</title>
+    <title>EAIM YOUTUBE ENSEMBLE</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,16 +13,14 @@
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
         .font-title { font-family: 'Black Han Sans', sans-serif; }
         .play-screen { background: radial-gradient(circle at top, #1e1b4b 0%, #020617 100%); min-height: 100vh; }
-        .fretboard { background: #1e293b; border-radius: 1rem; padding: 10px; position: relative; height: 160px; border: 4px solid #334155; }
+        .fretboard { background: #1e293b; border-radius: 1rem; padding: 10px; position: relative; height: 150px; border: 4px solid #334155; }
         .string { position: absolute; left: 0; right: 0; height: 2px; background: #64748b; }
         .fret { position: absolute; top: 0; bottom: 0; width: 2px; background: #475569; }
         .finger-dot { width: 26px; height: 26px; background: #f43f5e; border-radius: 50%; position: absolute; transform: translate(-50%, -50%); box-shadow: 0 0 20px #f43f5e; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white; }
-        .diet-box { border: 2px solid #334155; border-radius: 1.5rem; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 900; background: rgba(30, 41, 59, 0.4); }
+        .diet-box { border: 2px solid #334155; border-radius: 1.5rem; height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 900; background: rgba(30, 41, 59, 0.4); }
         .note-active { background: #22d3ee !important; color: #000 !important; transform: scale(1.05); box-shadow: 0 0 25px #22d3ee; }
-        .mode-btn { padding: 0.6rem 1.2rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; transition: 0.3s; border: 2px solid #334155; }
-        .mode-btn.active { background: #facc15; color: #000; border-color: #facc15; box-shadow: 0 0 15px rgba(250, 204, 21, 0.4); }
-        .animate-pulse-cyan { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(34, 211, 238, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); } }
+        .youtube-container { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; border-radius: 1rem; overflow: hidden; margin-bottom: 1rem; }
+        .youtube-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
@@ -37,9 +35,7 @@
                 <div className="fretboard mt-2 mb-4 overflow-hidden shadow-2xl">
                     {[1, 2, 3, 4].map(s => <div key={s} className="string" style={{ top: `${s * 20 + 15}%` }}></div>)}
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(f => (
-                        <div key={f} className="fret" style={{ left: `${f * 8.33}%` }}>
-                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] text-slate-600">{f}</span>
-                        </div>
+                        <div key={f} className="fret" style={{ left: `${f * 8.33}%` }}></div>
                     ))}
                     {positions.map((p, i) => (
                         <div key={i} className="finger-dot animate-bounce" style={{ left: `${p.f * 8.33 - 4}%`, top: `${p.s * 20 + 15}%` }}>
@@ -54,69 +50,49 @@
         const EnsembleApp = () => {
             const [step, setStep] = useState(0); 
             const [apiKey, setApiKey] = useState('');
-            const [audioUrl, setAudioUrl] = useState('');
-            const [songTitle, setSongTitle] = useState('');
-            const [playMode, setPlayMode] = useState('Original');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [videoUrl, setVideoUrl] = useState('');
             const [currentTime, setCurrentTime] = useState(0);
-            const [isPlaying, setIsPlaying] = useState(false);
             const [timeline, setTimeline] = useState([]);
-            const audioRef = useRef(null);
-            const timerRef = useRef(null);
+            const playerRef = useRef(null);
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_ensemble');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            const callGemini = async (prompt) => {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
-            };
-
-            const analyzeSong = async (file = null) => {
-                const title = file ? file.name : songTitle;
-                if (!title) return alert("곡 제목을 입력하거나 파일을 선택해주세요!");
-                
-                if (file) {
-                    setAudioUrl(URL.createObjectURL(file));
-                }
+            // 유튜브 영상 선택 및 분석
+            const handleSelectVideo = async () => {
+                if (!searchQuery) return alert("곡 제목을 입력하세요!");
                 setStep(2);
 
-                const prompt = `음악 분석 AI로서 '${title}'의 화성을 분석해 JSON으로 출력하세요. 
-                1. 원곡 키(orig)와 C, G, F 중 쉬운 조(easy)를 모두 분석하세요.
-                2. 에임기타(4줄 D,G,B,E) 기준 지판 포지션(s:줄, f:프렛)을 포함하세요.
-                3. 0초부터 4초 간격으로 10개 마디를 구성하세요.
-                [{"time": 0, "orig_chord": "Eb", "easy_chord": "C", "orig_notes": ["미b", "솔"], "easy_notes": ["도", "미"], "positions": [{"s":4, "f":1, "note":"Eb"}]}, ...] 형식만 출력하세요.`;
+                const prompt = `음악 분석 AI로서 유튜브 곡 '${searchQuery}'의 화성을 분석해 JSON으로 출력하세요. 
+                1. 원곡 키(orig)와 쉬운 조(easy)를 분석하세요.
+                2. 에임기타(4줄 D,G,B,E) 지판 포지션을 포함하세요.
+                3. 0초부터 4초 간격으로 타임라인을 구성하세요.
+                [{"time": 0, "orig_chord": "C", "easy_chord": "C", "orig_notes": ["도"], "easy_notes": ["도"], "positions": [{"s":4, "f":10, "note":"C"}]}, ...] 형식만 출력하세요.`;
 
                 try {
-                    const text = await callGemini(prompt);
-                    const jsonStr = text.match(/\[.*\]/s)[0];
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await response.json();
+                    const jsonStr = data.candidates[0].content.parts[0].text.match(/\[.*\]/s)[0];
                     setTimeline(JSON.parse(jsonStr));
+                    
+                    // 유튜브 검색 결과 시뮬레이션 (곡 제목으로 유튜브 검색 링크 생성)
+                    // 실제 서비스 시 YouTube Data API 사용 권장
+                    setVideoUrl(`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(searchQuery)}`);
                     setStep(3);
                 } catch (e) {
-                    alert("분석 중 오류가 발생했습니다. 데모 데이터를 불러옵니다.");
-                    setTimeline([{time:0, orig_chord:"C", easy_chord:"C", orig_notes:["도","미"], easy_notes:["도","미"], positions:[{s:4, f:10, note:"C"}]}]);
+                    alert("분석 실패. 데모 모드로 전환합니다.");
+                    setTimeline([{time:0, orig_chord:"C", easy_chord:"C", orig_notes:["도"], easy_notes:["도"], positions:[{s:4, f:10, note:"C"}]}]);
                     setStep(3);
                 }
             };
-
-            // 가상 타이머 로직 (파일이 없을 때 사용)
-            useEffect(() => {
-                if (isPlaying && !audioUrl) {
-                    timerRef.current = setInterval(() => {
-                        setCurrentTime(prev => (prev + 0.1) % 40);
-                    }, 100);
-                } else {
-                    clearInterval(timerRef.current);
-                }
-                return () => clearInterval(timerRef.current);
-            }, [isPlaying, audioUrl]);
 
             const currentData = timeline.find((item, index) => {
                 const nextItem = timeline[index + 1];
@@ -127,8 +103,8 @@
                 <div className="max-w-md mx-auto min-h-screen bg-slate-950 shadow-2xl flex flex-col relative overflow-hidden">
                     {step === 0 && (
                         <div className="flex-grow p-10 flex flex-col justify-center text-center">
-                            <h2 className="text-2xl font-bold text-cyan-400 mb-6 font-title">EAIM ENSEMBLE SYSTEM</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="bg-slate-900 border border-slate-700 p-4 rounded-xl text-white text-center mb-4" />
+                            <h2 className="text-2xl font-bold text-cyan-400 mb-6 font-title">EAIM YOUTUBE SYSTEM</h2>
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="bg-slate-900 border border-slate-700 p-4 rounded-xl text-white text-center mb-4 outline-none" />
                             <button onClick={() => { localStorage.setItem('gemini_api_key_ensemble', apiKey.trim()); setStep(1); }} className="bg-cyan-600 p-4 rounded-xl font-bold">시스템 접속</button>
                         </div>
                     )}
@@ -136,31 +112,15 @@
                     {step === 1 && (
                         <div className="flex-grow p-8 flex flex-col justify-center animate-fadeIn">
                             <div className="text-center mb-10">
-                                <div className="text-5xl mb-4">🎵</div>
-                                <h2 className="text-2xl font-bold mb-2">합주 곡 선택</h2>
-                                <p className="text-slate-500 text-sm">파일을 올리거나 제목만 적어도 분석이 가능합니다.</p>
+                                <div className="text-6xl mb-4">📺</div>
+                                <h2 className="text-2xl font-bold mb-2">유튜브 합주 검색</h2>
+                                <p className="text-slate-500 text-sm">유튜브 영상을 찾으면 즉석에서 악보를 만듭니다.</p>
                             </div>
                             
                             <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">1. 곡 제목 입력</label>
-                                    <input type="text" value={songTitle} onChange={e => setSongTitle(e.target.value)} className="w-full bg-slate-800 p-4 rounded-2xl text-white border border-slate-700 focus:border-cyan-500 outline-none" placeholder="예: 아이브 - I AM" />
-                                </div>
-
-                                <div className="relative py-4">
-                                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>
-                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-950 px-2 text-slate-600 font-bold">OR (직접 연주용)</span></div>
-                                </div>
-
-                                <div className="space-y-2 text-center">
-                                    <label className="inline-block bg-slate-800 text-slate-300 p-4 rounded-2xl border border-dashed border-slate-600 cursor-pointer hover:bg-slate-700 transition-all w-full">
-                                        📁 음악 파일(MP3) 선택하기
-                                        <input type="file" accept="audio/*" onChange={(e) => analyzeSong(e.target.files[0])} className="hidden" />
-                                    </label>
-                                </div>
-
-                                <button onClick={() => analyzeSong()} className="w-full bg-cyan-600 text-white p-5 rounded-2xl font-bold text-lg shadow-xl shadow-cyan-950/50">
-                                    제목으로 분석 시작 🪄
+                                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-slate-800 p-5 rounded-2xl text-white border border-slate-700 focus:border-cyan-500 outline-none text-center text-xl font-bold" placeholder="가수와 곡명 입력" />
+                                <button onClick={handleSelectVideo} className="w-full bg-red-600 text-white p-5 rounded-2xl font-bold text-lg shadow-xl shadow-red-950/50">
+                                    유튜브 영상 분석 시작 🔍
                                 </button>
                             </div>
                         </div>
@@ -168,47 +128,56 @@
 
                     {step === 2 && (
                         <div className="flex-grow flex flex-col justify-center items-center">
-                            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p className="text-cyan-400 font-bold animate-pulse font-title">AI 지능형 분석 로직 가동 중...</p>
+                            <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p className="text-red-500 font-bold animate-pulse font-title tracking-widest">YOUTUBE AI ANALYZING...</p>
                         </div>
                     )}
 
                     {step === 3 && (
-                        <div className="play-screen flex-grow flex flex-col p-6 animate-fadeIn">
-                            <header className="flex justify-between items-center mb-6">
-                                <div className="flex gap-2">
-                                    <button onClick={() => setPlayMode('Original')} className={`mode-btn ${playMode==='Original'?'active active-glow':''}`}>원곡 키</button>
-                                    <button onClick={() => setPlayMode('Easy')} className={`mode-btn ${playMode==='Easy'?'active active-glow':''}`}>쉬운 조</button>
-                                </div>
+                        <div className="play-screen flex-grow flex flex-col p-4 animate-fadeIn">
+                            <header className="flex justify-between items-center mb-4">
+                                <span className="font-title text-red-500 text-lg">YOUTUBE LIVE</span>
                                 <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">EXIT</button>
                             </header>
 
-                            <div className="flex-grow flex flex-col justify-center space-y-6">
-                                <div className="text-center">
-                                    <span className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">{playMode} Key Mode</span>
-                                    <div className="text-7xl font-black text-white mt-1">{playMode === 'Original' ? currentData.orig_chord : currentData.easy_chord}</div>
+                            {/* 유튜브 플레이어 섹션 */}
+                            <div className="youtube-container">
+                                <iframe 
+                                    src={videoUrl}
+                                    title="YouTube player" 
+                                    frameBorder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowFullScreen>
+                                </iframe>
+                            </div>
+
+                            <div className="flex-grow flex flex-col space-y-4">
+                                <div className="text-center bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
+                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Now Chord</span>
+                                    <div className="text-5xl font-black text-white">{currentData.orig_chord}</div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="diet-box note-active animate-pulse-cyan">
-                                        {playMode === 'Original' ? currentData.orig_notes[0] : currentData.easy_notes[0]}
+                                    <div className="diet-box note-active">
+                                        {currentData.orig_notes[0]}
                                     </div>
-                                    <p className="text-center text-[10px] text-slate-500 uppercase tracking-tighter italic">4-String Guitar Position Guide</p>
+                                    <p className="text-center text-[10px] text-slate-500 font-bold italic tracking-tighter">4-String Smart Fretboard Guide</p>
                                     <GuitarVisualizer chordData={currentData} />
                                 </div>
                             </div>
 
-                            <div className="mt-auto pt-6 border-t border-slate-800/50">
-                                {audioUrl ? (
-                                    <audio ref={audioRef} src={audioUrl} onTimeUpdate={() => setCurrentTime(audioRef.current.currentTime)} onLoadedMetadata={() => setDuration(audioRef.current.duration)} controls className="w-full h-10 opacity-50" />
-                                ) : (
-                                    <div className="flex flex-col items-center gap-4">
-                                        <p className="text-[10px] text-slate-500 font-bold">⚠️ 파일 없음: 외부 음악에 맞춰 재생 버튼을 누르세요</p>
-                                        <button onClick={() => setIsPlaying(!isPlaying)} className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-2xl ${isPlaying ? 'bg-red-600' : 'bg-cyan-600 animate-bounce'}`}>
-                                            {isPlaying ? '⏸' : '▶️'}
-                                        </button>
-                                    </div>
-                                )}
+                            {/* 싱크 조절기 (유튜브 영상 시간과 수동 동기화 보조) */}
+                            <div className="mt-auto py-4">
+                                <p className="text-[8px] text-center text-slate-600 mb-2">※ 영상 시간과 악보 시간이 맞지 않으면 아래 슬라이더로 조절하세요</p>
+                                <input 
+                                    type="range" 
+                                    min="0" 
+                                    max="40" 
+                                    step="1" 
+                                    value={currentTime} 
+                                    onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                                />
                             </div>
                         </div>
                     )}

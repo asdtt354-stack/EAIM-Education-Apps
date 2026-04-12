@@ -25,7 +25,7 @@
         const { useState, useEffect } = React;
 
         const MusicalMaker = () => {
-            const [step, setStep] = useState(0); // 0단계: API 키 입력 화면
+            const [step, setStep] = useState(0); 
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -36,13 +36,11 @@
 
             const [result, setResult] = useState({ script: '', lyrics: '', imagePrompt: '' });
 
-            // 💡 앱 실행 시 로컬에 저장된 키가 있는지 확인 (다른 앱과 동일한 로직)
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_musical');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // 💡 사용자가 입력한 키를 안전하게 저장
             const saveApiKey = () => {
                 if (apiKey.length < 10) return alert('API 키를 정확히 입력해주세요.');
                 localStorage.setItem('gemini_api_key_musical', apiKey.trim());
@@ -51,8 +49,9 @@
 
             const callGemini = async (prompt) => {
                 const cleanKey = apiKey.trim();
-                // 💡 최신 2.0 엔진 + v1beta 통신망 적용
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`;
+                // 💡 디렉터님 환경에서 검증된 2.5-flash 엔진 적용!
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
+                
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -70,11 +69,7 @@
 
                 const prompt = `당신은 천재 뮤지컬 감독입니다. 다음 조건을 바탕으로 창작 뮤지컬 기획안을 작성하세요.
                 주제: ${theme} / 인원: ${charCount}명 / 분위기: ${mood} / 장르: ${genre}
-
-                출력 형식은 반드시 아래 태그를 포함하세요:
-                [STORY] (인물 소개와 기승전결이 포함된 전체 줄거리 및 하이라이트 대본)
-                [LYRICS] (Suno AI용 가사 - 음악 스타일 영문 태그 5개 포함 및 1절 분량 가사)
-                [IMAGE] (무대 배경용 Midjourney 영문 프롬프트 --ar 16:9 포함)`;
+                [STORY], [LYRICS], [IMAGE] 태그를 사용하여 대본, 가사, 이미지 프롬프트 순으로 작성해줘.`;
 
                 try {
                     const text = await callGemini(prompt);
@@ -89,7 +84,7 @@
                         imagePrompt: extract('IMAGE')
                     });
                 } catch (e) {
-                    alert('기획안 생성 중 오류: ' + e.message);
+                    alert('기능 생성 중 오류: ' + e.message);
                     setStep(1);
                 } finally {
                     setIsAnalyzing(false);
@@ -98,60 +93,38 @@
 
             const copyToClipboard = (text) => {
                 navigator.clipboard.writeText(text);
-                alert('클립보드에 복사되었습니다!');
+                alert('복사되었습니다!');
             };
 
             return (
                 <div className="max-w-2xl mx-auto">
                     <header className="text-center mb-8 print-hidden">
                         <h1 className="text-3xl font-bold text-slate-800">🎭 EAIM 뮤지컬 메이커</h1>
-                        {step > 0 && (
-                            <button onClick={() => { localStorage.removeItem('gemini_api_key_musical'); setStep(0); window.location.reload(); }} className="text-xs text-slate-400 underline mt-2">API 키 재설정</button>
-                        )}
+                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_musical'); setStep(0); window.location.reload(); }} className="text-xs text-slate-400 underline mt-2">API 키 재설정</button>}
                     </header>
 
-                    {/* 💡 0단계: 다른 앱들과 통일된 API 키 입력 화면 */}
                     {step === 0 && (
                         <div className="glass-panel p-8 rounded-3xl shadow-xl space-y-6 animate-fadeIn">
-                            <h2 className="text-xl font-bold text-center text-blue-600">🔌 전원 연결 (시스템 기동)</h2>
-                            <p className="text-sm text-center text-slate-500">안전한 AI 기획을 위해 발급받은 API 키를 입력해주세요.</p>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full p-4 border-2 border-blue-100 rounded-2xl outline-none focus:border-blue-500 transition-all text-center" placeholder="API 키를 입력하세요" />
-                            <button onClick={saveApiKey} className="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition-colors">기획실 입장</button>
+                            <h2 className="text-xl font-bold text-center text-blue-600">🔌 전원 연결</h2>
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full p-4 border rounded-2xl text-center" placeholder="API 키 입력" />
+                            <button onClick={saveApiKey} className="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700">기획실 입장</button>
                         </div>
                     )}
 
                     {step === 1 && (
                         <div className="glass-panel p-8 rounded-3xl shadow-xl space-y-6 animate-fadeIn">
-                            <div className="space-y-2">
-                                <label className="font-bold text-slate-700">💡 뮤지컬 주제</label>
-                                <input type="text" value={theme} onChange={e => setTheme(e.target.value)} className="w-full p-4 border rounded-xl" placeholder="예: 미래 학교에서 벌어지는 소동" />
-                            </div>
+                            <input type="text" value={theme} onChange={e => setTheme(e.target.value)} className="w-full p-4 border rounded-xl" placeholder="뮤지컬 주제 입력" />
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="font-bold text-slate-700">👥 등장인물 수</label>
-                                    <input type="number" value={charCount} onChange={e => setCharCount(e.target.value)} className="w-full p-4 border rounded-xl" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="font-bold text-slate-700">🎵 음악 장르</label>
-                                    <select value={genre} onChange={e => setGenre(e.target.value)} className="w-full p-4 border rounded-xl">
-                                        <option value="auto">AI 추천</option>
-                                        <option value="Broadway Musical">정통 뮤지컬</option>
-                                        <option value="K-Pop Dance">K-Pop/댄스</option>
-                                        <option value="Disney Style">디즈니 스타일</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="font-bold text-slate-700">✨ 전체 분위기</label>
-                                <select value={mood} onChange={e => setMood(e.target.value)} className="w-full p-4 border rounded-xl">
-                                    <option>밝고 쾌활하고 코믹한</option>
-                                    <option>웅장하고 감동적인</option>
-                                    <option>신비롭고 환상적인</option>
-                                    <option>역동적이고 에너지 넘치는</option>
+                                <input type="number" value={charCount} onChange={e => setCharCount(e.target.value)} className="p-4 border rounded-xl" placeholder="인원" />
+                                <select value={genre} onChange={e => setGenre(e.target.value)} className="p-4 border rounded-xl">
+                                    <option value="auto">AI 추천 장르</option>
+                                    <option>정통 뮤지컬</option>
+                                    <option>K-Pop Dance</option>
+                                    <option>Disney Style</option>
                                 </select>
                             </div>
-                            <button onClick={generateMusical} disabled={isAnalyzing} className="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg">
-                                {isAnalyzing ? "AI 감독님이 시나리오 집필 중..." : "뮤지컬 기획 시작하기 🪄"}
+                            <button onClick={generateMusical} disabled={isAnalyzing} className="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold text-lg">
+                                {isAnalyzing ? "기획안 작성 중..." : "뮤지컬 기획 시작 🪄"}
                             </button>
                         </div>
                     )}
@@ -161,37 +134,25 @@
                             {isAnalyzing ? (
                                 <div className="text-center p-20 glass-panel rounded-3xl">
                                     <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto"></div>
-                                    <p className="mt-4 font-bold text-slate-600 italic">"훌륭한 장면이 떠오르고 있어요..."</p>
+                                    <p className="mt-4 font-bold text-slate-600 italic">"감독님이 집필 중입니다..."</p>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
-                                    <div className="glass-panel p-6 rounded-3xl border-l-8 border-blue-500 shadow-md">
-                                        <h3 className="text-lg font-bold mb-3 flex justify-between items-center text-blue-700">
-                                            <span>📖 1단계: 스토리 및 대본</span>
-                                            <button onClick={() => copyToClipboard(result.script)} className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">복사</button>
-                                        </h3>
-                                        <pre className="text-sm leading-relaxed text-slate-700 bg-white p-4 rounded-xl border border-blue-50">{result.script}</pre>
+                                    <div className="glass-panel p-6 rounded-3xl border-l-8 border-blue-500">
+                                        <h3 className="font-bold mb-3 flex justify-between">📖 스토리 & 대본 <button onClick={() => copyToClipboard(result.script)} className="text-xs text-blue-500 uppercase">Copy</button></h3>
+                                        <pre className="text-sm bg-white p-4 rounded-xl">{result.script}</pre>
                                     </div>
-
-                                    <div className="glass-panel p-6 rounded-3xl border-l-8 border-purple-500 shadow-md">
-                                        <h3 className="text-lg font-bold mb-3 flex justify-between items-center text-purple-700">
-                                            <span>🎵 2단계: Suno 가사 & 장르</span>
-                                            <button onClick={() => copyToClipboard(result.lyrics)} className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">복사</button>
-                                        </h3>
-                                        <pre className="text-sm leading-relaxed text-slate-700 bg-white p-4 rounded-xl border border-purple-50">{result.lyrics}</pre>
+                                    <div className="glass-panel p-6 rounded-3xl border-l-8 border-purple-500">
+                                        <h3 className="font-bold mb-3 flex justify-between">🎵 Suno 가사 <button onClick={() => copyToClipboard(result.lyrics)} className="text-xs text-purple-500 uppercase">Copy</button></h3>
+                                        <pre className="text-sm bg-white p-4 rounded-xl">{result.lyrics}</pre>
                                     </div>
-
-                                    <div className="glass-panel p-6 rounded-3xl border-l-8 border-orange-500 shadow-md">
-                                        <h3 className="text-lg font-bold mb-3 flex justify-between items-center text-orange-700">
-                                            <span>🎨 3단계: 무대 배경 프롬프트</span>
-                                            <button onClick={() => copyToClipboard(result.imagePrompt)} className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">복사</button>
-                                        </h3>
-                                        <pre className="text-sm leading-relaxed font-mono text-slate-600 bg-white p-4 rounded-xl border border-orange-50">{result.imagePrompt}</pre>
+                                    <div className="glass-panel p-6 rounded-3xl border-l-8 border-orange-500">
+                                        <h3 className="font-bold mb-3 flex justify-between">🎨 배경 프롬프트 <button onClick={() => copyToClipboard(result.imagePrompt)} className="text-xs text-orange-500 uppercase">Copy</button></h3>
+                                        <pre className="text-sm bg-white p-4 rounded-xl font-mono">{result.imagePrompt}</pre>
                                     </div>
-
                                     <div className="flex gap-4 print-hidden">
-                                        <button onClick={() => window.print()} className="flex-1 bg-slate-700 text-white p-4 rounded-2xl font-bold shadow-lg">🖨️ 기획안 인쇄하기</button>
-                                        <button onClick={() => setStep(1)} className="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">🔄 새로 기획하기</button>
+                                        <button onClick={() => window.print()} className="flex-1 bg-slate-700 text-white p-4 rounded-2xl font-bold">🖨️ 인쇄</button>
+                                        <button onClick={() => setStep(1)} className="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold">🔄 새로 만들기</button>
                                     </div>
                                 </div>
                             )}

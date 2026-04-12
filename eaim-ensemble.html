@@ -3,22 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM SYNC ENSEMBLE PRO</title>
+    <title>EAIM 4-BAND PERFECT SYNC v10</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
         .font-title { font-family: 'Black Han Sans', sans-serif; }
-        .station-card { background: rgba(30, 41, 59, 0.6); border: 2px solid #1e293b; border-radius: 1.5rem; padding: 1.2rem; transition: 0.3s; }
-        .active-station { border-color: #f43f5e; box-shadow: 0 0 30px rgba(244, 63, 94, 0.2); }
-        .power-bubble { width: 65px; height: 65px; border-radius: 1.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        
+        /* 스테이션 카드 공통 스타일 */
+        .station-card { background: rgba(30, 41, 59, 0.5); border: 2px solid #1e293b; border-radius: 1.25rem; padding: 1rem; transition: 0.3s; }
+        .active-station { border-color: #f43f5e; box-shadow: 0 0 25px rgba(244, 63, 94, 0.15); }
+
+        /* 파워코드 버블 */
+        .power-bubble { width: 58px; height: 58px; border-radius: 1.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .note-1 { background-color: #f43f5e; color: white; border: 2px solid #fb7185; }
         .note-5 { background-color: #3b82f6; color: white; border: 2px solid #60a5fa; }
+
+        /* 유튜브 플레이어 영역 */
         .youtube-container { width: 100%; aspect-ratio: 16/9; border-radius: 1.5rem; overflow: hidden; background: #000; border: 2px solid #334155; position: relative; }
         #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* 타악기 비주얼라이저 애니메이션 */
+        .beat-icon { font-size: 2.2rem; transition: 0.1s ease-out; opacity: 0.3; transform: scale(0.9); }
+        .beat-active { opacity: 1; transform: scale(1.25); filter: drop-shadow(0 0 10px #fbbf24); }
+        
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -40,27 +53,29 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // 💡 유튜브 API 로드 및 동기화 감시
+            // 💡 실시간 싱크 엔진 (0.1초 단위 감시)
             useEffect(() => {
                 if (step === 3) {
                     const timer = setInterval(() => {
                         if (playerRef.current && playerRef.current.getCurrentTime) {
                             setCurrentTime(playerRef.current.getCurrentTime());
                         }
-                    }, 200); // 0.2초마다 유튜브 시간과 싱크를 맞춤
+                    }, 100);
                     return () => clearInterval(timer);
                 }
             }, [step]);
 
             const handleAnalyze = async () => {
-                if (!searchQuery) return alert("유튜브 주소나 곡명을 넣어주세요!");
+                if (!searchQuery) return alert("유튜브 주소나 곡명을 입력하세요!");
                 setStep(2);
                 
                 let videoId = searchQuery;
                 if (searchQuery.includes('v=')) videoId = searchQuery.split('v=')[1].split('&')[0];
                 else if (searchQuery.includes('youtu.be/')) videoId = searchQuery.split('youtu.be/')[1].split('?')[0];
 
-                const prompt = `곡 '${searchQuery}'의 화성을 분석해 JSON으로만 출력해. 4초 간격. [{"time":0, "chord":"C5", "wind":"도", "guitar":["도","솔"], "key":["도","미","솔"]}]`;
+                const prompt = `곡 '${searchQuery}'을 분석해 4초 간격 JSON으로 출력해. 
+                - perc 항목에는 '🥁 👏 🥁🥁 👏' 형태의 리듬 패턴과 '쿵 팍' 같은 구음을 섞어줘.
+                - 형식: [{"time":0, "chord":"C5", "wind":"도", "guitar":["도","솔"], "key":["도","미","솔"], "perc":"🥁(쿵) 👏(팍)"}]`;
 
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
@@ -73,11 +88,11 @@
                     const match = data.candidates[0].content.parts[0].text.match(/\[.*\]/s);
                     setTimeline(JSON.parse(match[0]));
                     
-                    // 💡 유튜브 IFrame API 실행
+                    // 유튜브 플레이어 로딩
                     window.onYouTubeIframeAPIReady = () => {
                         playerRef.current = new YT.Player('player', {
                             height: '100%', width: '100%',
-                            videoId: videoId.length > 15 ? 'y6120QOlsfU' : videoId, // ID가 없으면 샘플곡
+                            videoId: videoId.length > 15 ? 'y6120QOlsfU' : videoId,
                             events: { 'onReady': () => setStep(3) }
                         });
                     };
@@ -85,100 +100,7 @@
                     tag.src = "https://www.youtube.com/iframe_api";
                     document.body.appendChild(tag);
                 } catch (e) {
-                    setTimeline([{time:0, chord:"C5", wind:"도", guitar:["도","솔"], key:["도","미","솔"]}]);
+                    setTimeline([{time:0, chord:"C5", wind:"도", guitar:["도","솔"], key:["도","미","솔"], perc:"🥁(쿵) 👏(팍)"}]);
                     setStep(3);
                 }
             };
-
-            const currentData = timeline.find((item, index) => {
-                const nextItem = timeline[index + 1];
-                return currentTime >= item.time && (!nextItem || currentTime < nextItem.time);
-            }) || { chord: '-', wind: '-', guitar:['-','-'], key:['-','-','-'] };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col relative overflow-hidden">
-                    {step === 0 && (
-                        <div className="flex-grow p-10 flex flex-col justify-center text-center animate-fadeIn">
-                            <h2 className="text-2xl font-bold text-rose-500 mb-6 font-title tracking-widest uppercase">EAIM LIVE SYNC</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center text-white outline-none" />
-                            <button onClick={() => { localStorage.setItem('gemini_api_key_ensemble', apiKey.trim()); setStep(1); }} className="bg-rose-600 p-4 rounded-xl font-bold mt-4 shadow-xl">시스템 접속</button>
-                        </div>
-                    )}
-
-                    {step === 1 && (
-                        <div className="flex-grow p-8 flex flex-col justify-center space-y-8 animate-fadeIn">
-                            <div className="text-center">
-                                <div className="text-6xl mb-4">🎵</div>
-                                <h2 className="text-2xl font-bold font-title">실시간 싱크 합주</h2>
-                                <p className="text-slate-500 text-sm mt-2 font-bold">유튜브 음악과 악보가 100% 동기화됩니다.</p>
-                            </div>
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center font-bold text-lg outline-none border-2 border-transparent focus:border-rose-500" placeholder="유튜브 주소 붙여넣기" />
-                            <button onClick={handleAnalyze} className="w-full bg-rose-600 p-5 rounded-2xl font-bold text-lg shadow-xl">곡 분석 및 로딩 시작 🔍</button>
-                        </div>
-                    )}
-
-                    {step === 2 && (
-                        <div className="flex-grow flex flex-col justify-center items-center">
-                            <div className="w-12 h-12 border-4 border-rose-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p className="text-rose-500 font-bold animate-pulse">유튜브-악보 싱크 회로 연결 중...</p>
-                        </div>
-                    )}
-
-                    {step === 3 && (
-                        <div className="flex-grow flex flex-col animate-fadeIn">
-                            <header className="p-4 flex justify-between items-center font-title text-rose-500">
-                                <span className="text-xl tracking-tighter">EAIM PERFECT SYNC</span>
-                                <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">EXIT</button>
-                            </header>
-
-                            <div className="px-4">
-                                <div className="youtube-container shadow-2xl">
-                                    <div id="player"></div>
-                                </div>
-                            </div>
-
-                            <div className="flex-grow flex flex-col p-4 space-y-2">
-                                <div className="station-card active-station flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-rose-400 uppercase">Guitar Mode</span>
-                                        <span className="text-[20px] font-black text-white">{currentData.chord}</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <div className="power-bubble note-1 animate-pulse"><span className="text-[8px] opacity-70">근음</span>{currentData.guitar[0]}</div>
-                                        <div className="power-bubble note-5"><span className="text-[8px] opacity-70">5음</span>{currentData.guitar[1]}</div>
-                                    </div>
-                                </div>
-
-                                <div className="station-card flex items-center justify-between py-4">
-                                    <span className="text-[10px] font-bold text-indigo-400 uppercase">Wind Team</span>
-                                    <div className="text-3xl font-black text-indigo-300 border-b-4 border-indigo-900 px-4 bg-indigo-900/20 rounded-xl">{currentData.wind}</div>
-                                </div>
-
-                                <div className="station-card flex items-center justify-between py-4">
-                                    <span className="text-[10px] font-bold text-pink-400 uppercase">Piano Team</span>
-                                    <div className="flex gap-2">
-                                        {currentData.key.map((n, i) => (
-                                            <span key={i} className="text-sm font-bold text-pink-200 bg-pink-900/40 px-3 py-1.5 rounded-lg">{n}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-slate-900/80 border-t border-white/5">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Real-time Data Sync</span>
-                                    <span className="text-[10px] text-cyan-400 font-bold bg-cyan-900/30 px-2 py-0.5 rounded-full">LIVE: {Math.floor(currentTime)}s</span>
-                                </div>
-                                <p className="text-[9px] text-center text-slate-500 italic">※ 유튜브 플레이어를 직접 조작해도 악보가 자동으로 따라옵니다.</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>

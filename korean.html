@@ -44,4 +44,32 @@
             const [draftLetter, setDraftLetter] = useState('');
 
             const words = ['기쁜', '슬픈', '화난', '불안한', '외로운', '설레는', '답답한', '신나는', '포근한'];
-            const colors = [{name:'빨강',code:'#EF4444'},{name:'주황',code:'#F97316'},{name:'노랑',code:'#FBBF24'},{name:'초록',code:'#34D399'},{name:'파랑',code:'#3B82F6'},{name:'보라',code:'#8B5CF
+            // 👇 잘려나갔던 색상 코드 부분 완벽 복구 완료!
+            const colors = [{name:'빨강',code:'#EF4444'},{name:'주황',code:'#F97316'},{name:'노랑',code:'#FBBF24'},{name:'초록',code:'#34D399'},{name:'파랑',code:'#3B82F6'},{name:'보라',code:'#8B5CF6'}];
+
+            useEffect(() => {
+                const savedKey = localStorage.getItem('gemini_api_key');
+                if (savedKey) { setApiKey(savedKey); setStep(1); }
+            }, []);
+
+            const callGemini = async (prompt) => {
+                const cleanKey = apiKey.trim();
+                // 💡 최신 2.5 모델 적용 완료
+                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || '연결 오류');
+                return data.candidates[0].content.parts[0].text;
+            };
+
+            const handleFetchPoem = async () => {
+                setIsAnalyzing(true);
+                setReadingPoem('시를 찾는 중입니다... ✨');
+                try {
+                    const text = await callGemini(`'${searchQuery}' 시인의 시

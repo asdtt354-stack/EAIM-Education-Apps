@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 감정 시인 Pro</title>
+    <title>EAIM 감정 시인 & 뮤지션 v7.0</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%); min-height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: #fdfcfb; min-height: 100vh; margin: 0; }
         .font-hand { font-family: 'Gaegu', cursive; }
         .font-serif { font-family: 'Gowun Batang', serif; }
-        .eaim-card { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(15px); border-radius: 2.5rem; box-shadow: 0 25px 50px rgba(0,0,0,0.1); border: 1px solid white; width: 100%; max-width: 600px; padding: 2.5rem; margin: 2rem 0; }
-        .eaim-input { width: 100%; border: 1px solid #d1d5db; border-radius: 1rem; padding: 1rem; background: white !important; outline: none; transition: 0.3s; }
-        .eaim-btn-main { background: #be185d !important; color: white !important; border-radius: 1rem; padding: 1.1rem; font-weight: bold; width: 100%; transition: 0.3s; border: none; cursor: pointer; }
-        .eaim-btn-main:hover { background: #9d174d !important; transform: translateY(-2px); }
+        .eaim-card { background: rgba(255, 255, 255, 0.95); border-radius: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.05); width: 100%; max-width: 500px; padding: 2rem; margin: 1rem auto; }
+        .eaim-input { width: 100%; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 0.8rem; outline: none; transition: 0.3s; font-size: 0.9rem; }
+        .eaim-btn { background: #be185d; color: white; border-radius: 1rem; padding: 1rem; font-weight: bold; width: 100%; border: none; cursor: pointer; transition: 0.3s; }
+        .genre-btn { border: 1px solid #be185d; color: #be185d; border-radius: 99px; padding: 6px 14px; font-size: 0.8rem; font-weight: bold; transition: 0.2s; }
+        .genre-active { background: #be185d; color: white; }
+        .suno-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 1rem; border-radius: 1rem; font-family: monospace; font-size: 0.75rem; color: #334155; }
+        .gallery-item { background: white; border: 1px solid #fce7f3; border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 1rem; }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @media print { .no-print { display: none !important; } .eaim-card { box-shadow: none !important; border: 1px solid #eee !important; width: 100% !important; max-width: none !important; } }
     </style>
 </head>
 <body>
@@ -29,166 +32,187 @@
         const { useState, useEffect } = React;
 
         const App = () => {
-            const [step, setStep] = useState(0);
-            const [apiKey, setApiKey] = useState('');
+            const [step, setStep] = useState(0); 
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v7') || '');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
-            // 데이터 설정
-            const emotionWords = ['기쁜', '슬픈', '화난', '불안한', '외로운', '설레는', '답답한', '신나는', '포근한'];
-            const colorPalette = [
-                {name:'빨강', code:'#EF4444'}, {name:'주황', code:'#F97316'}, {name:'노랑', code:'#FBBF24'}, 
-                {name:'초록', code:'#34D399'}, {name:'파랑', code:'#3B82F6'}, {name:'보라', code:'#8B5CF6'},
-                {name:'분홍', code:'#F472B6'}, {name:'검정', code:'#1F2937'}, {name:'하양', code:'#F9FAFB'}
-            ];
-
-            // 상태 관리
+            // 시 및 데이터 상태
+            const [userName, setUserName] = useState('');
             const [searchQuery, setSearchQuery] = useState('윤동주 서시');
             const [foundPoem, setFoundPoem] = useState('');
             const [poemImpression, setPoemImpression] = useState('');
-            const [myEmotion, setMyEmotion] = useState('');
-            const [myColor, setMyColor] = useState('');
-            const [mySituation, setMySituation] = useState('');
-            const [myBody, setMyBody] = useState('');
-            const [newEmotionName, setNewEmotionName] = useState('');
+            const [dissect, setDissect] = useState({ emotion: '', color: '', situation: '', body: '', newName: '' });
             const [finalPoem, setFinalPoem] = useState('');
             const [teacherFeedback, setTeacherFeedback] = useState('');
 
-            useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_kor_pro');
-                if (savedKey) { setApiKey(savedKey); setStep(1); }
-            }, []);
+            // 음악 상태
+            const genres = ['어쿠스틱 기타', '감성 발라드', '밝은 K-Pop', '차분한 로파이', '웅장한 뮤지컬', '재즈'];
+            const [selectedGenre, setSelectedGenre] = useState('');
+            const [sunoPrompt, setSunoPrompt] = useState('');
+
+            // 갤러리 상태
+            const [allPoems, setAllPoems] = useState(JSON.parse(localStorage.getItem('eaim_shared_forest_v7') || '[]'));
 
             const callGemini = async (prompt) => {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-                const data = await response.json();
+                const data = await res.json();
                 return data.candidates[0].content.parts[0].text;
             };
 
             const handleSearchPoem = async () => {
                 setIsAnalyzing(true);
                 try {
-                    const text = await callGemini(`'${searchQuery}' 시의 전문을 정확하게 찾아주세요. 제목과 시인 이름을 포함해 정중하게 보여주세요.`);
-                    setFoundPoem(text);
-                    setStep(2);
-                } catch (e) { alert('시를 찾지 못했습니다.'); } finally { setIsAnalyzing(false); }
+                    const text = await callGemini(`'${searchQuery}' 시의 전문을 찾아줘. 제목과 작가를 포함해서.`);
+                    setFoundPoem(text); setStep(2);
+                } catch (e) { alert('연결 오류'); } finally { setIsAnalyzing(false); }
             };
 
             const handleCreatePoem = async () => {
-                if(!myEmotion || !myColor || !newEmotionName) return alert('감정과 색깔, 새 이름을 모두 정해주세요!');
-                setIsAnalyzing(true);
-                setStep(5);
+                if(!userName) return alert('작가의 이름을 알려줘!');
+                setIsAnalyzing(true); setStep(4);
                 try {
-                    const poemText = await callGemini(`학생이 읽은 시의 느낌('${poemImpression}')과 학생의 감정(단어:${myEmotion}, 색깔:${myColor}, 상황:${mySituation}, 신체:${myBody})을 융합한 시를 지어줘. 감정의 새 이름 '${newEmotionName}'을 제목이나 마지막에 꼭 넣어줘.`);
-                    setFinalPoem(poemText);
-                    const feedbackText = await callGemini(`위 시를 쓴 학생에게 SEL 교사로서 따뜻한 응원의 편지를 3문장 써줘. '${myEmotion}'을 느낀 학생의 마음을 다정하게 보듬어줘.`);
-                    setTeacherFeedback(feedbackText);
-                } catch (e) { alert('오류 발생'); setStep(4); } finally { setIsAnalyzing(false); }
+                    const pText = await callGemini(`학생 '${userName}'이 읽은 시의 느낌('${poemImpression}')과 학생의 감정(단어:${dissect.emotion}, 색깔:${dissect.color})을 융합한 짧은 시를 지어줘. 새 이름 '${dissect.newName}'을 강조해줘.`);
+                    setFinalPoem(pText);
+                    const fText = await callGemini(`위 시를 쓴 학생에게 SEL 교사로서 따뜻한 응원을 3문장 써줘.`);
+                    setTeacherFeedback(fText);
+                } catch (e) { alert('오류 발생'); } finally { setIsAnalyzing(false); }
+            };
+
+            // 💡 Suno 프롬프트 생성 함수
+            const generateSunoPrompt = async (genre) => {
+                setSelectedGenre(genre);
+                setIsAnalyzing(true);
+                try {
+                    const prompt = `위 시 [${finalPoem}]를 바탕으로 Suno AI용 음악 프롬프트를 작성해줘. 
+                    장르: ${genre}. 
+                    출력 형식:
+                    [Style Tag] (영문 스타일 태그들)
+                    [Structure] (Verse, Chorus 등 구조 설명)
+                    [Mood] (음악의 분위기 설명)
+                    아주 감각적이고 시의 감정에 딱 맞게 영어 위주로 작성해줘.`;
+                    const result = await callGemini(prompt);
+                    setSunoPrompt(result);
+                } catch (e) { alert('프롬프트 생성 중 오류'); }
+                finally { setIsAnalyzing(false); }
+            };
+
+            const shareToForest = () => {
+                const newEntry = { id: Date.now(), author: userName, poem: finalPoem, emotion: dissect.emotion, genre: selectedGenre, comments: [] };
+                const updated = [newEntry, ...allPoems];
+                setAllPoems(updated);
+                localStorage.setItem('eaim_shared_forest_v7', JSON.stringify(updated));
+                setStep(5);
             };
 
             return (
-                <div className="eaim-card">
-                    {step === 0 && (
-                        <div className="space-y-6 text-center animate-fadeIn">
-                            <h2 className="text-2xl font-bold text-pink-800">EAIM 감정 시인 스튜디오</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="eaim-input text-center" />
-                            <button onClick={() => { localStorage.setItem('gemini_api_key_kor_pro', apiKey.trim()); setStep(1); }} className="eaim-btn-main shadow-lg">작가실 입장</button>
+                <div className="p-4">
+                    <header className="max-w-md mx-auto flex justify-between items-center mb-4 px-2">
+                        <h1 className="font-hand text-2xl text-pink-800 font-bold">감정 시인 & 뮤지션</h1>
+                        <div className="flex gap-2">
+                            <button onClick={() => setStep(5)} className="text-xs bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-bold">우리들의 숲 🌳</button>
+                            <button onClick={() => {localStorage.removeItem('gemini_api_key_v7'); window.location.reload();}} className="text-[10px] text-gray-400 underline">KEY RESET</button>
                         </div>
-                    )}
+                    </header>
 
-                    {step > 0 && (
-                        <div className="space-y-6">
-                            <header className="flex justify-between items-center border-b pb-3 no-print font-hand">
-                                <span className="font-bold text-pink-700 text-xl">감정 시인 Pro 📖</span>
-                                <button onClick={() => { localStorage.removeItem('gemini_api_key_kor_pro'); window.location.reload(); }} className="text-[10px] text-gray-400 underline">RESET</button>
-                            </header>
+                    <div className="eaim-card animate-fadeIn shadow-2xl border-t-8 border-pink-700">
+                        {step === 0 && (
+                            <div className="space-y-6 text-center py-10">
+                                <div className="text-6xl mb-4">🎼</div>
+                                <h2 className="text-xl font-bold">음악이 흐르는 시인실</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="eaim-input text-center" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_v7', apiKey.trim()); setStep(1); }} className="eaim-btn">입장하기</button>
+                            </div>
+                        )}
 
-                            {step === 1 && (
-                                <div className="space-y-6 animate-fadeIn">
-                                    <div className="text-center"><h2 className="text-xl font-bold">1. 영감 얻기</h2><p className="text-sm text-gray-500">마음을 열어줄 시를 검색해보세요.</p></div>
-                                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="eaim-input" placeholder="시인이나 시 제목" />
-                                    <button onClick={handleSearchPoem} disabled={isAnalyzing} className="eaim-btn-main">{isAnalyzing ? "시를 찾는 중..." : "시 불러오기 ✨"}</button>
+                        {step === 1 && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-center">1. 시에서 영감 얻기</h3>
+                                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="eaim-input" placeholder="어떤 시가 궁금한가요?" />
+                                <button onClick={handleSearchPoem} className="eaim-btn">{isAnalyzing ? "시를 찾는 중..." : "영감 불러오기"}</button>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="space-y-4">
+                                <div className="bg-stone-50 p-4 rounded-xl text-sm font-serif leading-relaxed max-h-40 overflow-y-auto border">{foundPoem}</div>
+                                <label className="text-xs font-bold text-pink-800">이 시의 어떤 부분이 마음을 울렸나요?</label>
+                                <textarea value={poemImpression} onChange={e => setPoemImpression(e.target.value)} className="eaim-input h-20 text-xs" placeholder="느낌을 자유롭게 적어보세요."></textarea>
+                                <button onClick={() => setStep(3)} className="eaim-btn">내 마음 분석실로</button>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="space-y-4">
+                                <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="eaim-input font-bold" placeholder="너의 이름은?" />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input type="text" placeholder="감정 단어" className="eaim-input" onChange={e => setDissect({...dissect, emotion: e.target.value})} />
+                                    <input type="text" placeholder="마음의 색깔" className="eaim-input" onChange={e => setDissect({...dissect, color: e.target.value})} />
                                 </div>
-                            )}
+                                <input type="text" placeholder="이 감정의 새로운 이름" className="eaim-input font-bold text-pink-600 border-pink-200" onChange={e => setDissect({...dissect, newName: e.target.value})} />
+                                <button onClick={handleCreatePoem} className="eaim-btn bg-pink-800">시 완성하기 🪄</button>
+                            </div>
+                        )}
 
-                            {step === 2 && (
-                                <div className="space-y-6 animate-fadeIn">
-                                    <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200 shadow-inner max-h-60 overflow-y-auto">
-                                        <pre className="font-serif text-sm leading-loose whitespace-pre-wrap">{foundPoem}</pre>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="font-bold text-pink-800 text-sm ml-1">💬 이 시를 읽고 어떤 느낌이 들었나요?</label>
-                                        <textarea value={poemImpression} onChange={e => setPoemImpression(e.target.value)} className="eaim-input h-20 text-sm" placeholder="시를 읽은 뒤 떠오르는 느낌을 적어보세요."></textarea>
-                                    </div>
-                                    <button onClick={() => setStep(3)} disabled={!poemImpression} className="eaim-btn-main">내 감정 분석하기 👉</button>
-                                </div>
-                            )}
-
-                            {step === 3 && (
-                                <div className="space-y-5 animate-fadeIn">
-                                    <div className="text-center"><h2 className="text-xl font-bold">2. 내 마음 해부하기</h2></div>
-                                    
-                                    {/* 감정 단어 클릭 선택 */}
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-gray-400 ml-1">지금 내 감정은?</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {emotionWords.map(w => (
-                                                <button key={w} onClick={() => setMyEmotion(w)} className={`px-3 py-1.5 rounded-full text-xs transition-all ${myEmotion === w ? 'bg-pink-600 text-white shadow-md scale-105' : 'bg-white border border-gray-200 text-gray-500'}`}>{w}</button>
-                                            ))}
+                        {step === 4 && (
+                            <div className="space-y-6">
+                                {isAnalyzing && !sunoPrompt ? <div className="py-20 text-center animate-pulse text-pink-700">시를 다듬고 있습니다...</div> : (
+                                    <>
+                                        <div className="text-center bg-white p-6 rounded-2xl border-2 border-pink-100 shadow-inner">
+                                            <h4 className="font-hand text-xl text-pink-800 mb-4">{userName} 시인의 작품</h4>
+                                            <pre className="font-serif text-sm leading-relaxed whitespace-pre-wrap">{finalPoem}</pre>
                                         </div>
-                                    </div>
-
-                                    {/* 감정 색깔 클릭 선택 */}
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-gray-400 ml-1">이 감정의 색깔은?</label>
-                                        <div className="flex flex-wrap gap-3">
-                                            {colorPalette.map(c => (
-                                                <button key={c.name} onClick={() => setMyColor(c.name)} style={{backgroundColor: c.code}} className={`w-8 h-8 rounded-full border-2 transition-all ${myColor === c.name ? 'ring-4 ring-pink-200 border-pink-600 scale-110' : 'border-white shadow-sm'}`} title={c.name}></button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <input type="text" value={mySituation} onChange={e => setMySituation(e.target.value)} className="eaim-input text-xs" placeholder="언제 이런 기분이 드나요? (예: 시험을 망쳤을 때)" />
-                                        <input type="text" value={myBody} onChange={e => setMyBody(e.target.value)} className="eaim-input text-xs" placeholder="그때 내 몸은 어때요? (예: 어깨가 무거워요)" />
-                                        <input type="text" value={newEmotionName} onChange={e => setNewEmotionName(e.target.value)} className="eaim-input font-bold border-pink-300 text-sm" placeholder="✨ 이 감정에게 지어줄 새로운 이름" />
-                                    </div>
-                                    
-                                    <button onClick={handleCreatePoem} className="eaim-btn-main bg-gradient-to-r from-pink-700 to-rose-700">시 완성하고 답장 받기 🪄</button>
-                                </div>
-                            )}
-
-                            {step === 5 && (
-                                <div className="space-y-6 animate-fadeIn pb-10">
-                                    {isAnalyzing ? (
-                                        <div className="text-center py-20">
-                                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-700 mx-auto mb-4"></div>
-                                            <p className="text-pink-700 font-hand text-xl italic">당신의 마음을 시로 엮고 있습니다...</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-6">
-                                            <div className="bg-white p-8 rounded-[2rem] border-2 border-pink-100 shadow-sm text-center">
-                                                <h3 className="text-pink-800 font-hand text-2xl mb-6">나의 감정 시</h3>
-                                                <pre className="font-serif text-lg leading-loose whitespace-pre-wrap">{finalPoem}</pre>
-                                            </div>
-                                            <div className="bg-pink-50 p-6 rounded-3xl border-l-8 border-pink-400 relative">
-                                                <div className="absolute -top-3 left-6 bg-pink-400 text-white px-3 py-0.5 rounded-full text-[10px] font-bold">👩‍🏫 선생님의 마음 편지</div>
-                                                <div className="font-hand text-lg text-pink-900 leading-relaxed mt-2 whitespace-pre-wrap">{teacherFeedback}</div>
-                                            </div>
-                                            <div className="flex gap-2 no-print">
-                                                <button onClick={() => window.print()} className="flex-1 bg-stone-800 text-white p-4 rounded-xl font-bold">🖨️ 인쇄하기</button>
-                                                <button onClick={() => setStep(1)} className="flex-1 bg-pink-100 text-pink-700 p-4 rounded-xl font-bold border border-pink-200">다시 쓰기</button>
+                                        
+                                        <div className="space-y-3">
+                                            <p className="text-xs font-bold text-center text-slate-500 uppercase tracking-widest">이 시를 노래로 만든다면?</p>
+                                            <div className="flex flex-wrap justify-center gap-2">
+                                                {genres.map(g => (
+                                                    <button key={g} onClick={() => generateSunoPrompt(g)} className={`genre-btn ${selectedGenre === g ? 'genre-active' : ''}`}>{g}</button>
+                                                ))}
                                             </div>
                                         </div>
-                                    )}
+
+                                        {sunoPrompt && (
+                                            <div className="space-y-2 animate-fadeIn">
+                                                <p className="text-[10px] font-bold text-blue-600">Suno AI 프롬프트 (복사해서 사용하세요)</p>
+                                                <div className="suno-box whitespace-pre-wrap">{sunoPrompt}</div>
+                                                <button onClick={() => {navigator.clipboard.writeText(sunoPrompt); alert('프롬프트가 복사되었습니다!');}} className="text-[10px] bg-slate-200 px-2 py-1 rounded">프롬프트 복사 📋</button>
+                                            </div>
+                                        )}
+
+                                        <div className="bg-pink-50 p-4 rounded-xl text-xs text-pink-900 border-l-4 border-pink-400">
+                                            <span className="font-bold">👩‍🏫 선생님:</span> {teacherFeedback}
+                                        </div>
+                                        <button onClick={shareToForest} className="eaim-btn shadow-xl">우리들의 숲에 공유하기 👉</button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {step === 5 && (
+                            <div className="space-y-4">
+                                <h3 className="text-center font-bold text-lg mb-4 font-hand text-2xl">🌳 우리들의 감정 숲</h3>
+                                <div className="max-h-[500px] overflow-y-auto px-1">
+                                    {allPoems.length === 0 ? <p className="text-center text-gray-400 py-10">아직 들려온 노래가 없어요.</p> :
+                                    allPoems.map(p => (
+                                        <div key={p.id} className="gallery-item animate-fadeIn shadow-sm">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-xs font-bold bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">{p.author} 시인 & 뮤지션</span>
+                                                <span className="text-[10px] text-gray-400 font-bold">{p.genre || '시'}</span>
+                                            </div>
+                                            <pre className="text-xs font-serif leading-relaxed mb-4 whitespace-pre-wrap border-l-2 pl-3 border-pink-200">{p.poem}</pre>
+                                            <div className="flex gap-2">
+                                                <span className="text-[9px] bg-slate-100 px-2 py-0.5 rounded text-slate-500">#{p.emotion}</span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                        </div>
-                    )}
+                                <button onClick={() => setStep(1)} className="eaim-btn bg-stone-700">다시 시 쓰러 가기</button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             );
         };

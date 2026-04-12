@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM Space & Constellation Center</title>
+    <title>EAIM Astro Visualizer Pro</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,43 +13,40 @@
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
         .font-serif { font-family: 'Gowun Dodum', serif; }
         
-        /* 🚀 태양계 + 별자리 엔진 */
+        /* 🚀 태양계 + 별자리 아트 엔진 */
         .solar-system { 
-            position: relative; width: 100%; height: 400px; 
+            position: relative; width: 100%; height: 420px; 
             background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); 
             display: flex; justify-content: center; align-items: center; 
             overflow: hidden; border-radius: 2.5rem; border: 1px solid rgba(255,255,255,0.1);
         }
         
-        /* 💡 별자리 레이어 (날짜에 따라 배경 변화) */
-        .constellation-bg {
-            position: absolute; inset: 0; opacity: 0.4;
-            background-size: cover; background-position: center;
-            transition: 1.5s ease-in-out; pointer-events: none;
+        /* 💡 별자리 비주얼 레이어 */
+        .const-canvas {
+            position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+            transition: 1s ease-in-out;
         }
 
-        .sun { width: 32px; height: 32px; background: #facc15; border-radius: 50%; box-shadow: 0 0 50px #facc15; z-index: 50; }
+        .sun { width: 32px; height: 32px; background: #facc15; border-radius: 50%; box-shadow: 0 0 60px #facc15; z-index: 50; }
         .orbit { position: absolute; border: 1px solid rgba(255,255,255,0.06); border-radius: 50%; pointer-events: none; }
         .rev-track { position: absolute; width: 100%; height: 100%; animation: revolve linear infinite; }
         .planet { 
             position: absolute; border-radius: 50%; top: 0; left: 50%; transform: translate(-50%, -50%); 
             box-shadow: inset -4px -4px 6px rgba(0,0,0,0.7); cursor: pointer; pointer-events: auto; z-index: 60;
-            animation: self-spin linear infinite;
         }
 
+        /* 줌인 효과 */
         .zoomed-planet {
-            width: 190px; height: 190px; border-radius: 50%; margin: 0 auto;
-            position: relative; box-shadow: inset -30px -30px 60px rgba(0,0,0,0.9), 0 0 40px rgba(255,255,255,0.1);
-            animation: self-spin linear infinite;
+            width: 180px; height: 180px; border-radius: 50%; margin: 0 auto;
+            box-shadow: inset -30px -30px 60px rgba(0,0,0,0.9), 0 0 50px rgba(255,255,255,0.1);
+            animation: big-spin linear infinite;
         }
 
         @keyframes revolve { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes self-spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-
-        .animate-fadeIn { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes big-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
-        .const-badge { background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.3); padding: 4px 12px; border-radius: 99px; font-size: 10px; color: #a5b4fc; }
+        .animate-fadeIn { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -58,12 +55,30 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // 💡 별자리 SVG 아트 컴포넌트 (계절별 문양)
+        const ConstellationArt = ({ season }) => {
+            const artMap = {
+                봄: <path d="M50,100 L150,50 L250,100 L200,200 L100,200 Z" stroke="white" strokeWidth="0.5" fill="none" opacity="0.3" />, // 사자자리 형상화
+                여름: <path d="M200,50 L100,150 L200,250 L300,150 Z M200,50 L200,350" stroke="white" strokeWidth="0.5" fill="none" opacity="0.3" />, // 백조자리 형상화
+                가을: <path d="M100,100 H300 V300 H100 Z M100,100 L50,50" stroke="white" strokeWidth="0.5" fill="none" opacity="0.3" />, // 페가수스자리 형상화
+                겨울: <path d="M150,100 L250,100 L200,200 L150,300 L250,300 Z M200,200 H100 M200,200 H300" stroke="white" strokeWidth="0.5" fill="none" opacity="0.3" /> // 오리온자리 형상화
+            };
+            return (
+                <svg className="const-canvas" viewBox="0 0 400 400">
+                    <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    <g filter="url(#glow)">{artMap[season]}</g>
+                    {/* 랜덤 별빛들 */}
+                    {[...Array(20)].map((_, i) => <circle key={i} cx={Math.random()*400} cy={Math.random()*400} r={Math.random()*1.5} fill="white" opacity={Math.random()} />)}
+                </svg>
+            );
+        };
+
         const App = () => {
             const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v11') || '');
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v12') || '');
             const [obsDate, setObsDate] = useState(new Date().toISOString().split('T')[0]);
             const [selectedPlanet, setSelectedPlanet] = useState(null);
-            const [briefing, setBriefing] = useState({ temp: '', atmos: '', aiMsg: '', constellation: '' });
+            const [briefing, setBriefing] = useState({ temp: '', atmos: '', aiMsg: '', constName: '' });
             const [isLoading, setIsLoading] = useState(false);
 
             const planets = [
@@ -77,17 +92,16 @@
                 { id: 8, name: '명왕성', size: 6, orbit: 380, revTime: 180, rotTime: 6, color: '#64748b' }
             ];
 
-            // 💡 날짜별 계절 별자리 데이터
-            const getSeasonConst = () => {
+            const getSeasonData = () => {
                 const month = new Date(obsDate).getMonth() + 1;
-                if ([3, 4, 5].includes(month)) return { name: "봄 (사자자리, 처녀자리)", icon: "🦁" };
-                if ([6, 7, 8].includes(month)) return { name: "여름 (백조자리, 거문고자리)", icon: "🦢" };
-                if ([9, 10, 11].includes(month)) return { name: "가을 (페가수스자리, 안드로메다)", icon: "🐎" };
-                return { name: "겨울 (오리온자리, 큰개자리)", icon: "🏹" };
+                if ([3, 4, 5].includes(month)) return { key: "봄", name: "사자자리 & 처녀자리" };
+                if ([6, 7, 8].includes(month)) return { key: "여름", name: "백조자리 & 거문고자리" };
+                if ([9, 10, 11].includes(month)) return { key: "가을", name: "페가수스 & 안드로메다" };
+                return { key: "겨울", name: "오리온자리 & 큰개자리" };
             };
 
             const callGemini = async (prompt) => {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -100,20 +114,15 @@
                 setIsLoading(true);
                 setSelectedPlanet(planet);
                 setStep(3);
-                
-                const season = getSeasonConst();
-                const prompt = `${obsDate} 기준, ${planet.name}의 실시간 상태를 브리핑해줘. 
-                현재 배경에는 ${season.name}가 떠있어. 
-                1. 평균 온도 / 2. 대기 상태 / 3. 행성과 별자리를 엮은 감동적인 SEL 메시지
-                JSON 형식 {"temp": "", "atmos": "", "msg": ""}로만 출력해줘.`;
+                const season = getSeasonData();
+                const prompt = `${obsDate} 기준 ${planet.name}의 실시간 상태(온도, 대기)와 현재 별자리 '${season.name}'를 연계한 SEL 메시지를 JSON {"temp":"", "atmos":"", "msg":""}로 써줘.`;
 
                 try {
                     const res = await callGemini(prompt);
                     const json = JSON.parse(res.match(/\{.*\}/s)[0]);
-                    setBriefing({ ...json, constellation: season.name, aiMsg: json.msg });
-                } catch (e) {
-                    setBriefing({ temp: "분석 중", atmos: "안정적", aiMsg: "우주가 당신을 환영합니다.", constellation: season.name });
-                } finally { setIsLoading(false); }
+                    setBriefing({ ...json, constName: season.name });
+                } catch (e) { setBriefing({ temp: "연결 중", atmos: "신비로움", msg: "우주의 메시지를 읽고 있습니다.", constName: season.name }); }
+                finally { setIsLoading(false); }
             };
 
             const getStartPos = (period) => {
@@ -123,45 +132,41 @@
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-[#020617] flex flex-col relative shadow-2xl">
-                    {step === 0 && (
-                        <div className="absolute inset-0 bg-slate-900 z-[100] flex flex-col justify-center p-10 text-center animate-fadeIn">
-                            <div className="text-7xl mb-6">🛰️</div>
-                            <h2 className="text-2xl font-bold text-indigo-400 mb-6 font-serif uppercase tracking-widest">EAIM Integrated Observatory</h2>
-                            <input type="password" onKeyDown={e => e.key === 'Enter' && setStep(1)} onChange={e => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v11', e.target.value);}} placeholder="Gemini API Key" className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center outline-none border border-slate-700" />
-                            <button onClick={() => setStep(1)} className="mt-4 bg-indigo-600 p-5 rounded-2xl font-bold text-lg">시스템 동기화</button>
+                    {step === 0 && !apiKey && (
+                        <div className="absolute inset-0 bg-slate-900 z-[100] flex flex-col justify-center p-10 text-center">
+                            <h2 className="text-xl font-bold text-indigo-400 mb-6 font-serif uppercase tracking-widest">Connect EAIM Astro-Gate</h2>
+                            <input type="password" onBlur={e => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v12', e.target.value); setStep(1);}} placeholder="Gemini API Key" className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center outline-none border border-slate-700 shadow-inner" />
                         </div>
                     )}
 
                     <header className="p-6 flex justify-between items-center border-b border-white/5">
-                        <h1 className="text-xl font-black text-indigo-400 font-serif tracking-tighter uppercase">EAIM Space Control</h1>
-                        {step > 1 && <button onClick={() => setStep(2)} className="text-[10px] bg-slate-800 px-3 py-1 rounded-full border border-white/10">메인 관측실</button>}
+                        <h1 className="text-xl font-black text-indigo-400 font-serif tracking-tighter uppercase">EAIM Astro Center</h1>
+                        {step > 1 && <button onClick={() => setStep(2)} className="text-[10px] bg-slate-800 px-3 py-1 rounded-full border border-white/10 uppercase font-bold">Observer</button>}
                     </header>
 
                     <main className="flex-grow p-6 overflow-y-auto pb-20">
-                        {step === 1 && (
-                            <div className="flex flex-col items-center justify-center py-20 space-y-10 animate-fadeIn">
+                        {step <= 1 && (
+                            <div className="flex flex-col items-center justify-center py-20 space-y-12 animate-fadeIn">
                                 <div className="text-center">
-                                    <h2 className="text-4xl font-black mb-2 font-serif">Astro Station</h2>
-                                    <p className="text-slate-500 text-sm">행성과 별자리의 데이터를 통합합니다.</p>
+                                    <h2 className="text-4xl font-black mb-3 font-serif">Star & Planet</h2>
+                                    <p className="text-slate-500 text-sm tracking-wide">날짜별 행성과 별자리를 동기화합니다.</p>
                                 </div>
-                                <button onClick={() => setStep(2)} className="w-64 h-64 rounded-full bg-gradient-to-br from-indigo-700 to-rose-900 flex items-center justify-center text-2xl font-black shadow-2xl border-8 border-white/5">
-                                    관측 시작
+                                <button onClick={() => setStep(2)} className="w-60 h-60 rounded-full bg-gradient-to-tr from-indigo-700 via-indigo-500 to-rose-600 flex items-center justify-center text-2xl font-black shadow-2xl border-4 border-white/10 hover:scale-105 transition-all">
+                                    관측소 입장 🔭
                                 </button>
                             </div>
                         )}
 
                         {step === 2 && (
                             <div className="space-y-8 animate-fadeIn">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Observing Period</label>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Observing Date</label>
                                     <input type="date" value={obsDate} onChange={e => setObsDate(e.target.value)} className="w-full bg-slate-900 p-4 rounded-2xl text-white text-center border border-indigo-500/20 font-black" />
                                 </div>
                                 
                                 <div className="solar-system shadow-2xl relative">
-                                    {/* 💡 별자리 배경 (계절별로 텍스트 변화 시뮬레이션) */}
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <span className="text-[60px] opacity-10">{getSeasonConst().icon}</span>
-                                    </div>
+                                    {/* 💡 핵심: 별자리 시각화 아트 레이어 */}
+                                    <ConstellationArt season={getSeasonData().key} />
                                     
                                     <div className="sun"></div>
                                     {planets.map(p => (
@@ -175,8 +180,9 @@
                                         </div>
                                     ))}
                                 </div>
-                                <div className="text-center">
-                                    <span className="const-badge">현재 밤하늘: {getSeasonConst().name}</span>
+                                <div className="text-center space-y-1">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Current Constellation</p>
+                                    <h3 className="text-indigo-300 font-bold text-lg">{getSeasonData().name}</h3>
                                 </div>
                             </div>
                         )}
@@ -184,50 +190,49 @@
                         {step === 3 && selectedPlanet && (
                             <div className="space-y-6 animate-fadeIn pb-10">
                                 <div className="text-center">
-                                    <h2 className="text-4xl font-black text-white">{selectedPlanet.name}</h2>
-                                    <p className="text-indigo-400 text-[10px] font-bold mt-2">COSMOS ARCHIVE: {obsDate}</p>
+                                    <h2 className="text-5xl font-black text-white">{selectedPlanet.name}</h2>
+                                    <p className="text-indigo-400 text-[10px] font-bold mt-3 tracking-widest">{getSeasonData().name} 아래에서 관측 중</p>
                                 </div>
 
                                 <div className="relative py-4">
                                     <div className="zoomed-planet shadow-2xl" style={{ backgroundColor: selectedPlanet.color }}></div>
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                                        <div className="w-[260px] h-[260px] border-2 border-dashed border-indigo-500 rounded-full animate-spin" style={{ animationDuration: '20s' }}></div>
+                                        <div className="w-[280px] h-[280px] border-2 border-indigo-500 rounded-full animate-ping"></div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-slate-900/80 p-5 rounded-3xl border border-white/5 shadow-inner">
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3 text-center">
+                                        <div className="bg-slate-900 p-5 rounded-3xl border border-white/5 shadow-inner">
                                             <span className="text-[9px] text-indigo-400 font-bold uppercase">Temperature</span>
                                             <div className="text-xl font-black text-white mt-1">{isLoading ? "..." : briefing.temp}</div>
                                         </div>
-                                        <div className="bg-slate-900/80 p-5 rounded-3xl border border-white/5 shadow-inner">
-                                            <span className="text-[9px] text-indigo-400 font-bold uppercase">Background</span>
-                                            <div className="text-[11px] font-bold text-white mt-1 leading-tight">{briefing.constellation}</div>
+                                        <div className="bg-slate-900 p-5 rounded-3xl border border-white/5 shadow-inner">
+                                            <span className="text-[9px] text-indigo-400 font-bold uppercase">Atmosphere</span>
+                                            <div className="text-xs font-bold text-white mt-1 leading-tight">{isLoading ? "..." : briefing.atmos}</div>
                                         </div>
                                     </div>
                                     
-                                    <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900/40 p-6 rounded-[2.5rem] border border-indigo-500/20 shadow-2xl relative overflow-hidden">
+                                    <div className="bg-gradient-to-br from-indigo-900/50 to-slate-900/50 p-7 rounded-[2.5rem] border border-indigo-500/20 shadow-2xl relative overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3 relative z-10">
                                             <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
-                                            <h3 className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">AI Emotional Briefing</h3>
+                                            <h3 className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">AI Cosmic Briefing</h3>
                                         </div>
                                         {isLoading ? (
-                                            <div className="h-24 flex items-center justify-center"><div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
+                                            <div className="h-20 flex items-center justify-center"><div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
                                         ) : (
-                                            <p className="text-[13px] leading-relaxed text-indigo-50 font-serif italic relative z-10">"{briefing.aiMsg}"</p>
+                                            <p className="text-[14px] leading-relaxed text-indigo-50 font-serif italic relative z-10">"{briefing.msg}"</p>
                                         )}
-                                        <div className="absolute -bottom-4 -right-4 text-7xl opacity-5 grayscale">{getSeasonConst().icon}</div>
                                     </div>
                                 </div>
 
-                                <button onClick={() => setStep(2)} className="w-full bg-slate-800 p-5 rounded-3xl font-bold text-slate-400 border border-slate-700 mt-4">다시 전체 관측실로</button>
+                                <button onClick={() => setStep(2)} className="w-full bg-slate-800 p-5 rounded-3xl font-bold text-slate-400 border border-slate-700 mt-4 shadow-xl">전체 성도(星圖)로 복귀</button>
                             </div>
                         )}
                     </main>
 
                     <footer className="mt-auto p-4 text-center border-t border-white/5 bg-black/20">
-                        <p className="text-[8px] text-slate-700 font-bold uppercase tracking-[0.3em]">&copy; 2026 EAIM STUDIO | PLANET & STAR ENGINE v8.0</p>
+                        <p className="text-[8px] text-slate-700 font-bold uppercase tracking-[0.4em]">&copy; 2026 EAIM STUDIO | ASTRO VISUAL ENGINE v9.0</p>
                     </footer>
                 </div>
             );

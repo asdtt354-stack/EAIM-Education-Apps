@@ -54,8 +54,8 @@
 
             const callGemini = async (prompt) => {
                 const cleanKey = apiKey.trim();
-                // 💡 최신 2.0 모델 + v1beta 통신망 완벽 적용!
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`;
+                // 💡 디렉터님 환경에서 검증된 2.5-flash 엔진 적용!
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
                 const response = await fetch(url, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -68,11 +68,7 @@
             const generateCase = async () => {
                 if (!apiKey) return alert('API 키를 확인해주세요.');
                 setIsAnalyzing(true);
-                const prompt = `당신은 중학교 과학 교사이자 추리소설 작가입니다. 중학교 과학의 '${scienceUnit}' 단원과 사람의 '${emotionKeyword}'이라는 감정을 융합하여, 중학생들이 학교에서 겪을 법한 미스터리 사건을 만들어주세요.
-                조건 1: 아주 쉽고, 흥미진진하게 3~4문장으로 짧게 작성할 것. (중학교 남학생 타겟)
-                조건 2: 범인이 나쁜 짓을 한 것이 아니라, 오해나 서툰 감정 표현 때문이라는 여지를 남길 것.
-                조건 3: 절대 너무 어려운 과학 용어를 남발하지 말 것.`;
-
+                const prompt = `과학 교사로서 과학의 '${scienceUnit}' 원리와 '${emotionKeyword}' 감정을 융합한 짧은 미스테리 사건을 만들어줘. (중학생 수준, 3~4문장)`;
                 try {
                     const text = await callGemini(prompt);
                     setCaseStory(text);
@@ -83,33 +79,23 @@
 
             const getHint = async () => {
                 setIsLoadingHint(true);
-                const prompt = `당신은 CSI 과학 탐정대의 따뜻한 대장입니다.
-                현재 발생한 사건: ${caseStory}
-                관련된 과학 단원: ${scienceUnit}
-                학생 탐정이 과학 단서를 찾는 데 어려움을 겪고 있습니다. 정답을 직접 말하지 말고, 이 단원의 핵심 원리를 떠올릴 수 있도록 다정하고 결정적인 힌트를 딱 1~2문장으로만 무전으로 보내주세요.`;
-                
+                const prompt = `탐정 대장으로서 다음 사건에 숨겨진 '${scienceUnit}' 원리에 대한 힌트를 1문장으로만 줘. 답을 말하지 말고 생각할 거리를 줘: ${caseStory}`;
                 try {
                     const text = await callGemini(prompt);
                     setScienceHint(text);
-                } catch (e) { setScienceHint('통신 오류: 힌트를 무전으로 받아오지 못했습니다. 다시 시도해봐!'); }
+                } catch (e) { setScienceHint('통신 실패!'); }
                 finally { setIsLoadingHint(false); }
             };
 
             const solveCase = async () => {
                 setIsAnalyzing(true); setStep(4);
-                const prompt = `당신은 CSI 과학 탐정대의 대장(수석 프로파일러)입니다. 학생 탐정이 사건('${caseStory}')에 대해 다음과 같이 추리했습니다.
-                1. 이성적 추론(과학 단서): ${scienceClue}
-                2. 감성적 추론(마음): ${emotionClue}
-
-                이 단서들을 바탕으로 다음 3가지를 포함하여 '최종 사건 해결 보고서'를 아주 훈훈하고 따뜻한 중학생 말투로 작성해주세요.
-                - 🔍 과학적 진실: (과학 단원의 원리를 쉽게 설명)
-                - 💓 숨겨진 마음: (범인의 행동 뒤에 숨겨진 감정 공감)
-                - 🤝 화해의 미션: (친구와 어떻게 다시 잘 지낼 수 있을지 구체적인 행동 제안)`;
-
+                const prompt = `탐정 대장으로서 다음 단서들을 융합해 최종 보고서를 써줘.
+                사건: ${caseStory} / 과학단서: ${scienceClue} / 마음추리: ${emotionClue}
+                [과학적 진실], [숨겨진 마음], [화해의 미션] 항목으로 나누어 작성해줘.`;
                 try {
                     const text = await callGemini(prompt);
                     setFinalReport(text);
-                } catch (e) { setFinalReport('보고서 작성 중 오류가 발생했습니다.'); } 
+                } catch (e) { setFinalReport('보고서 작성 실패'); } 
                 finally { setIsAnalyzing(false); }
             };
 
@@ -118,11 +104,8 @@
                     {step === 0 && (
                         <div className="text-center space-y-6">
                             <h2 className="font-bold text-2xl font-hand text-slate-700">EAIM 과학 탐정대 설정</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="eaim-input" placeholder="발급받은 API 키를 입력하세요" />
-                            <button onClick={() => { 
-                                localStorage.setItem('gemini_api_key_sci', apiKey.trim()); 
-                                setStep(1); 
-                            }} className="eaim-btn-main shadow-lg">시스템 가동 🚀</button>
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="eaim-input" placeholder="API 키 입력" />
+                            <button onClick={() => { localStorage.setItem('gemini_api_key_sci', apiKey.trim()); setStep(1); }} className="eaim-btn-main shadow-lg">시스템 가동 🚀</button>
                         </div>
                     )}
 
@@ -136,93 +119,49 @@
                             {step === 1 && (
                                 <div className="space-y-6 animate-fade-in print-hidden">
                                     <div className="text-center">
-                                        <h2 className="text-2xl font-hand text-slate-800 mb-2">사건 파일 생성 📂</h2>
-                                        <p className="text-sm text-slate-500">배울 과학 원리와 친구의 마음을 골라주세요.</p>
+                                        <h2 className="text-2xl font-hand text-slate-800">사건 파일 생성 📂</h2>
+                                        <p className="text-sm text-slate-500">배울 원리와 친구의 마음을 골라주세요.</p>
                                     </div>
-                                    
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-500 ml-2">🔬 과학 단원 (원리)</label>
-                                        <input type="text" value={scienceUnit} onChange={e => setScienceUnit(e.target.value)} className="eaim-input" placeholder="예: 보일의 법칙, 상태 변화" />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-500 ml-2">💓 숨겨진 마음 (정서)</label>
-                                        <input type="text" value={emotionKeyword} onChange={e => setEmotionKeyword(e.target.value)} className="eaim-input" placeholder="예: 미안함, 돕고싶음, 부끄러움" />
-                                    </div>
-
-                                    <button onClick={generateCase} disabled={isAnalyzing} className="eaim-btn-main mt-4">
-                                        {isAnalyzing ? "사건 구성 중..." : "AI 사건 만들기 ✨"}
-                                    </button>
+                                    <input type="text" value={scienceUnit} onChange={e => setScienceUnit(e.target.value)} className="eaim-input" placeholder="과학 원리 (예: 기체의 압력)" />
+                                    <input type="text" value={emotionKeyword} onChange={e => setEmotionKeyword(e.target.value)} className="eaim-input" placeholder="감정 키워드 (예: 고마움)" />
+                                    <button onClick={generateCase} disabled={isAnalyzing} className="eaim-btn-main">{isAnalyzing ? "사건 구성 중..." : "AI 사건 만들기 ✨"}</button>
                                 </div>
                             )}
 
                             {step === 2 && (
                                 <div className="space-y-6 animate-fade-in print-hidden">
                                     <h2 className="text-2xl font-hand text-center text-slate-800">1단계: 현장 관찰 🚨</h2>
-                                    <div className="bg-white/70 p-6 rounded-3xl border-2 border-teal-200">
-                                        <p className="text-lg leading-relaxed font-hand text-slate-700 whitespace-pre-wrap">{caseStory}</p>
-                                    </div>
-
-                                    <div className="space-y-3 mt-6">
-                                        <div className="flex justify-between items-end ml-2">
-                                            <h3 className="text-lg font-bold text-teal-600">2단계: 이성적 추론 (과학 단서)</h3>
-                                            {!scienceHint && (
-                                                <button onClick={getHint} disabled={isLoadingHint} className="text-xs bg-yellow-400 text-slate-800 px-3 py-1.5 rounded-full font-bold shadow-sm hover:bg-yellow-300">
-                                                    {isLoadingHint ? "연결 중..." : "💡 대장님 힌트!"}
-                                                </button>
-                                            )}
+                                    <div className="bg-white/70 p-6 rounded-3xl border-2 border-teal-200 font-hand text-lg">{caseStory}</div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between">
+                                            <h3 className="font-bold text-teal-600 ml-2">2단계: 과학 단서 추리</h3>
+                                            {!scienceHint && <button onClick={getHint} disabled={isLoadingHint} className="text-xs bg-yellow-400 px-3 py-1 rounded-full font-bold">💡 힌트</button>}
                                         </div>
-
-                                        {scienceHint && (
-                                            <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-200 text-slate-700 text-sm font-hand">
-                                                <span className="font-bold text-yellow-600">🎙️ 무전:</span> {scienceHint}
-                                            </div>
-                                        )}
-
-                                        <textarea value={scienceClue} onChange={e => setScienceClue(e.target.value)} className="eaim-input h-28" placeholder="어떤 과학 원리가 숨어있을까?"></textarea>
+                                        {scienceHint && <div className="bg-yellow-50 p-3 rounded-2xl border border-yellow-200 text-sm font-hand text-yellow-800">대장: {scienceHint}</div>}
+                                        <textarea value={scienceClue} onChange={e => setScienceClue(e.target.value)} className="eaim-input h-24" placeholder="어떤 과학 원리가 있을까?"></textarea>
                                     </div>
-
-                                    <button onClick={() => setStep(3)} disabled={!scienceClue} className="eaim-btn-main bg-teal-500 mt-2">다음 수사로 이동 👉</button>
+                                    <button onClick={() => setStep(3)} disabled={!scienceClue} className="eaim-btn-main bg-teal-500">다음 수사 👉</button>
                                 </div>
                             )}
 
                             {step === 3 && (
                                 <div className="space-y-6 animate-fade-in print-hidden">
-                                    <h2 className="text-2xl font-hand text-center text-slate-800">3단계: 감성적 추론 💓</h2>
-                                    <div className="bg-white/50 p-4 rounded-2xl border border-teal-100 text-sm text-slate-500 mb-2">
-                                        <span className="font-bold text-teal-600">사건 요약: </span>{caseStory.substring(0, 40)}...
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <h3 className="text-lg font-bold text-pink-500 ml-2">친구의 마음 프로파일링</h3>
-                                        <textarea value={emotionClue} onChange={e => setEmotionClue(e.target.value)} className="eaim-input h-28" placeholder="범인은 왜 이런 행동을 했을까?"></textarea>
-                                    </div>
-
-                                    <button onClick={solveCase} disabled={!emotionClue || isAnalyzing} className="eaim-btn-main mt-6">
-                                        {isAnalyzing ? "보고서 작성 중..." : "최종 보고서 요청하기 📝"}
-                                    </button>
+                                    <h2 className="text-2xl font-hand text-center text-slate-800">3단계: 감성 추론 💓</h2>
+                                    <textarea value={emotionClue} onChange={e => setEmotionClue(e.target.value)} className="eaim-input h-32" placeholder="범인은 왜 그랬을까? 친구의 마음을 상상해봐."></textarea>
+                                    <button onClick={solveCase} disabled={isAnalyzing} className="eaim-btn-main">{isAnalyzing ? "분석 중..." : "보고서 요청 📝"}</button>
                                 </div>
                             )}
 
                             {step === 4 && (
                                 <div className="space-y-6 animate-fade-in print-area">
-                                    <h2 className="text-3xl font-hand text-center text-teal-600">4단계: 사건 해결 ✨</h2>
-                                    <div className="bg-white p-8 rounded-3xl border-2 border-teal-200 min-h-[350px] shadow-sm">
-                                        {isAnalyzing ? (
-                                            <div className="text-center text-teal-600 font-bold font-hand text-xl mt-20">대장이 과학과 마음을 융합 중...</div>
-                                        ) : (
-                                            <div className="whitespace-pre-wrap text-slate-700 text-lg leading-relaxed font-hand">
-                                                {finalReport}
-                                            </div>
-                                        )}
+                                    <h2 className="text-3xl font-hand text-center text-teal-600">최종 사건 보고서 ✨</h2>
+                                    <div className="bg-white p-8 rounded-3xl border-2 border-teal-200 whitespace-pre-wrap font-hand text-lg shadow-sm">
+                                        {isAnalyzing ? "대장이 정리 중..." : finalReport}
                                     </div>
-
-                                    {!isAnalyzing && (
-                                        <div className="flex gap-3 print-hidden">
-                                            <button onClick={() => window.print()} className="flex-1 eaim-btn-main bg-slate-400">🖨️ 보고서 인쇄</button>
-                                            <button onClick={() => { setStep(1); setFinalReport(''); setScienceClue(''); setEmotionClue(''); setScienceHint(''); }} className="flex-1 eaim-btn-main bg-teal-500">새 사건 수사 🕵️</button>
-                                        </div>
-                                    )}
+                                    <div className="flex gap-2 print-hidden">
+                                        <button onClick={() => window.print()} className="flex-1 eaim-btn-main bg-slate-400">🖨️ 인쇄</button>
+                                        <button onClick={() => { setStep(1); setFinalReport(''); setScienceClue(''); setEmotionClue(''); setScienceHint(''); }} className="flex-1 eaim-btn-main">새 사건 🕵️</button>
+                                    </div>
                                 </div>
                             )}
                         </div>

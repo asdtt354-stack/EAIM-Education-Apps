@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 비트 & 볼 v3.0 | Level Edition</title>
+    <title>EAIM 비트 & 볼 v4.5</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
@@ -15,9 +16,10 @@
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .level-card { transition: 0.3s; cursor: pointer; border: 2px solid transparent; }
         .level-active { border-color: #f97316; background: rgba(249, 115, 22, 0.15) !important; transform: scale(1.02); }
+        .youtube-box { width: 100%; aspect-ratio: 16/9; border-radius: 1.5rem; overflow: hidden; background: #000; border: 2px solid #334155; }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-glow { box-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
+        .bounce-box { border-left: 6px solid #f97316; background: rgba(249, 115, 22, 0.05); }
     </style>
 </head>
 <body>
@@ -31,15 +33,15 @@
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
+            const [musicSearch, setMusicSearch] = useState('');
             const [sport, setSport] = useState('농구 🏀');
-            const [level, setLevel] = useState(1); // 💡 레벨 상태 추가 (1~3)
-            const [beatStyle, setBeatStyle] = useState('힙합 (Boom Bap) 🎧');
+            const [level, setLevel] = useState(1);
             const [parsedData, setParsedData] = useState({ intro: '', teamA: '', teamB: '', teamC: '' });
             const [journal, setJournal] = useState('');
             const [feedback, setFeedback] = useState('');
 
             useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_beat');
+                const savedKey = localStorage.getItem('gemini_api_key_beat_v4_5');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
@@ -55,22 +57,21 @@
             };
 
             const generateRhythm = async () => {
+                if(!musicSearch) return alert("연습할 음악 제목을 입력해주세요!");
                 setIsAnalyzing(true);
-                const levelDesc = [
-                    "입문(Level 1): 1,3박자 중심의 아주 단순한 공 튕기기와 박수. 전원이 같은 동작 위주.",
-                    "도전(Level 2): 4박자 정박 리듬. A팀(베이스), B팀(스네어)의 기초적 역할 분담.",
-                    "마스터(Level 3): 빠른 비트와 엇박(싱코페이션) 포함. 3개 팀의 화려한 리듬 앙상블."
-                ][level - 1];
+                const levelDesc = ["초보용 단체 비트", "역할 분담 비트", "화려한 앙상블"][level - 1];
 
-                const prompt = `당신은 체육교사입니다. ${sport} 종목에 맞는 바디 퍼커션 리듬을 짜주세요.
-                현재 난이도: ${levelDesc}
+                // 💡 디렉터님의 '플로어 리듬' 철학을 프롬프트에 주입
+                const prompt = `당신은 체육교사이자 리듬 안무가입니다. 음악 '${musicSearch}'에 맞춰 ${sport} 리듬 체육 대본을 써주세요.
                 
-                [도입부] 학생들에게 파이팅을 주는 닉네임 코치님의 한마디
-                [A팀 리듬] 베이스 역할
-                [B팀 리듬] 스네어/캐치 역할
-                [C팀 리듬] 하이햇/기교 역할 (레벨 1인 경우 '자유 동작'으로 대체 가능)
+                [철저 준수 사항]
+                1. 절대 '허벅지'를 치지 마세요. 소리가 안 나고 아픕니다.
+                2. 대신 '강당 바닥'에 공을 튕겨서 웅장한 울림(Bass)을 만드세요.
+                3. 배구의 경우 손으로 서로 공을 주고받는(패스/캐치) 소리를 리듬으로 활용하세요.
+                4. 난이도: ${levelDesc}
                 
-                형식대로 아주 쉽고 직관적인 '쿵, 팍' 같은 구음으로 출력해줘.`;
+                형식: [도입부] / [A팀 리듬(Floor)] / [B팀 리듬(Catch)] / [C팀 리듬]
+                '쿵(바닥), 탁(손)' 같은 직관적 구음으로 아주 짧게 써줘.`;
 
                 try {
                     const text = await callGemini(prompt);
@@ -80,8 +81,8 @@
                     };
                     setParsedData({
                         intro: extract('도입부'),
-                        teamA: extract('A팀 리듬'),
-                        teamB: extract('B팀 리듬'),
+                        teamA: extract('A팀 리듬(Floor)'),
+                        teamB: extract('B팀 리듬(Catch)'),
                         teamC: extract('C팀 리듬')
                     });
                     setStep(2);
@@ -90,117 +91,105 @@
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col relative shadow-2xl overflow-hidden">
-                    <header className="p-6 border-b border-slate-800 flex justify-between items-center">
-                        <div>
-                            <h1 className="text-2xl font-title text-orange-500 italic leading-none">BEAT & BALL</h1>
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Level-up Performance</span>
-                        </div>
+                    <header className="p-5 border-b border-slate-800 flex justify-between items-center">
+                        <h1 className="text-xl font-title text-orange-500 italic uppercase">Beat & Ball Pro</h1>
                         {step > 0 && <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">RESET</button>}
                     </header>
 
-                    <main className="flex-grow p-6 overflow-y-auto pb-20">
+                    <main className="flex-grow p-6 overflow-y-auto pb-24">
                         {step === 0 && (
                             <div className="py-10 text-center animate-fadeIn space-y-6">
-                                <div className="text-7xl">🔥</div>
-                                <h2 className="text-xl font-bold">AI 스마트 체육관 접속</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API KEY" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-center" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_beat', apiKey.trim()); setStep(1); }} className="w-full bg-orange-600 p-4 rounded-2xl font-bold btn-glow">입장하기</button>
+                                <div className="text-7xl">🏀</div>
+                                <h2 className="text-xl font-bold">플로어 리듬 엔진 가동</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-center" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_beat_v4_5', apiKey.trim()); setStep(1); }} className="w-full bg-indigo-600 p-4 rounded-2xl font-bold">시스템 접속</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-8 animate-fadeIn">
                                 <section className="space-y-3">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">STEP 1. 종목 선택</label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {['농구 🏀', '배구 🏐', '축구 ⚽', '짐볼 🔵'].map(s => (
-                                            <button key={s} onClick={() => setSport(s)} className={`p-4 rounded-xl font-bold text-sm ${sport === s ? 'bg-orange-600' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>{s}</button>
-                                        ))}
-                                    </div>
+                                    <label className="text-xs font-bold text-indigo-400 ml-1 uppercase">1. 음악 검색 (유튜브)</label>
+                                    <input type="text" value={musicSearch} onChange={e => setMusicSearch(e.target.value)} placeholder="노래 제목 입력" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl focus:border-orange-500 outline-none" />
                                 </section>
 
                                 <section className="space-y-3">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">STEP 2. 난이도 설정 (디렉터님 추천 ✨)</label>
+                                    <label className="text-xs font-bold text-indigo-400 ml-1 uppercase">2. 종목 & 레벨</label>
+                                    <div className="grid grid-cols-2 gap-2 mb-4">
+                                        {['농구 🏀', '배구 🏐', '축구 ⚽', '짐볼 🔵'].map(s => (
+                                            <button key={s} onClick={() => setSport(s)} className={`p-3 rounded-xl font-bold text-xs ${sport === s ? 'bg-orange-600' : 'bg-slate-800 text-slate-500'}`}>{s}</button>
+                                        ))}
+                                    </div>
                                     <div className="space-y-2">
-                                        {[
-                                            { lv: 1, title: 'Lv.1 심장 박동 (Beginner)', desc: '단순한 박자에 맞춰 전원 합차' },
-                                            { lv: 2, title: 'Lv.2 리듬 조율 (Expert)', desc: '팀별로 다른 리듬을 섞어봐요' },
-                                            { lv: 3, title: 'Lv.3 퍼펙트 앙상블 (Master)', desc: '화려한 기술과 빠른 비트' }
-                                        ].map(l => (
+                                        {[{ lv: 1, title: 'Lv.1 심장 박동' }, { lv: 2, title: 'Lv.2 리듬 조율' }, { lv: 3, title: 'Lv.3 퍼펙트 앙상블' }].map(l => (
                                             <div key={l.lv} onClick={() => setLevel(l.lv)} className={`level-card p-4 rounded-2xl bg-slate-900 border-slate-800 ${level === l.lv ? 'level-active' : ''}`}>
                                                 <div className="font-bold text-sm text-white">{l.title}</div>
-                                                <div className="text-[11px] text-slate-500 mt-1">{l.desc}</div>
                                             </div>
                                         ))}
                                     </div>
                                 </section>
 
-                                <button onClick={generateRhythm} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-600 p-5 rounded-2xl font-black text-lg shadow-xl uppercase tracking-tighter">
-                                    {isAnalyzing ? "리듬 설계 중..." : "AI 비트 생성하기 ⚡"}
+                                <button onClick={generateRhythm} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-600 p-5 rounded-2xl font-black text-lg shadow-xl">
+                                    {isAnalyzing ? "AI 코치가 리듬 짜는 중..." : "AI 플로어 비트 생성 ✨"}
                                 </button>
                             </div>
                         )}
 
                         {step === 2 && (
                             <div className="space-y-6 animate-fadeIn pb-10">
-                                <div className="text-center glass-panel p-6 rounded-[2rem] border-orange-500/30">
-                                    <span className="bg-orange-600 text-[10px] px-3 py-1 rounded-full font-bold">LEVEL {level}</span>
-                                    <h2 className="text-xl font-bold mt-3">"{parsedData.intro}"</h2>
+                                <div className="youtube-box">
+                                    <iframe src={`https://www.youtube.com/embed?listType=search&list=${musicSearch}`} frameBorder="0" allowFullScreen className="w-full h-full"></iframe>
+                                </div>
+
+                                <div className="bounce-box p-4 rounded-2xl">
+                                    <span className="text-[10px] text-orange-500 font-bold uppercase tracking-tighter">Coach Guide</span>
+                                    <p className="text-sm font-bold mt-1 text-slate-200 leading-relaxed">"{parsedData.intro}"</p>
                                 </div>
 
                                 <div className="space-y-3">
                                     <div className="glass-panel p-5 rounded-2xl border-l-4 border-orange-500">
-                                        <h3 className="font-bold text-orange-400 text-sm mb-2">Team A (Bass)</h3>
-                                        <p className="text-slate-100 leading-relaxed text-sm">{parsedData.teamA}</p>
+                                        <h3 className="font-black text-orange-400 text-xs mb-2 uppercase tracking-widest">Team A (Floor Bounce)</h3>
+                                        <p className="text-white text-lg font-black">{parsedData.teamA}</p>
                                     </div>
                                     <div className="glass-panel p-5 rounded-2xl border-l-4 border-blue-500">
-                                        <h3 className="font-bold text-blue-400 text-sm mb-2">Team B (Snare)</h3>
-                                        <p className="text-slate-100 leading-relaxed text-sm">{parsedData.teamB}</p>
+                                        <h3 className="font-black text-blue-400 text-xs mb-2 uppercase tracking-widest">Team B (Hand / Pass)</h3>
+                                        <p className="text-white text-lg font-black">{parsedData.teamB}</p>
                                     </div>
                                     {level > 1 && (
                                         <div className="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
-                                            <h3 className="font-bold text-emerald-400 text-sm mb-2">Team C (High-Hat)</h3>
-                                            <p className="text-slate-100 leading-relaxed text-sm">{parsedData.teamC}</p>
+                                            <h3 className="font-black text-emerald-400 text-xs mb-2 uppercase tracking-widest">Team C (Skill)</h3>
+                                            <p className="text-white text-lg font-black">{parsedData.teamC}</p>
                                         </div>
                                     )}
                                 </div>
 
-                                <button onClick={() => setStep(3)} className="w-full bg-slate-800 p-4 rounded-xl font-bold mt-4">훈련 완료! 일지 작성 👉</button>
+                                <button onClick={() => setStep(3)} className="w-full bg-slate-800 p-5 rounded-2xl font-bold mt-4 border border-slate-700">활동 완료! 마음 기록 👉</button>
                             </div>
                         )}
 
                         {step === 3 && (
                             <div className="space-y-6 animate-fadeIn">
-                                <div className="text-center">
-                                    <h2 className="text-2xl font-title text-orange-400">마음 바운스 일지</h2>
-                                    <p className="text-slate-500 text-sm mt-1">오늘 우리의 호흡은 어땠나요?</p>
-                                </div>
-                                <textarea value={journal} onChange={e => setJournal(e.target.value)} className="w-full bg-slate-900 border border-slate-800 p-5 rounded-3xl text-white h-48 outline-none focus:border-orange-500" placeholder="함께 비트를 맞추며 느낀 감정을 적어주세요."></textarea>
+                                <h2 className="text-2xl font-title text-center text-orange-500 mt-10 tracking-tighter uppercase">Rhythm Journal</h2>
+                                <textarea value={journal} onChange={e => setJournal(e.target.value)} className="w-full bg-slate-900 border border-slate-700 p-5 rounded-3xl text-white h-48 focus:border-orange-500 outline-none" placeholder="강당 바닥을 울리며 느낀 우리의 에너지는 어땠나요?"></textarea>
                                 <button onClick={async () => {
                                     setIsAnalyzing(true);
-                                    const res = await callGemini(`학생이 쓴 리듬체육 일지야: ${journal}. 체육 코치로서 팀워크를 칭찬하는 다정한 답장 3문장 해줘.`);
-                                    setFeedback(res);
-                                    setStep(4);
-                                    setIsAnalyzing(false);
-                                }} disabled={!journal || isAnalyzing} className="w-full bg-orange-600 p-5 rounded-2xl font-bold">코치님께 전송 📮</button>
+                                    const res = await callGemini(`학생 일지: ${journal}. 체육 코치로서 팀의 에너지를 칭찬하는 다정한 답장 3문장 써줘.`);
+                                    setFeedback(res); setStep(4); setIsAnalyzing(false);
+                                }} disabled={!journal || isAnalyzing} className="w-full bg-orange-600 p-5 rounded-2xl font-bold shadow-xl">코치님께 제출 📮</button>
                             </div>
                         )}
 
                         {step === 4 && (
                             <div className="space-y-6 animate-fadeIn text-center">
-                                <div className="text-6xl mb-4">🏆</div>
-                                <h2 className="text-2xl font-title text-orange-400">Victory Message</h2>
-                                <div className="glass-panel p-8 rounded-[2.5rem] border-orange-500/20 text-left">
-                                    <p className="text-lg leading-relaxed italic text-slate-200">"{feedback}"</p>
+                                <div className="text-7xl mb-4 mt-10">🏆</div>
+                                <h2 className="text-2xl font-title text-orange-400 uppercase tracking-tighter">Victory Feedback</h2>
+                                <div className="glass-panel p-8 rounded-[2.5rem] text-left">
+                                    <p className="text-lg leading-relaxed italic text-slate-100 font-serif">"{feedback}"</p>
                                 </div>
-                                <button onClick={() => setStep(1)} className="w-full bg-slate-800 p-4 rounded-2xl font-bold">다음 레벨 도전!</button>
+                                <button onClick={() => setStep(1)} className="w-full bg-slate-800 p-4 rounded-2xl font-bold">새로운 음악 도전</button>
                             </div>
                         )}
                     </main>
-                    
-                    <footer className="absolute bottom-0 w-full p-4 bg-slate-950/80 backdrop-blur-md text-center border-t border-slate-900">
-                        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-tighter">© 2026 EAIM STUDIO | Sports Rhythm AI v3.0</p>
-                    </footer>
                 </div>
             );
         };

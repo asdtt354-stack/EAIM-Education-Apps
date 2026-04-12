@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 비트 & 볼</title>
+    <title>EAIM 비트 & 볼 v2.5</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #111827; color: #F3F4F6; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #0f172a; color: #f8fafc; }
         .font-title { font-family: 'Black Han Sans', sans-serif; }
-        .glass-panel { background: rgba(31, 41, 55, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(75, 85, 99, 0.4); }
-        .neon-border { box-shadow: 0 0 10px rgba(249, 115, 22, 0.5); border-color: #F97316; }
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @media print {
-            body { background: white; color: black; display: block; }
-            .print-hidden { display: none !important; }
-        }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .neon-border { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); border-color: #f97316; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @media print { .print-hidden { display: none !important; } }
     </style>
 </head>
 <body>
@@ -35,15 +32,19 @@
             
             const [sport, setSport] = useState('농구 🏀');
             const [beatStyle, setBeatStyle] = useState('힙합 (Boom Bap) 🎧');
+            const [customSong, setCustomSong] = useState(''); // 특정 곡명 입력 가능
             const [parsedData, setParsedData] = useState({ intro: '', teamA: '', teamB: '', teamC: '' });
             
             const [journal, setJournal] = useState('');
-            const [imagePreview, setImagePreview] = useState(null);
-            const [uploadedImage, setUploadedImage] = useState(null);
             const [teacherFeedback, setTeacherFeedback] = useState('');
 
-            const sports = ['농구 🏀', '배구 🏐', '축구 ⚽', '짐볼 🔵'];
-            const beats = ['힙합 (Boom Bap) 🎧', '빠른 댄스 (EDM) ⚡', '펑키 리듬 (Funky) 🎸', '응원가 비트 (March) 🥁'];
+            // 💡 장르별 추천 비트 음악 (샘플 주소 - 실제 수업 시 유튜브 링크 등으로 활용 가능)
+            const musicMap = {
+                '힙합 (Boom Bap) 🎧': 'https://www.youtube.com/results?search_query=Boom+Bap+Beat+90bpm',
+                '빠른 댄스 (EDM) ⚡': 'https://www.youtube.com/results?search_query=EDM+Background+Music+128bpm',
+                '펑키 리듬 (Funky) 🎸': 'https://www.youtube.com/results?search_query=Funk+Groove+Backing+Track',
+                '응원가 비트 (March) 🥁': 'https://www.youtube.com/results?search_query=Sports+March+Music'
+            };
 
             useEffect(() => {
                 const savedKey = localStorage.getItem('gemini_api_key_beat');
@@ -51,27 +52,19 @@
             }, []);
 
             const saveApiKey = () => {
-                if (apiKey.length < 10) return alert('API 키를 입력해주세요.');
+                if (apiKey.length < 10) return alert('API 키를 정확히 입력해주세요.');
                 localStorage.setItem('gemini_api_key_beat', apiKey.trim());
                 setStep(1);
             };
 
-            const callGemini = async (prompt, imageData = null) => {
+            const callGemini = async (prompt) => {
                 const cleanKey = apiKey.trim();
-                // 💡 디렉터님 환경에서 검증된 2.5-flash 엔진 적용!
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
-                
-                const contents = [{ parts: [{ text: prompt }] }];
-                if (imageData) {
-                    contents[0].parts.push({ inlineData: { data: imageData.data, mimeType: imageData.mimeType } });
-                }
-
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || '연결 오류');
                 return data.candidates[0].content.parts[0].text;
@@ -85,8 +78,18 @@
 
             const generateBeatMatrix = async () => {
                 setIsAnalyzing(true);
-                const prompt = `체육교사이자 안무가로서 '${sport}' 종목과 '${beatStyle}' 스타일을 결합한 4박자 바디 퍼커션 리듬을 짜주세요. 
-                [도입부], [A팀 리듬], [B팀 리듬], [C팀 리듬] 태그를 꼭 포함해서 작성해줘.`;
+                // 💡 곡 제목 유무에 따라 프롬프트를 다르게 구성 (자유로운 연결)
+                const songInfo = customSong ? `선택된 곡명: '${customSong}'` : `일반적인 '${beatStyle}' 스타일`;
+                const prompt = `당신은 체육교사 겸 리듬 안무가입니다.
+                종목: ${sport} / ${songInfo}
+                위 곡(혹은 스타일)의 4박자 비트에 완벽하게 어울리는 바디 퍼커션(공 튕기기 포함) 리듬을 짜주세요. 
+                특히 3개 팀이 서로 다른 역할을 하여 하나의 앙상블이 되도록 구성해야 합니다.
+                
+                [도입부] 선생님의 열정적인 한마디
+                [A팀 리듬] (베이스 역할 - 큰 움직임)
+                [B팀 리듬] (스네어 역할 - 박수나 캐치)
+                [C팀 리듬] (하이햇/기교 - 잔발이나 빠른 드리블)
+                형식대로 출력해줘.`;
 
                 try {
                     const text = await callGemini(prompt);
@@ -100,104 +103,125 @@
                 } catch (e) { alert('비트 생성 오류: ' + e.message); } finally { setIsAnalyzing(false); }
             };
 
-            const handleImageUpload = (e) => {
-                const file = e.target.files[0];
-                if(file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setUploadedImage({ data: reader.result.split(',')[1], mimeType: file.type });
-                        setImagePreview(reader.result);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-
-            const generateFeedback = async () => {
-                setIsAnalyzing(true);
-                setStep(4);
-                const prompt = `체육 선생님으로서 '${sport}' 바디 퍼커션을 마친 학생의 일지에 따뜻한 피드백을 써주세요.\n학생의 글: ${journal}\n에너지 넘치는 칭찬과 SEL 공감을 담아 3문장으로 작성해줘.`;
-                try {
-                    const text = await callGemini(prompt, uploadedImage);
-                    setTeacherFeedback(text);
-                } catch (e) { setTeacherFeedback('피드백 생성 오류: ' + e.message); } finally { setIsAnalyzing(false); }
-            };
-
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-gray-900 shadow-2xl flex flex-col relative overflow-hidden">
-                    <header className="bg-gray-950 p-4 flex justify-between items-center border-b border-gray-800 print-hidden">
-                        <h1 className="text-2xl font-title tracking-wider text-orange-500 italic">EAIM 비트 & 볼</h1>
-                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_beat'); setStep(0); window.location.reload(); }} className="text-xs text-gray-500 underline">키 재설정</button>}
+                <div className="max-w-md mx-auto min-h-screen bg-slate-900 shadow-2xl flex flex-col relative overflow-hidden">
+                    <header className="bg-slate-950 p-5 flex justify-between items-center border-b border-slate-800 print-hidden">
+                        <div className="flex flex-col">
+                            <h1 className="text-2xl font-title tracking-wider text-orange-500 italic">BEAT & BALL</h1>
+                            <span className="text-[10px] text-slate-500">Social Emotional Sports Learning</span>
+                        </div>
+                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_beat'); setStep(0); window.location.reload(); }} className="text-[10px] border border-slate-700 px-2 py-1 rounded text-slate-400">RESET</button>}
                     </header>
 
-                    <main className="flex-grow p-5 overflow-y-auto pb-24">
+                    <main className="flex-grow p-6 overflow-y-auto pb-24">
                         {step === 0 && (
-                            <div className="space-y-4 py-10 text-center animate-fadeIn">
-                                <h2 className="text-2xl font-bold text-orange-500 font-title">🔌 시스템 전원 연결</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full bg-gray-800 border p-4 rounded-xl text-white text-center" />
-                                <button onClick={saveApiKey} className="w-full bg-orange-600 text-white p-4 rounded-xl font-bold">체육관 입장</button>
+                            <div className="space-y-6 py-10 text-center animate-fadeIn">
+                                <div className="text-6xl mb-4">🏀</div>
+                                <h2 className="text-xl font-bold text-orange-500">AI 체육관 시스템 연결</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key 입력" className="w-full bg-slate-800 border-2 border-slate-700 p-4 rounded-2xl text-white text-center outline-none focus:border-orange-500" />
+                                <button onClick={saveApiKey} className="w-full bg-orange-600 text-white p-4 rounded-2xl font-bold shadow-lg">스마트 휘슬 불기</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-6 animate-fadeIn">
                                 <div className="text-center">
-                                    <h2 className="text-3xl font-title text-white">비트 세팅</h2>
-                                    <p className="text-gray-400 text-sm mt-2">종목과 음악을 고르면 AI가 앙상블을 짜줍니다.</p>
+                                    <h2 className="text-3xl font-title text-white">리듬 세팅</h2>
+                                    <p className="text-slate-400 text-sm mt-2">곡과 종목을 정하면 AI 코치가 비트를 짜줍니다.</p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {sports.map(s => <button key={s} onClick={() => setSport(s)} className={`p-3 rounded-xl border font-bold ${sport === s ? 'bg-orange-600 border-orange-400' : 'bg-gray-800 border-gray-700'}`}>{s}</button>)}
+                                
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-500 ml-1">🎵 오늘 사용할 곡 (선택사항)</label>
+                                        <input type="text" value={customSong} onChange={e => setCustomSong(e.target.value)} className="w-full bg-slate-800 p-4 rounded-xl text-white outline-none border border-slate-700 focus:border-blue-500" placeholder="예: BTS-Dynamite (비워두면 장르 기반)" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-500 ml-1">🏀 종목 & 비트 스타일</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {['농구 🏀', '배구 🏐', '축구 ⚽', '짐볼 🔵'].map(s => <button key={s} onClick={() => setSport(s)} className={`p-3 rounded-lg border text-sm font-bold ${sport === s ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{s}</button>)}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {Object.keys(musicMap).map(b => <button key={b} onClick={() => setBeatStyle(b)} className={`p-2 rounded-lg border text-[11px] font-bold ${beatStyle === b ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{b}</button>)}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {beats.map(b => <button key={b} onClick={() => setBeatStyle(b)} className={`p-3 rounded-xl border font-bold ${beatStyle === b ? 'bg-blue-600 border-blue-400' : 'bg-gray-800 border-gray-700'}`}>{b}</button>)}
-                                </div>
-                                <button onClick={generateBeatMatrix} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-5 rounded-2xl font-bold text-lg mt-4">
-                                    {isAnalyzing ? "AI 비트 제작 중..." : "AI 비트 생성하기 ⚡"}
+
+                                <button onClick={generateBeatMatrix} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-600 p-5 rounded-2xl font-bold text-lg shadow-xl hover:scale-95 transition-all">
+                                    {isAnalyzing ? "AI 리듬 설계 중..." : "AI 앙상블 비트 생성 ⚡"}
                                 </button>
                             </div>
                         )}
 
                         {step === 2 && (
-                            <div className="space-y-5 animate-fadeIn">
-                                <div className="text-center bg-gray-800 p-6 rounded-3xl border border-gray-700">
-                                    <h2 className="text-xl font-bold text-white">{sport} X {beatStyle}</h2>
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="text-center bg-slate-800 p-6 rounded-[2rem] border-2 border-orange-500/30 neon-border">
+                                    <h2 className="text-xl font-bold text-white">{customSong || beatStyle}</h2>
                                     <p className="text-sm text-orange-400 mt-2 font-hand">"{parsedData.intro}"</p>
                                 </div>
-                                <div className="space-y-3">
-                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-l-orange-500"><h3 className="font-bold text-orange-400">A팀 (베이스)</h3><p>{parsedData.teamA}</p></div>
-                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-l-blue-500"><h3 className="font-bold text-blue-400">B팀 (스네어)</h3><p>{parsedData.teamB}</p></div>
-                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-l-emerald-500"><h3 className="font-bold text-emerald-400">C팀 (기교)</h3><p>{parsedData.teamC}</p></div>
+
+                                {/* 💡 음악 연결 섹션 추가 */}
+                                <div className="bg-blue-900/20 p-4 rounded-2xl border border-blue-500/30 text-center space-y-3">
+                                    <p className="text-xs text-blue-300 font-bold">📢 [선생님 가이드] 비트 음악을 연결하세요</p>
+                                    <a href={musicMap[beatStyle]} target="_blank" className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg animate-pulse">
+                                        🎵 추천 비트 음악 재생 (유튜브)
+                                    </a>
                                 </div>
-                                <button onClick={() => setStep(3)} className="w-full bg-indigo-600 p-4 rounded-xl font-bold">활동 일지 쓰기 ✍️</button>
+
+                                <div className="space-y-3">
+                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-orange-500">
+                                        <h3 className="font-bold text-orange-400 mb-1">Team A (Bass)</h3>
+                                        <p className="text-slate-100 text-sm">{parsedData.teamA}</p>
+                                    </div>
+                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-blue-500">
+                                        <h3 className="font-bold text-blue-400 mb-1">Team B (Snare)</h3>
+                                        <p className="text-slate-100 text-sm">{parsedData.teamB}</p>
+                                    </div>
+                                    <div className="glass-panel p-4 rounded-2xl border-l-4 border-emerald-500">
+                                        <h3 className="font-bold text-emerald-400 mb-1">Team C (High-Hat)</h3>
+                                        <p className="text-slate-100 text-sm">{parsedData.teamC}</p>
+                                    </div>
+                                </div>
+                                
+                                <button onClick={() => setStep(3)} className="w-full bg-slate-700 p-4 rounded-xl font-bold">활동 완료! 일지 쓰기 👉</button>
                             </div>
                         )}
 
                         {step === 3 && (
                             <div className="space-y-6 animate-fadeIn">
-                                <div className="p-4 bg-gray-800 rounded-xl">
-                                    <label className="text-sm font-bold text-gray-300 block mb-2">📸 활동 사진 (선택)</label>
-                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="text-xs text-gray-400 w-full" />
-                                    {imagePreview && <img src={imagePreview} className="mt-2 rounded-lg max-h-40 w-full object-cover" />}
-                                </div>
-                                <textarea value={journal} onChange={e => setJournal(e.target.value)} className="w-full bg-gray-800 p-4 rounded-xl h-32" placeholder="오늘 활동하며 느낀 감정을 적어주세요."></textarea>
-                                <button onClick={generateFeedback} disabled={!journal || isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 rounded-xl font-bold">
-                                    {isAnalyzing ? "코치님이 읽는 중..." : "AI 코치님께 제출 📝"}
+                                <h2 className="text-2xl font-title text-center text-white">마음 바운스 일지</h2>
+                                <textarea value={journal} onChange={e => setJournal(e.target.value)} className="w-full bg-slate-800 border border-slate-700 p-4 rounded-2xl text-white h-40 outline-none focus:border-orange-500" placeholder="함께 비트를 맞추며 어떤 기분이 들었나요?"></textarea>
+                                <button onClick={async () => {
+                                    setIsAnalyzing(true); setStep(4);
+                                    const prompt = `체육 코치로서 학생의 감정 일지에 대해 파이팅 넘치는 칭찬을 해주세요.\n학생의 글: ${journal}\n스포츠맨십과 팀워크를 강조하며 다정한 3문장으로 써줘.`;
+                                    try { const text = await callGemini(prompt); setTeacherFeedback(text); } 
+                                    catch(e) { setTeacherFeedback('피드백 생성 오류'); } finally { setIsAnalyzing(false); }
+                                }} disabled={!journal || isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-5 rounded-2xl font-bold">
+                                    AI 코치님께 일지 제출 📝
                                 </button>
                             </div>
                         )}
 
                         {step === 4 && (
                             <div className="space-y-6 animate-fadeIn">
-                                <h2 className="text-2xl font-title text-center text-orange-400">🔥 코치님의 피드백</h2>
-                                <div className="bg-gray-800 p-6 rounded-3xl border-2 border-orange-500/50 min-h-[200px]">
-                                    {isAnalyzing ? "작성 중..." : <div className="whitespace-pre-wrap">{teacherFeedback}</div>}
+                                <h2 className="text-2xl font-title text-center text-orange-400">Victory Feedback</h2>
+                                <div className="bg-slate-800 p-8 rounded-[2rem] border-2 border-orange-500/50 min-h-[250px] shadow-2xl">
+                                    {isAnalyzing ? (
+                                        <div className="text-center py-20 text-orange-300 animate-pulse font-bold">코치님이 답변을 작성 중입니다...</div>
+                                    ) : (
+                                        <div className="whitespace-pre-wrap text-lg leading-relaxed italic text-slate-100 font-hand">{teacherFeedback}</div>
+                                    )}
                                 </div>
                                 <div className="flex gap-2 print-hidden">
-                                    <button onClick={() => window.print()} className="flex-1 bg-gray-600 p-3 rounded-xl font-bold">인쇄</button>
-                                    <button onClick={() => setStep(1)} className="flex-1 bg-orange-600 p-3 rounded-xl font-bold">새 비트</button>
+                                    <button onClick={() => window.print()} className="flex-1 bg-slate-700 p-4 rounded-xl font-bold">인쇄</button>
+                                    <button onClick={() => setStep(1)} className="flex-1 bg-orange-600 p-4 rounded-xl font-bold">새 게임 시작</button>
                                 </div>
                             </div>
                         )}
                     </main>
+                    <footer className="p-4 text-center text-[10px] text-slate-600 border-t border-slate-800">
+                        &copy; 2026 EAIM Studio | Social-Emotional Rhythm AI
+                    </footer>
                 </div>
             );
         };

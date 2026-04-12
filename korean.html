@@ -67,8 +67,8 @@
 
             const callGemini = async (prompt) => {
                 const cleanKey = apiKey.trim();
-                // 💡 최신 2.0 엔진과 v1beta 통신망으로 완벽 교체 완료! (에러 차단)
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`;
+                // 💡 디렉터님 환경에서 검증된 2.5-flash 엔진 적용!
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -81,7 +81,6 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            // 💡 끊어졌던 시 검색 함수 복구
             const handleFetchPoem = async () => {
                 if (!searchQuery) return alert("시인이나 시 제목을 입력해주세요.");
                 setIsAnalyzing(true);
@@ -94,40 +93,31 @@
                 } catch (e) { alert('시를 불러오는 중 오류가 발생했습니다: ' + e.message); } finally { setIsAnalyzing(false); }
             };
 
-            // 💡 끊어졌던 내 감정 시 창작 함수 복구
             const generateMyPoem = async () => {
                 if(!emotionWord || !emotionColor || !emotionName) return alert("감정의 색깔과 이름을 모두 정해주세요!");
                 setIsAnalyzing(true);
                 setStep(4);
                 try {
                     const prompt = `당신은 따뜻한 국어 교사이자 시인입니다. 학생이 자신의 감정을 탐색하고 작성한 아래 내용을 바탕으로, 한 편의 아름답고 공감 가는 자유시를 작성해주세요.
-                    - 감정 단어: ${emotionWord}
-                    - 감정 색깔: ${emotionColor}
-                    - 느끼는 상황: ${situation}
-                    - 신체 반응: ${bodyPart}이/가 ${bodySensation}
-                    - 감정의 모양: ${appearance}
-                    - 감정과의 관계: ${relationship}
-                    - 내가 지어준 감정의 새 이름: ${emotionName}
-                    
-                    이 요소들이 자연스럽게 비유와 상징으로 녹아든 시를 써주세요. 학생의 감정을 있는 그대로 수용하고 위로하는 따뜻한 톤(SEL)을 유지해주세요.`;
+                    - 감정 단어: ${emotionWord} / 색깔: ${emotionColor} / 상황: ${situation}
+                    - 신체 반응: ${bodyPart}이/가 ${bodySensation} / 모양: ${appearance}
+                    - 관계: ${relationship} / 감정 이름: ${emotionName}
+                    위 요소들이 비유와 상징으로 녹아든 SEL 기반 위로의 시를 써주세요.`;
                     
                     const text = await callGemini(prompt);
                     setFinalResult(text);
                 } catch (e) { setFinalResult('시 창작 중 오류가 발생했습니다: ' + e.message); } finally { setIsAnalyzing(false); }
             };
 
-            // 💡 끊어졌던 짝꿍에게 공감 편지 쓰기 함수 복구
             const generateLetter = async () => {
                 if(!friendName || !friendPoem) return alert("친구 이름과 친구의 시를 입력해주세요!");
                 setIsAnalyzing(true);
                 setStep(6);
                 try {
-                    const prompt = `당신은 공감 능력이 뛰어난 따뜻한 멘토입니다. 짝꿍 '${friendName}'(이)가 쓴 아래의 감정 시를 읽고, 친구의 마음에 깊이 공감하고 위로와 응원을 건네는 다정한 편지를 3~4문장으로 작성해주세요. (중학생 말투로 따뜻하게 작성)
-                    친구의 시: ${friendPoem}`;
-                    
+                    const prompt = `당신은 공감 능력이 뛰어난 멘토입니다. 짝꿍 '${friendName}'이 쓴 다음 감정 시를 읽고 깊이 공감하는 다정한 응원 편지를 3문장 내외로 작성해주세요: ${friendPoem}`;
                     const text = await callGemini(prompt);
                     setDraftLetter(text);
-                } catch (e) { setDraftLetter('편지 작성 중 오류가 발생했습니다: ' + e.message); } finally { setIsAnalyzing(false); }
+                } catch (e) { setDraftLetter('편지 작성 중 오류: ' + e.message); } finally { setIsAnalyzing(false); }
             };
 
             return (
@@ -135,7 +125,7 @@
                     {step === 0 && (
                         <div className="text-center space-y-6 print-hidden">
                             <h2 className="font-bold text-2xl font-hand text-indigo-600">EAIM 감정 시인 연결</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="eaim-input" placeholder="발급받은 API 키를 입력하세요" />
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="eaim-input" placeholder="API 키를 입력하세요" />
                             <button onClick={saveApiKey} className="eaim-btn-main shadow-lg">마음의 문 열기 📖</button>
                         </div>
                     )}
@@ -149,12 +139,9 @@
 
                             {step === 1 && (
                                 <div className="space-y-6 animate-fade-in text-center print-hidden">
-                                    <h2 className="text-2xl font-hand text-slate-800">1. 시와 만나기</h2>
-                                    <p className="text-sm text-slate-500">읽고 싶은 시인이나 시 제목을 검색해보세요.</p>
-                                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="eaim-input" placeholder="예: 윤동주 별 헤는 밤" />
-                                    <button onClick={handleFetchPoem} disabled={isAnalyzing} className="eaim-btn-main mt-4">
-                                        {isAnalyzing ? "시를 찾는 중..." : "시 불러오기 ✨"}
-                                    </button>
+                                    <h2 className="text-2xl font-hand">1. 시와 만나기</h2>
+                                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="eaim-input" placeholder="시인이나 시 제목 검색" />
+                                    <button onClick={handleFetchPoem} disabled={isAnalyzing} className="eaim-btn-main mt-4">시 불러오기 ✨</button>
                                 </div>
                             )}
 
@@ -169,91 +156,46 @@
                             )}
 
                             {step === 3 && (
-                                <div className="space-y-6 animate-fade-in print-hidden">
-                                    <h2 className="text-2xl font-hand text-center text-slate-800">2. 내 마음 해부하기</h2>
-                                    
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="text-sm font-bold text-slate-500">1. 지금 내 감정은?</label>
-                                            <div className="flex flex-wrap gap-2 mt-2">
-                                                {words.map(w => <button key={w} onClick={() => setEmotionWord(w)} className={`px-3 py-1.5 rounded-full text-sm transition-all ${emotionWord === w ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-indigo-100'}`}>{w}</button>)}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="text-sm font-bold text-slate-500">2. 이 감정의 색깔은?</label>
-                                            <div className="flex gap-2 mt-2">
-                                                {colors.map(c => <button key={c.name} onClick={() => setEmotionColor(c.name)} style={{backgroundColor: c.code}} className={`w-10 h-10 rounded-full shadow-sm transition-all ${emotionColor === c.name ? 'ring-4 ring-offset-2 ring-indigo-400 scale-110' : 'hover:scale-105'}`} title={c.name}></button>)}
-                                            </div>
-                                        </div>
-
-                                        <input type="text" value={situation} onChange={e => setSituation(e.target.value)} className="eaim-input text-sm" placeholder="언제 이 감정을 느끼나요? (예: 혼자 남겨졌을 때)" />
-                                        <div className="flex gap-2">
-                                            <input type="text" value={bodyPart} onChange={e => setBodyPart(e.target.value)} className="eaim-input text-sm w-1/2" placeholder="신체 부위 (예: 가슴이)" />
-                                            <input type="text" value={bodySensation} onChange={e => setBodySensation(e.target.value)} className="eaim-input text-sm w-1/2" placeholder="감각 (예: 쿵쾅거린다)" />
-                                        </div>
-                                        <input type="text" value={appearance} onChange={e => setAppearance(e.target.value)} className="eaim-input text-sm" placeholder="감정의 모양은? (예: 뾰족한 가시 모양)" />
-                                        <input type="text" value={relationship} onChange={e => setRelationship(e.target.value)} className="eaim-input text-sm" placeholder="이 감정에게 해주고 싶은 말은? (예: 안아주고 싶다)" />
-                                        <input type="text" value={emotionName} onChange={e => setEmotionName(e.target.value)} className="eaim-input border-indigo-400 font-bold" placeholder="✨ 이 감정의 새로운 이름 지어주기" />
+                                <div className="space-y-4 animate-fade-in print-hidden">
+                                    <h2 className="text-2xl font-hand text-center">2. 내 마음 해부하기</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {words.map(w => <button key={w} onClick={() => setEmotionWord(w)} className={`px-3 py-1 rounded-full text-sm ${emotionWord === w ? 'bg-indigo-500 text-white' : 'bg-slate-100'}`}>{w}</button>)}
                                     </div>
-
-                                    <button onClick={generateMyPoem} className="eaim-btn-main">AI와 함께 시 완성하기 🪄</button>
+                                    <div className="flex gap-2">
+                                        {colors.map(c => <button key={c.name} onClick={() => setEmotionColor(c.name)} style={{backgroundColor: c.code}} className={`w-8 h-8 rounded-full ${emotionColor === c.name ? 'ring-4 ring-indigo-300' : ''}`}></button>)}
+                                    </div>
+                                    <input type="text" value={situation} onChange={e => setSituation(e.target.value)} className="eaim-input text-sm" placeholder="상황" />
+                                    <input type="text" value={emotionName} onChange={e => setEmotionName(e.target.value)} className="eaim-input border-indigo-400 font-bold" placeholder="감정의 새 이름" />
+                                    <button onClick={generateMyPoem} className="eaim-btn-main">AI 시 완성 🪄</button>
                                 </div>
                             )}
 
                             {step === 4 && (
                                 <div className="space-y-6 animate-fade-in print-area">
                                     <h2 className="text-3xl font-hand text-center text-indigo-600">나의 감정 시</h2>
-                                    <div className="bg-white p-8 rounded-3xl border-2 border-indigo-100 min-h-[300px] shadow-sm">
-                                        {isAnalyzing ? (
-                                            <div className="text-center text-indigo-400 font-bold mt-20">시인이 당신의 마음을 시로 엮고 있습니다...</div>
-                                        ) : (
-                                            <div className="whitespace-pre-wrap text-slate-700 text-lg leading-loose font-serif text-center">
-                                                {finalResult}
-                                            </div>
-                                        )}
+                                    <div className="bg-white p-8 rounded-3xl border-2 border-indigo-100 min-h-[300px] text-center whitespace-pre-wrap font-serif">
+                                        {isAnalyzing ? "작성 중..." : finalResult}
                                     </div>
-                                    {!isAnalyzing && (
-                                        <div className="flex gap-2 print-hidden">
-                                            <button onClick={() => window.print()} className="flex-1 eaim-btn-main bg-slate-400">🖨️ 인쇄</button>
-                                            <button onClick={() => setStep(5)} className="flex-1 eaim-btn-main bg-emerald-500">💌 짝꿍에게 편지 쓰기</button>
-                                        </div>
-                                    )}
+                                    {!isAnalyzing && <button onClick={() => setStep(5)} className="eaim-btn-main bg-emerald-500 print-hidden">💌 짝꿍 편지 쓰기</button>}
                                 </div>
                             )}
 
                             {step === 5 && (
-                                <div className="space-y-6 animate-fade-in print-hidden">
-                                    <h2 className="text-2xl font-hand text-center text-slate-800">3. 공감과 위로의 편지</h2>
-                                    <p className="text-sm text-slate-500 text-center">짝꿍이 쓴 시를 읽고 따뜻한 답장을 보내주세요.</p>
-                                    
-                                    <input type="text" value={friendName} onChange={e => setFriendName(e.target.value)} className="eaim-input" placeholder="짝꿍의 이름은?" />
-                                    <textarea value={friendPoem} onChange={e => setFriendPoem(e.target.value)} className="eaim-input h-32 text-left" placeholder="짝꿍이 쓴 시를 여기에 붙여넣어 주세요."></textarea>
-                                    
-                                    <button onClick={generateLetter} disabled={isAnalyzing} className="eaim-btn-main bg-emerald-500">
-                                        {isAnalyzing ? "편지 작성 중..." : "AI와 함께 공감 편지 쓰기 💌"}
-                                    </button>
+                                <div className="space-y-4 animate-fade-in print-hidden">
+                                    <h2 className="text-2xl font-hand text-center">3. 공감 편지</h2>
+                                    <input type="text" value={friendName} onChange={e => setFriendName(e.target.value)} className="eaim-input" placeholder="짝꿍 이름" />
+                                    <textarea value={friendPoem} onChange={e => setFriendPoem(e.target.value)} className="eaim-input h-32" placeholder="짝꿍의 시를 복사해서 넣어주세요"></textarea>
+                                    <button onClick={generateLetter} className="eaim-btn-main bg-emerald-500">편지 작성 💌</button>
                                 </div>
                             )}
 
                             {step === 6 && (
                                 <div className="space-y-6 animate-fade-in print-area">
-                                    <h2 className="text-3xl font-hand text-center text-emerald-600">💌 {friendName}에게 보내는 편지</h2>
-                                    <div className="bg-emerald-50 p-8 rounded-3xl border-2 border-emerald-100 min-h-[250px] shadow-sm">
-                                        {isAnalyzing ? (
-                                            <div className="text-center text-emerald-400 font-bold mt-20">따뜻한 마음을 담아 편지를 쓰는 중...</div>
-                                        ) : (
-                                            <div className="whitespace-pre-wrap text-slate-700 text-lg leading-loose font-hand">
-                                                {draftLetter}
-                                            </div>
-                                        )}
+                                    <h2 className="text-3xl font-hand text-center text-emerald-600">💌 {friendName}에게</h2>
+                                    <div className="bg-emerald-50 p-8 rounded-3xl border-2 border-emerald-100 min-h-[250px] font-hand text-xl">
+                                        {isAnalyzing ? "작성 중..." : draftLetter}
                                     </div>
-                                    {!isAnalyzing && (
-                                        <div className="flex gap-2 print-hidden">
-                                            <button onClick={() => window.print()} className="flex-1 eaim-btn-main bg-slate-400">🖨️ 편지 인쇄</button>
-                                            <button onClick={() => { setStep(1); setFinalResult(''); setDraftLetter(''); setEmotionWord(''); setEmotionColor(''); }} className="flex-1 eaim-btn-main">처음으로 돌아가기</button>
-                                        </div>
-                                    )}
+                                    <button onClick={() => window.print()} className="eaim-btn-main bg-slate-400 print-hidden">🖨️ 인쇄</button>
                                 </div>
                             )}
                         </div>

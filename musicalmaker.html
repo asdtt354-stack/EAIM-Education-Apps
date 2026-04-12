@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 뮤지컬 메이커 v5.2</title>
+    <title>EAIM 뮤지컬 메이커 v5.3</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,17 +11,17 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #1a0509; color: #FFF; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #1a0509; color: #FFF; margin: 0; padding: 0; overflow-x: hidden; }
         .font-drama { font-family: 'Gowun Batang', serif; }
         .font-show { font-family: 'Black Han Sans', sans-serif; }
         .stage-curtain { background: linear-gradient(to bottom, #9F1239, #881337); border-bottom: 4px solid #FCD34D; }
         .ticket-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: 0.3s; outline: none; }
         .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
         .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.5rem; font-weight: bold; font-size: 0.75rem; padding: 0.5rem 0.8rem; }
+        .cast-suggest-btn { background: rgba(252, 211, 77, 0.1); border: 1px solid #FCD34D; color: #FCD34D; font-size: 0.7rem; padding: 4px 10px; border-radius: 99px; }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         pre { white-space: pre-wrap; line-height: 1.8; color: #FDE68A; }
-        .cast-suggest-btn { background: rgba(252, 211, 77, 0.1); border: 1px solid #FCD34D; color: #FCD34D; font-size: 0.7rem; padding: 4px 10px; border-radius: 99px; }
     </style>
 </head>
 <body>
@@ -31,7 +31,7 @@
         const { useState, useEffect } = React;
 
         const App = () => {
-            const [step, setStep] = useState(0);
+            const [step, setStep] = useState(0); 
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [isGenerating, setIsGenerating] = useState(false);
@@ -39,7 +39,7 @@
             const [topic, setTopic] = useState('');
             const [place, setPlace] = useState('');
             const [title, setTitle] = useState('');
-            const [castList, setCastList] = useState([{ role: '주인공', desc: '밝고 용감함' }]);
+            const [castList, setCastList] = useState([{ role: '주인공', desc: '특징을 입력하세요' }]);
             const [finalScript, setFinalScript] = useState('');
 
             useEffect(() => {
@@ -61,7 +61,7 @@
             const generateAutoTitle = async () => {
                 if (!topic || !place) return alert("주제와 배경을 먼저 입력해주세요!");
                 setIsGenerating(true);
-                const prompt = `뮤지컬 작가로서 주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. 제목만 출력해.`;
+                const prompt = `뮤지컬 작가로서 주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. 제목만 텍스트로 출력해.`;
                 try {
                     const result = await callGemini(prompt);
                     setTitle(result.trim().replace(/["']/g, ""));
@@ -69,20 +69,16 @@
                 finally { setIsGenerating(false); }
             };
 
-            // 💡 AI 캐릭터 추천 함수
             const suggestCharacters = async () => {
-                if (!title) return alert("제목이 먼저 정해져야 캐릭터를 추천할 수 있습니다!");
+                if (!title) return alert("제목이 확정되어야 캐릭터 추천이 가능합니다!");
                 setIsGenerating(true);
-                const prompt = `뮤지컬 제목 '${title}' (주제: ${topic})에 어울리는 조연 캐릭터 3명을 추천해줘. 
-                각 캐릭터는 [역할명: 특징] 형식으로 짧게 작성해줘. 
-                예: [단짝친구: 호기심이 많고 덜렁대지만 의리 있음]
-                불필요한 설명 없이 캐릭터 리스트만 3줄로 출력해줘.`;
-                
+                const prompt = `뮤지컬 제목 '${title}' (주제: ${topic})에 어울리는 개성 넘치는 조연 캐릭터 3명을 추천해줘. 
+                각 캐릭터는 [역할명: 특징] 형식으로 짧게 작성해줘. 불필요한 설명 없이 3줄로만 출력해줘.`;
                 try {
                     const result = await callGemini(prompt);
                     const lines = result.split('\n').filter(l => l.includes(':'));
                     const newCasts = lines.map(line => {
-                        const [role, desc] = line.replace(/[\[\]]/g, "").split(':');
+                        const [role, desc] = line.replace(/[\[\]\d.]/g, "").split(':');
                         return { role: role.trim(), desc: desc.trim() };
                     });
                     setCastList([...castList, ...newCasts]);
@@ -93,22 +89,23 @@
             const generateAIScript = async () => {
                 setIsAnalyzing(true);
                 setStep(3);
-                const prompt = `당신은 25년 경력 뮤지컬 연출가입니다. [제목: ${title} / 주제: ${topic} / 배경: ${place}] 뮤지컬 극본을 집필하세요. 
+                const prompt = `당신은 베테랑 뮤지컬 연출가입니다. [제목: ${title} / 주제: ${topic} / 배경: ${place}] 뮤지컬 극본을 집필하세요. 
                 캐스팅: ${castList.map(c=>c.role + '('+c.desc+')').join(', ')}
-                1~4막 구성으로 [배경연출/대사/가사]를 사회정서학습(SEL) 관점에서 감동적으로 써줘.`;
+                구조: 도입, 전개, 위기, 결말 4막 구조.
+                막별로 무대 연출 가이드, 주요 대사, 주제곡(넘버) 가사를 사회정서학습(SEL) 관점에서 감동적으로 써줘.`;
                 try {
                     const text = await callGemini(prompt);
                     setFinalScript(text);
-                } catch (e) { alert('집필 오류'); setStep(1); }
+                } catch (e) { alert('집필 중 오류가 발생했습니다.'); setStep(1); }
                 finally { setIsAnalyzing(false); }
             };
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-[#1a0509] flex flex-col relative border-x-2 border-[#4a0410] animate-fadeIn pb-10 shadow-2xl">
-                    <header className="stage-curtain p-6 flex justify-between items-center no-print">
+                <div className="max-w-md mx-auto min-h-screen bg-[#1a0509] flex flex-col relative border-x-2 border-[#4a0410] shadow-2xl">
+                    <header className="stage-curtain p-6 flex justify-between items-center no-print shadow-xl">
                         <div onClick={() => window.location.reload()} className="text-[#FCD34D] cursor-pointer"><i className="fa-solid fa-masks-theater"></i></div>
-                        <h1 className="text-xl text-[#FCD34D] font-show uppercase tracking-tighter">EAIM Musical Creator</h1>
-                        <div onClick={() => { localStorage.removeItem('gemini_api_key_musical'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer text-[10px] border border-[#FCD34D] px-2 py-1 rounded">RESET</div>
+                        <h1 className="text-xl text-[#FCD34D] font-show uppercase tracking-tighter">EAIM Musical Maker</h1>
+                        <div onClick={() => { localStorage.removeItem('gemini_api_key_musical'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer text-[10px] border border-[#FCD34D] px-2 py-1 rounded">KEY RESET</div>
                     </header>
 
                     <main className="flex-grow p-6 overflow-y-auto">
@@ -116,30 +113,30 @@
                             <div className="space-y-6 py-10 text-center animate-fadeIn">
                                 <div className="text-6xl mb-4">🎭</div>
                                 <h2 className="text-xl font-bold text-[#FCD34D]">AI 작가실 입장</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full p-4 rounded-xl ticket-input text-center" />
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key를 입력하세요" className="w-full p-4 rounded-xl ticket-input text-center" />
                                 <button onClick={() => { localStorage.setItem('gemini_api_key_musical', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-4 rounded-xl font-bold">등록하기</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-6 animate-fadeIn">
-                                <div className="space-y-5 bg-white/5 p-6 rounded-3xl border border-white/10 shadow-inner">
+                                <div className="space-y-5 bg-white/5 p-6 rounded-3xl border border-white/10">
                                     <div className="space-y-2">
-                                        <label className="text-xs text-rose-300 font-bold ml-1">💡 작품 주제</label>
-                                        <input className="w-full p-4 rounded-2xl ticket-input text-sm" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 우정, 환경보호, 나눔" />
+                                        <label className="text-xs text-rose-300 font-bold ml-1">💡 작품의 주제</label>
+                                        <input className="w-full p-4 rounded-2xl ticket-input text-sm" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 용기, 사계절의 변화, 인공지능" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs text-rose-300 font-bold ml-1">📍 공간 배경</label>
-                                        <input className="w-full p-4 rounded-2xl ticket-input text-sm" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 초등학교 교실, 마법의 숲" />
+                                        <input className="w-full p-4 rounded-2xl ticket-input text-sm" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 2050년 미래 학교, 숲속 비밀 기지" />
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="text-xs text-amber-300 font-bold ml-1">📜 최종 제목</label>
-                                            <button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn shadow-lg">
-                                                {isGenerating ? "..." : "AI 추천 ✨"}
+                                            <button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn">
+                                                {isGenerating ? "추천중..." : "AI 제목 추천 ✨"}
                                             </button>
                                         </div>
-                                        <input className="w-full p-4 rounded-2xl ticket-input text-sm border-yellow-500/20 font-bold" value={title} onChange={e=>setTitle(e.target.value)} placeholder="직접 입력하거나 버튼 클릭" />
+                                        <input className="w-full p-4 rounded-2xl ticket-input text-sm border-yellow-500/20 font-bold" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하거나 추천받으세요" />
                                     </div>
                                 </div>
                                 <button onClick={()=>setStep(2)} className="w-full bg-gradient-to-r from-rose-800 to-rose-950 py-5 rounded-2xl font-bold shadow-xl">캐스팅 보드로 이동 👉</button>
@@ -151,20 +148,17 @@
                                 <div className="flex justify-between items-center mb-2">
                                     <h2 className="font-bold text-[#FCD34D]">캐스팅 보드</h2>
                                     <button onClick={suggestCharacters} disabled={isGenerating} className="cast-suggest-btn animate-pulse">
-                                        {isGenerating ? "생성중..." : "AI 캐릭터 추천 ✨"}
+                                        AI 캐릭터 추천 ✨
                                     </button>
                                 </div>
-                                
                                 {castList.map((c, i) => (
-                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex gap-3 border border-white/5 shadow-sm animate-fadeIn">
-                                        <input className="w-1/3 bg-transparent border-b border-rose-900 text-yellow-300 font-bold text-sm outline-none" value={c.role} placeholder="역할" onChange={e=>{const n=[...castList]; n[i].role=e.target.value; setCastList(n);}} />
-                                        <input className="flex-1 bg-transparent border-b border-rose-900 text-xs text-white outline-none" value={c.desc} placeholder="특징" onChange={e=>{const n=[...castList]; n[i].desc=e.target.value; setCastList(n);}} />
+                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex gap-3 border border-white/5 animate-fadeIn">
+                                        <input className="w-1/3 bg-transparent border-b border-rose-900 text-yellow-300 font-bold text-sm outline-none" value={c.role} placeholder="배역" onChange={e=>{const n=[...castList]; n[i].role=e.target.value; setCastList(n);}} />
+                                        <input className="flex-1 bg-transparent border-b border-rose-900 text-xs text-white outline-none" value={c.desc} placeholder="성격 및 특징" onChange={e=>{const n=[...castList]; n[i].desc=e.target.value; setCastList(n);}} />
                                         <button onClick={()=>setCastList(castList.filter((_,idx)=>idx!==i))} className="text-rose-900"><i className="fa-solid fa-circle-minus"></i></button>
                                     </div>
                                 ))}
-                                
                                 <button onClick={()=>setCastList([...castList, {role:'', desc:''}])} className="w-full py-3 border-2 border-dashed border-rose-900/50 text-rose-700 text-xs rounded-2xl">+ 배역 추가</button>
-                                
                                 <div className="flex gap-3 pt-6">
                                     <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-4 rounded-2xl text-xs">이전</button>
                                     <button onClick={generateAIScript} className="flex-[2] bg-[#9F1239] py-4 rounded-2xl font-bold shadow-xl">집필 시작 ✨</button>
@@ -177,29 +171,33 @@
                                 {isAnalyzing ? (
                                     <div className="text-center py-24">
                                         <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-[#FCD34D] mx-auto mb-6"></div>
-                                        <p className="text-[#FCD34D] font-drama animate-pulse italic">디렉터 박성애 님을 위해<br/>최고의 극본을 집필 중입니다...</p>
+                                        {/* 💡 핵심 수정: 성함 제거 후 범용 문구로 변경 */}
+                                        <p className="text-[#FCD34D] font-drama animate-pulse italic">디렉터님을 위한 최고의 극본을<br/>정성껏 집필하고 있습니다...</p>
                                     </div>
                                 ) : (
                                     <div className="print-area">
                                         <div className="bg-white p-8 rounded-3xl text-black shadow-2xl">
                                             <div className="flex justify-between items-center mb-6 no-print">
-                                                <span className="text-[10px] font-bold text-rose-800 uppercase tracking-widest">Musical Script</span>
-                                                <button onClick={() => window.print()} className="bg-black text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">인쇄하기</button>
+                                                <span className="text-[10px] font-bold text-rose-800 uppercase tracking-widest">Final Script</span>
+                                                <button onClick={() => window.print()} className="bg-black text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">인쇄하기</button>
                                             </div>
-                                            <h2 className="text-xl font-show mb-6 text-center border-b-2 border-black pb-4">{title}</h2>
+                                            <h2 className="text-2xl font-show mb-6 text-center border-b-2 border-black pb-4 uppercase tracking-tighter">{title}</h2>
                                             <pre className="font-drama text-[13px] leading-relaxed text-gray-800">
                                                 {finalScript}
                                             </pre>
                                         </div>
                                         <div className="mt-8 flex gap-3 no-print">
-                                            <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-4 rounded-2xl text-xs font-bold">새 기획</button>
-                                            <button onClick={()=>{ navigator.clipboard.writeText(finalScript); alert('복사되었습니다!'); }} className="flex-1 bg-green-700 py-4 rounded-2xl text-xs font-bold">대본 복사</button>
+                                            <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-4 rounded-2xl text-xs font-bold">새로 기획하기</button>
+                                            <button onClick={()=>{ navigator.clipboard.writeText(finalScript); alert('대본 전체 내용이 복사되었습니다!'); }} className="flex-1 bg-green-700 py-4 rounded-2xl text-xs font-bold">대본 전체 복사</button>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         )}
                     </main>
+                    <footer className="p-4 text-center text-[10px] text-gray-600 opacity-30 no-print">
+                        &copy; 2026 EAIM Studio | Creative Musical AI Engine v5.3
+                    </footer>
                 </div>
             );
         };

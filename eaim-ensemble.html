@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 앙상블</title>
+    <title>EAIM 앙상블 v2.5</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -15,6 +15,7 @@
         .glass-panel { background: rgba(39, 39, 42, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(82, 82, 91, 0.5); }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media print { .no-print { display: none !important; } body { background: white; color: black; } .glass-panel { border: 1px solid #ccc; background: white; color: black; } }
     </style>
 </head>
 <body>
@@ -38,15 +39,30 @@
             }, []);
 
             const saveApiKey = () => {
-                if (apiKey.length < 10) return alert('API 키를 입력해주세요.');
+                if (apiKey.length < 10) return alert('API 키를 정확히 입력해주세요.');
                 localStorage.setItem('gemini_api_key_ensemble', apiKey.trim());
                 setStep(1);
+            };
+
+            const callGemini = async (prompt) => {
+                const cleanKey = apiKey.trim();
+                // 💡 디렉터님 전용 마법의 주소: gemini-2.5-flash 고정
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || '연결 오류');
+                return data.candidates[0].content.parts[0].text;
             };
 
             const extractSection = (text, sectionName) => {
                 const regex = new RegExp(`\\[${sectionName}\\](.*?)(?=\\[|$)`, 's');
                 const match = text.match(regex);
-                return match ? match[1].trim() : '데이터 분석 실패';
+                return match ? match[1].trim() : '데이터 분석 중...';
             };
 
             const analyzeSong = async () => {
@@ -56,30 +72,16 @@
                 const prompt = `음악 편곡가로서 곡 '${songTitle}'의 핵심 화성을 분석해. 
                 모든 코드명 뒤엔 한글 계이름을 괄호안에 적어(예: C(도)). 아래 형식 필수:
                 [곡 소개] 합주 추천 이유 1줄
-                [원곡 코드] 원곡 코드 진행
                 [드럼] 기본 리듬 가이드
                 [베이스] 근음과 계이름
                 [통기타] 파워코드와 계이름
-                [화성 건반] 핵심 2음과 계이름
+                [화성 건반] 핵심 2음(근음+3음)과 계이름
                 [멜로디 건반] 연주 꿀팁`;
 
                 try {
-                    const cleanKey = apiKey.trim();
-                    // 💡 디렉터님 환경에서 검증된 2.5-flash 엔진 적용!
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
-                    
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error?.message || '연결 오류');
-                    const text = data.candidates[0].content.parts[0].text;
-                    
+                    const text = await callGemini(prompt);
                     setParsedData({
                         intro: extractSection(text, '곡 소개'),
-                        originalChord: extractSection(text, '원곡 코드'),
                         drum: extractSection(text, '드럼'),
                         bass: extractSection(text, '베이스'),
                         guitar: extractSection(text, '통기타'),
@@ -92,29 +94,29 @@
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-zinc-900 shadow-2xl flex flex-col relative overflow-hidden">
-                    <header className="bg-zinc-950 p-4 flex justify-between items-center border-b border-zinc-800">
+                    <header className="bg-zinc-950 p-4 flex justify-between items-center border-b border-zinc-800 no-print">
                         <h1 className="text-xl font-title tracking-wider text-zinc-100 italic">EAIM 앙상블</h1>
-                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_ensemble'); setStep(0); window.location.reload(); }} className="text-xs text-zinc-400 underline">키 재설정</button>}
+                        {step > 0 && <button onClick={() => { localStorage.removeItem('gemini_api_key_ensemble'); setStep(0); window.location.reload(); }} className="text-[10px] text-zinc-500 border border-zinc-700 px-2 py-1 rounded">KEY RESET</button>}
                     </header>
 
                     <main className="flex-grow p-5 overflow-y-auto pb-24">
                         {step === 0 && (
-                            <div className="space-y-6 py-10 animate-fadeIn text-center">
+                            <div className="space-y-6 py-10 text-center animate-fadeIn">
                                 <h2 className="text-2xl font-bold text-cyan-400 font-title">🔌 앰프 전원 연결</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full bg-zinc-800 border border-zinc-700 p-4 rounded-xl text-white outline-none text-center" />
-                                <button onClick={saveApiKey} className="w-full bg-cyan-600 text-white p-4 rounded-xl font-bold hover:bg-cyan-500 shadow-lg">스튜디오 입장</button>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key 입력" className="w-full bg-zinc-800 border border-zinc-700 p-4 rounded-xl text-white outline-none text-center" />
+                                <button onClick={saveApiKey} className="w-full bg-cyan-600 text-white p-4 rounded-xl font-bold hover:bg-cyan-500 shadow-lg transition-all">스튜디오 입장</button>
                             </div>
                         )}
 
                         {step === 1 && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <div className="text-center mt-10">
+                            <div className="space-y-6 animate-fadeIn mt-10">
+                                <div className="text-center">
                                     <h2 className="text-3xl font-title text-cyan-400">화성 압축 연주</h2>
-                                    <p className="text-zinc-400 text-sm mt-2 font-bold">1시간 합주의 기적</p>
+                                    <p className="text-zinc-400 text-sm mt-2">1시간 만에 원곡과 합주하는 기적</p>
                                 </div>
-                                <input type="text" value={songTitle} onChange={e => setSongTitle(e.target.value)} className="w-full bg-zinc-800 border-2 border-zinc-700 p-4 rounded-2xl text-white text-xl text-center" />
-                                <button onClick={analyzeSong} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg">
-                                    {isAnalyzing ? "분석 중..." : "AI 합주 악보 생성 🪄"}
+                                <input type="text" value={songTitle} onChange={e => setSongTitle(e.target.value)} className="w-full bg-zinc-800 border-2 border-zinc-700 p-4 rounded-2xl text-white text-xl text-center outline-none focus:border-cyan-500 transition-all" placeholder="곡 제목과 가수명" />
+                                <button onClick={analyzeSong} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white p-5 rounded-2xl font-bold text-lg shadow-lg hover:scale-105 transition-all">
+                                    {isAnalyzing ? "AI 분석 중..." : "AI 합주 악보 만들기 🪄"}
                                 </button>
                             </div>
                         )}
@@ -122,26 +124,26 @@
                         {step === 2 && (
                             <div className="space-y-4 animate-fadeIn pb-10">
                                 <div className="text-center bg-zinc-800/50 p-6 rounded-3xl border border-zinc-700 shadow-inner">
-                                    <h2 className="text-xl font-bold text-white">{songTitle}</h2>
-                                    <p className="text-xs text-cyan-300 mt-2">"{parsedData.intro}"</p>
+                                    <h2 className="text-xl font-bold text-white mb-2">{songTitle}</h2>
+                                    <p className="text-xs text-cyan-300 font-medium italic">"{parsedData.intro}"</p>
                                 </div>
 
-                                <div className="space-y-3 mt-4">
-                                    <PartCard icon="🥁" title="드럼" color="amber" content={parsedData.drum} />
-                                    <PartCard icon="🎸" title="베이스" color="blue" content={parsedData.bass} isCode />
-                                    <PartCard icon="🎸" title="통기타" color="orange" content={parsedData.guitar} isCode />
-                                    <PartCard icon="🎹" title="화성건반" color="pink" content={parsedData.harmKey} isCode />
-                                    <PartCard icon="🎹" title="멜로디 팁" color="emerald" content={parsedData.melKey} />
+                                <div className="space-y-3">
+                                    <PartCard icon="🥁" title="드럼 리듬" color="amber" content={parsedData.drum} />
+                                    <PartCard icon="🎸" title="베이스 (근음)" color="blue" content={parsedData.bass} isCode />
+                                    <PartCard icon="🎸" title="통기타 (파워코드)" color="orange" content={parsedData.guitar} isCode />
+                                    <PartCard icon="🎹" title="화성 건반 (핵심음)" color="pink" content={parsedData.harmKey} isCode />
+                                    <PartCard icon="🎹" title="멜로디 연주 팁" color="emerald" content={parsedData.melKey} />
                                 </div>
 
-                                <div className="flex gap-2">
-                                    <button onClick={() => window.print()} className="flex-1 bg-zinc-700 text-white p-3 rounded-xl font-bold">🖨️ 인쇄</button>
-                                    <button onClick={() => setStep(1)} className="flex-1 bg-zinc-800 text-zinc-400 p-3 rounded-xl font-bold">🔄 재검색</button>
+                                <div className="flex gap-2 no-print mt-6">
+                                    <button onClick={() => window.print()} className="flex-1 bg-zinc-700 text-white p-4 rounded-xl font-bold">🖨️ 악보 인쇄</button>
+                                    <button onClick={() => setStep(1)} className="flex-1 bg-zinc-800 text-zinc-400 p-4 rounded-xl font-bold">다른 곡 찾기</button>
                                 </div>
                             </div>
                         )}
                     </main>
-                    <footer className="p-4 text-center text-[10px] text-zinc-600 border-t border-zinc-800 bg-zinc-950">
+                    <footer className="p-4 text-center text-[10px] text-zinc-600 border-t border-zinc-800 bg-zinc-950 no-print">
                         &copy; 2026 EAIM Studio. Powered by Gemini 2.5 Flash
                     </footer>
                 </div>
@@ -149,11 +151,22 @@
         };
 
         const PartCard = ({ icon, title, color, content, isCode }) => {
-            const colorMap = { amber: 'border-l-amber-500 text-amber-400', blue: 'border-l-blue-500 text-blue-400', orange: 'border-l-orange-500 text-orange-400', pink: 'border-l-pink-500 text-pink-400', emerald: 'border-l-emerald-500 text-emerald-400' };
+            const colorMap = {
+                amber: 'border-l-amber-500 text-amber-400',
+                blue: 'border-l-blue-500 text-blue-400',
+                orange: 'border-l-orange-500 text-orange-400',
+                pink: 'border-l-pink-500 text-pink-400',
+                emerald: 'border-l-emerald-500 text-emerald-400'
+            };
             return (
                 <div className={`glass-panel p-4 rounded-2xl border-l-4 ${colorMap[color]} shadow-lg`}>
-                    <div className="flex items-center gap-2 mb-2 font-bold">{icon} {title}</div>
-                    <div className={`ml-6 p-2 rounded-lg ${isCode ? 'bg-zinc-800 text-cyan-100 font-mono text-lg' : 'text-zinc-200 text-sm'}`}>{content}</div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">{icon}</span>
+                        <span className="font-bold">{title}</span>
+                    </div>
+                    <div className={`ml-8 ${isCode ? 'bg-zinc-800/80 p-3 rounded-lg border border-zinc-700 font-mono text-cyan-100 text-lg leading-relaxed' : 'text-zinc-200 text-sm'}`}>
+                        {content}
+                    </div>
                 </div>
             );
         };

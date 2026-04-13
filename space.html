@@ -91,11 +91,20 @@
                 return { key: "겨울", name: "오리온자리" };
             };
 
+            // ⚡ 속도 최적화: JSON 강제 출력 및 단어 탐색 제한 적용
             const callGemini = async (prompt) => {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.4,       // 감성 메시지 작성을 위한 약간의 유연성
+                            topK: 20,               // 단어 검색 폭을 줄여 속도 확보
+                            maxOutputTokens: 250,   // 필요한 만큼만 출력 후 즉각 종료
+                            responseMimeType: "application/json" // 💡 가장 빠른 응답! AI가 부연 설명 없이 완벽한 JSON만 리턴함
+                        }
+                    })
                 });
                 const data = await res.json();
                 return data.candidates[0].content.parts[0].text;
@@ -105,11 +114,19 @@
                 setIsLoading(true); setSelectedPlanet(planet); setStep(3);
                 const season = getSeasonData();
                 try {
-                    const prompt = `${obsDate} 기준 ${planet.name}의 온도, 대기상태와 별자리 '${season.name}'를 엮은 SEL 메시지를 JSON {"temp":"", "atmos":"", "msg":""}로 써줘.`;
+                    // 프롬프트를 JSON 포맷에 맞게 명확하게 지시
+                    const prompt = `관측일: ${obsDate}, 대상 행성: ${planet.name}, 계절 별자리: ${season.name}. 
+                    이 정보들을 바탕으로 과학적 사실(온도, 대기)과 중학생을 위한 따뜻한 감성 SEL 메시지를 작성해. 
+                    다음 JSON 스키마를 엄격히 준수해: {"temp":"(행성의 실제 온도)", "atmos":"(행성의 주요 대기성분)", "msg":"(별자리와 행성의 특징을 엮은 감성 메시지)"}`;
+                    
                     const res = await callGemini(prompt);
-                    const json = JSON.parse(res.match(/\{.*\}/s)[0]);
+                    // responseMimeType 설정 덕분에 정규식으로 자를 필요 없이 바로 파싱 가능
+                    const json = JSON.parse(res); 
                     setBriefing({ ...json, constName: season.name });
-                } catch (e) { setBriefing({ temp: "데이터 로딩 중", atmos: "분석 중", msg: "우주와 연결 중입니다.", constName: season.name }); }
+                } catch (e) { 
+                    console.error(e);
+                    setBriefing({ temp: "데이터 로딩 중", atmos: "분석 중", msg: "우주와 통신 중 장애가 발생했습니다.", constName: season.name }); 
+                }
                 finally { setIsLoading(false); }
             };
 
@@ -120,7 +137,6 @@
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-[#020617] flex flex-col relative shadow-2xl">
-                    {/* 💡 문제의 첫 화면 수정: 버튼 명확히 추가 */}
                     {(step === 0 || !apiKey) && (
                         <div className="absolute inset-0 bg-slate-900 z-[100] flex flex-col justify-center p-10 text-center animate-fadeIn space-y-8">
                             <div className="text-7xl">🛰️</div>
@@ -219,7 +235,7 @@
                                         {isLoading ? <div className="animate-pulse h-20 bg-white/5 rounded-xl"></div> : <p className="text-[14px] leading-relaxed text-indigo-50 font-serif italic italic">"{briefing.msg}"</p>}
                                     </div>
                                 </div>
-                                <button onClick={() => setStep(2)} className="w-full bg-slate-800 p-5 rounded-3xl font-bold text-slate-400 border border-slate-700 shadow-xl">전체 성도(星圖)로 복귀</button>
+                                <button onClick={() => setStep(2)} className="w-full bg-slate-800 p-5 rounded-3xl font-bold text-slate-400 border border-slate-700 shadow-xl">전체 성도로 복귀</button>
                             </div>
                         )}
                     </main>

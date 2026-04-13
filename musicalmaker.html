@@ -20,7 +20,6 @@
         .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.5rem; font-weight: bold; font-size: 0.75rem; padding: 0.5rem 0.8rem; }
         .cast-suggest-btn { background: rgba(252, 211, 77, 0.1); border: 1px solid #FCD34D; color: #FCD34D; font-size: 0.7rem; padding: 4px 10px; border-radius: 99px; }
         
-        /* 탭 디자인 고도화 */
         .tab-btn { padding: 0.8rem 0.5rem; flex: 1; font-weight: bold; font-size: 0.75rem; transition: 0.3s; border-bottom: 3px solid transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
         .tab-active { color: #FCD34D; border-bottom-color: #FCD34D; background: rgba(252, 211, 77, 0.07); }
         
@@ -47,7 +46,7 @@
             const [title, setTitle] = useState('');
             const [castList, setCastList] = useState([{ role: '주인공', desc: '특징을 입력하세요' }]);
             
-            const [activeTab, setActiveTab] = useState('script'); // 'script', 'image', 'suno'
+            const [activeTab, setActiveTab] = useState('script'); 
             const [finalScript, setFinalScript] = useState('');
             const [imagePrompts, setImagePrompts] = useState('');
             const [sunoPrompts, setSunoPrompts] = useState('');
@@ -57,30 +56,48 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // ⚡ 속도 최적화: 작업 성격에 맞게 generationConfig를 동적으로 받아 처리하도록 개선
+            // ⚡ 속도 최적화 및 에러 핸들링 함수
             const callGemini = async (prompt, customConfig = {}) => {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: customConfig.temperature ?? 0.3,      // 기본적으로 창의성보다 정밀도와 속도 우선
-                            topK: customConfig.topK ?? 20,                     // 단어 탐색 풀 제한
-                            maxOutputTokens: customConfig.maxTokens ?? 2500    // 대본의 경우 충분히 길게, 나머지는 짧게
-                        }
-                    })
-                });
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
+                
+                const generationConfig = {
+                    temperature: customConfig.temperature ?? 0.3,
+                    topK: customConfig.topK ?? 20,
+                };
+                
+                // 💡 글자 수 제한(maxTokens)이 넘어왔을 때만 적용하고, 없으면 무제한(AI가 알아서 끝낼 때까지) 허용합니다.
+                if (customConfig.maxTokens) {
+                    generationConfig.maxOutputTokens = customConfig.maxTokens;
+                }
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: generationConfig
+                        })
+                    });
+                    
+                    if (!response.ok) throw new Error("API 호출 실패");
+                    const data = await response.json();
+                    
+                    if (!data.candidates || !data.candidates[0].content) {
+                        throw new Error("응답이 중간에 차단되었습니다.");
+                    }
+                    
+                    return data.candidates[0].content.parts[0].text;
+                } catch (error) {
+                    console.error(error);
+                    throw error;
+                }
             };
 
             const generateAutoTitle = async () => {
                 if (!topic || !place) return alert("주제와 배경을 먼저 입력해주세요!");
                 setIsGenerating(true);
                 try {
-                    // ⚡ 제목은 창의성이 필요하지만 매우 짧아야 하므로 글자 수를 확 줄여서 속도 극대화
                     const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. 부연설명 절대 금지.`, { temperature: 0.7, maxTokens: 40 });
                     setTitle(result.trim().replace(/["']/g, ""));
                 } catch (e) { alert("제목 생성 오류"); }
@@ -91,7 +108,6 @@
                 if (!title) return alert("제목이 확정되어야 합니다!");
                 setIsGenerating(true);
                 try {
-                    // ⚡ 캐릭터 추천도 리스트 형식으로만 빠르게 받아오도록 제한
                     const result = await callGemini(`뮤지컬 '${title}'(주제:${topic})에 어울리는 조연 캐릭터 3명을 [역할명: 특징] 형식으로 추천해줘. 부연설명 금지.`, { temperature: 0.6, maxTokens: 200 });
                     const lines = result.split('\n').filter(l => l.includes(':'));
                     const newCasts = lines.map(line => {
@@ -107,33 +123,51 @@
                 setIsAnalyzing(true);
                 setStep(3);
                 
-                // 💡 프롬프트 최적화: 군더더기 말 차단 및 출력 형식을 엄격하게 통제하여 렌더링 지연 방지
                 const prompt = `베테랑 뮤지컬 연출가로서 다음 조건의 뮤지컬 극본을 집필해. 인사말이나 부연설명은 절대 금지하고 즉시 극본만 출력해.
                 제목: ${title} / 주제: ${topic} / 배경: ${place}
                 배역: ${castList.map(c=>c.role + '('+c.desc+')').join(', ')}
 
                 [집필 및 기획 규칙]
                 1. 구조: 오프닝 코러스 -> 1막~4막 -> 커튼콜 완결된 구조.
-                2. 다이어트 가사: 넘버 가사는 핵심 위주로 아주 짧고 강렬하게 (8행 이내) 작성할 것.
+                2. 다이어트 가사: 넘버 가사는 핵심 위주로 아주 짧고 강렬하게 작성할 것.
                 3. 형식 분리 (매우 중요): 극본 집필 후, 반드시 아래 구분자를 사용하여 정보를 따로 정리할 것.
 
                 ---IMAGE_PROMPTS---
-                (각 막 및 중요한 장면 전환에 필요한 미드저니/DALL-E용 영문 이미지 프롬프트 리스트. 장면의 분위기와 배경 묘사를 포함할 것.)
+                (각 막 및 중요한 장면 전환에 필요한 미드저니용 영문 이미지 프롬프트 리스트)
                 ---SUNO_PROMPTS---
-                (각 넘버별 Suno AI용 영문 프롬프트 리스트. 가사 없이 Style, Mood, Tempo 정보만 포함.)
+                (각 넘버별 Suno AI용 영문 프롬프트 리스트. 가사 없이 Style, Mood, Tempo 정보만 포함)
 
-                극본 내에는 가사만 깔끔하게 나오도록 SEL(사회정서학습) 관점에서 감동적으로 집필해줘.`;
+                극본 내에는 대사와 가사만 나오도록 SEL 관점에서 감동적으로 집필해.`;
 
                 try {
-                    // ⚡ 종합 집필은 글자 수가 많으므로 maxTokens를 넉넉하게 주고, temperature를 낮춰 안정적이고 빠르게 출력 유도
-                    const text = await callGemini(prompt, { temperature: 0.3, maxTokens: 3000 });
-                    const [tempPart1, sunoPart] = text.split('---SUNO_PROMPTS---');
-                    const [scriptPart, imagePart] = tempPart1.split('---IMAGE_PROMPTS---');
+                    // 💡 뮤지컬 대본은 매우 길기 때문에 maxTokens 설정을 아예 없애서 끝까지 다 쓰도록 허용합니다.
+                    const text = await callGemini(prompt, { temperature: 0.4 });
                     
-                    setFinalScript(scriptPart.trim());
-                    setImagePrompts(imagePart ? imagePart.trim() : "장면 배경 프롬프트 생성 중 오류가 발생했습니다.");
-                    setSunoPrompts(sunoPart ? sunoPart.trim() : "Suno 프롬프트 생성 중 오류가 발생했습니다.");
-                } catch (e) { alert('집필 중 오류가 발생했습니다.'); setStep(1); }
+                    // 💡 안전장치: AI가 혹시나 '---SUNO_PROMPTS---' 같은 구분자를 빼먹더라도 에러 나지 않게 처리
+                    let scriptPart = text;
+                    let imagePart = "AI가 이미지 프롬프트를 생성하지 못했습니다.";
+                    let sunoPart = "AI가 Suno 프롬프트를 생성하지 못했습니다.";
+
+                    if (text.includes('---IMAGE_PROMPTS---')) {
+                        const split1 = text.split('---IMAGE_PROMPTS---');
+                        scriptPart = split1[0].trim();
+                        
+                        if (split1[1].includes('---SUNO_PROMPTS---')) {
+                            const split2 = split1[1].split('---SUNO_PROMPTS---');
+                            imagePart = split2[0].trim();
+                            sunoPart = split2[1].trim();
+                        } else {
+                            imagePart = split1[1].trim();
+                        }
+                    }
+
+                    setFinalScript(scriptPart);
+                    setImagePrompts(imagePart);
+                    setSunoPrompts(sunoPart);
+                } catch (e) { 
+                    alert('집필 중 오류가 발생했습니다. 조금 더 간단한 주제로 다시 시도해 주세요.'); 
+                    setStep(1); 
+                }
                 finally { setIsAnalyzing(false); }
             };
 
@@ -202,63 +236,4 @@
                                         <div className="flex border-b border-white/10 mb-6 no-print sticky top-0 bg-[#1a0509] z-10 shadow-lg">
                                             <button onClick={() => setActiveTab('script')} className={`tab-btn ${activeTab === 'script' ? 'tab-active' : ''}`}><i className="fa-solid fa-scroll"></i>📜 극본</button>
                                             <button onClick={() => setActiveTab('image')} className={`tab-btn ${activeTab === 'image' ? 'tab-active' : ''}`}><i className="fa-solid fa-palette"></i>🎨 장면 배경</button>
-                                            <button onClick={() => setActiveTab('suno')} className={`tab-btn ${activeTab === 'suno' ? 'tab-active' : ''}`}><i className="fa-solid fa-music"></i>🎵 Suno</button>
-                                        </div>
-
-                                        <div className="bg-white p-6 sm:p-8 rounded-3xl text-black shadow-2xl min-h-[400px]">
-                                            <div className="flex justify-between items-center mb-6 no-print">
-                                                <span className="text-[10px] font-bold text-rose-800 bg-rose-100 px-3 py-1 rounded-full">{activeTab === 'script' ? 'Musical Script' : activeTab === 'image' ? 'Visual Style' : 'Music Style'}</span>
-                                                <button onClick={() => window.print()} className="bg-black hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">🖨️ 인쇄/저장</button>
-                                            </div>
-                                            
-                                            {activeTab === 'script' ? (
-                                                <div className="animate-fadeIn">
-                                                    <h2 className="text-xl font-show mb-6 text-center border-b-2 border-black pb-4">{title}</h2>
-                                                    <pre className="font-drama text-[13px] leading-relaxed text-gray-800">
-                                                        {finalScript}
-                                                    </pre>
-                                                </div>
-                                            ) : activeTab === 'image' ? (
-                                                <div className="animate-fadeIn space-y-4 font-serif text-slate-700 text-[12px]">
-                                                    <h3 className="text-lg text-pink-800 font-bold mb-5 flex items-center gap-2"><i className="fa-solid fa-magic"></i> 각 장면별 이미지 생성 가이드</h3>
-                                                    <div className="suno-card bg-slate-50 border-slate-200 text-slate-800 p-5 rounded-xl border whitespace-pre-wrap leading-loose">
-                                                        {imagePrompts}
-                                                    </div>
-                                                    <p className="mt-4 text-[10px] text-slate-400 italic text-center">※ 영문 프롬프트를 복사하여 미드저니/DALL-E에 입력하세요.</p>
-                                                </div>
-                                            ) : (
-                                                <div className="animate-fadeIn space-y-4 font-serif text-slate-700 text-[12px]">
-                                                    <h3 className="text-lg text-rose-800 font-bold mb-5 flex items-center gap-2"><i className="fa-solid fa-compact-disc"></i> 넘버별 음악 스타일 가이드</h3>
-                                                    <div className="suno-card whitespace-pre-wrap leading-loose p-5 bg-slate-50 border border-slate-200 text-slate-800 rounded-xl">
-                                                        {sunoPrompts}
-                                                    </div>
-                                                    <p className="mt-4 text-[10px] text-slate-400 italic text-center">※ 영문 프롬프트를 복사하여 Suno AI의 'Style of Music'에 넣으세요.</p>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="mt-8 flex gap-3 no-print">
-                                            <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-4 rounded-2xl text-xs font-bold">새 기획</button>
-                                            <button onClick={()=>{ 
-                                                const copyText = activeTab === 'script' ? finalScript : activeTab === 'image' ? imagePrompts : sunoPrompts;
-                                                navigator.clipboard.writeText(copyText); 
-                                                alert(`${activeTab === 'script' ? '대본' : activeTab === 'image' ? '장면 배경' : 'Suno'} 프롬프트가 복사되었습니다!`); 
-                                            }} className="flex-1 bg-green-700 py-4 rounded-2xl text-xs font-bold">전체 복사 📋</button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </main>
-                    <footer className="p-4 bg-black/40 text-center text-[10px] text-gray-600 opacity-40 no-print border-t border-white/5 mt-auto">
-                        &copy; 2026 EAIM Studio | Integrated Creative AI Engine v5.5
-                    </footer>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                            <button onClick={() => setActiveTab('suno')} className={`tab-btn ${activeTab === 'suno' ? 'tab-active' : ''}`}><i className="fa-solid

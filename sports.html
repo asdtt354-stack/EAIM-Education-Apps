@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 감정 비트 & 볼 v5.1 (2.5 PRO)</title>
+    <title>EAIM Beat & Ball 2.5 PRO</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -15,7 +15,7 @@
         .font-title { font-family: 'Black Han Sans', sans-serif; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .emotion-btn { transition: 0.2s; border: 2px solid transparent; cursor: pointer; }
-        .emotion-active { border-color: #f97316; transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
+        .emotion-active { border-color: #f43f5e; transform: scale(1.05); box-shadow: 0 0 20px rgba(244, 63, 94, 0.3); }
         .youtube-box { width: 100%; aspect-ratio: 16/9; border-radius: 1.5rem; overflow: hidden; background: #000; border: 2px solid #334155; }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -33,12 +33,10 @@
             return (match && match[2].length === 11) ? match[2] : null;
         };
 
-        const emotionList = ['화남 😡', '우울함 🌧️', '불안함 😰', '평온함 😌', '신남 😆', '무기력함 🫠'];
-        const colorPalette = [
-            { name: '빨강 (분노/열정)', hex: '#ef4444' }, { name: '주황 (활기/짜증)', hex: '#f97316' },
-            { name: '노랑 (기쁨/불안)', hex: '#eab308' }, { name: '초록 (평화/휴식)', hex: '#22c55e' },
-            { name: '파랑 (우울/차분)', hex: '#3b82f6' }, { name: '보라 (복잡/신비)', hex: '#a855f7' },
-            { name: '무채색 (공허/지침)', hex: '#64748b' }
+        const emotionList = [
+            { name: '화남 😡', color: '#ef4444' }, { name: '우울함 🌧️', color: '#3b82f6' },
+            { name: '불안함 😰', color: '#eab308' }, { name: '평온함 😌', color: '#22c55e' },
+            { name: '신남 😆', color: '#f97316' }, { name: '무기력함 🫠', color: '#64748b' }
         ];
 
         const App = () => {
@@ -46,14 +44,138 @@
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
-            const [preEmotion, setPreEmotion] = useState({ word: '', color: '' });
-            const [postEmotion, setPostEmotion] = useState({ word: '', color: '', journal: '' });
-            const [prescription, setPrescription] = useState({ bpm: '', genre: '', explanation: '', searchKeyword: '' });
+            const [selectedEmotion, setSelectedEmotion] = useState(null);
+            const [prescription, setPrescription] = useState({ bpm: '', genre: '', msg: '', searchKey: '' });
             
             const [youtubeLink, setYoutubeLink] = useState('');
             const [videoId, setVideoId] = useState('');
-            const [sport, setSport] = useState('농구 🏀');
             const [rhythmData, setRhythmData] = useState({ intro: '', teamA: '', teamB: '', teamC: '' });
-            const [finalFeedback, setFinalFeedback] = useState('');
+            
+            const [studentJournal, setStudentJournal] = useState('');
+            const [teacherFeedback, setTeacherFeedback] = useState('');
 
-            useEffect
+            useEffect(() => {
+                const savedKey = localStorage.getItem('gemini_api_key_sel_beat_pro');
+                if (savedKey) { setApiKey(savedKey); setStep(1); }
+            }, []);
+
+            // ⚡ 2.5-flash 최적화 호출 (JSON 모드)
+            const callGeminiJSON = async (prompt) => {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+                const response = await fetch(url, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { 
+                            temperature: 0.3, 
+                            maxOutputTokens: 8192, 
+                            responseMimeType: "application/json" 
+                        }
+                    })
+                });
+                const data = await response.json();
+                return JSON.parse(data.candidates[0].content.parts[0].text);
+            };
+
+            const callGeminiText = async (prompt) => {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+                const response = await fetch(url, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.5, maxOutputTokens: 2000 }
+                    })
+                });
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            };
+
+            // 1단계: 감정 기반 음악 처방
+            const handleEmotionSelect = async (emotion) => {
+                setSelectedEmotion(emotion);
+                setIsAnalyzing(true);
+                setStep(2);
+                
+                const prompt = `학생의 현재 감정은 '${emotion.name}'입니다. 
+                감정심리학의 '동질성의 원리(Iso Principle)'를 적용하여, 이 감정을 먼저 수용하고 긍정적으로 승화시킬 수 있는 음악 처방을 내려주세요.
+                다음 JSON 형식을 엄격히 지켜주세요:
+                {
+                    "bpm": "추천 BPM 범위 (예: 120-130)",
+                    "genre": "추천 장르",
+                    "searchKey": "유튜브 검색 키워드 추천",
+                    "msg": "학생에게 해주는 따뜻한 위로와 운동 동기부여 2문장"
+                }`;
+
+                try {
+                    const res = await callGeminiJSON(prompt);
+                    setPrescription(res);
+                } catch (e) { alert('처방 데이터를 가져오지 못했습니다.'); setStep(1); } 
+                finally { setIsAnalyzing(false); }
+            };
+
+            // 2단계: 리듬 생성
+            const handleGenerateRhythm = async () => {
+                if (!youtubeLink) return alert("유튜브 링크를 입력해주세요!");
+                const extractedId = getYouTubeId(youtubeLink);
+                if (!extractedId) return alert("올바른 링크가 아닙니다.");
+                
+                setVideoId(extractedId);
+                setIsAnalyzing(true);
+
+                const prompt = `체육 교사이자 리듬 안무가로서, '${selectedEmotion.name}' 감정 케어를 위한 리듬 운동 대본을 작성하세요.
+                [조건]
+                1. 절대로 '허벅지'를 치지 말고 '강당 바닥'에 공을 튕기는 소리(Floor)를 활용할 것.
+                2. 구음(쿵, 탁 등)으로 아주 짧게 작성할 것.
+                형식:
+                {
+                    "intro": "활동 시작 멘트 1문장",
+                    "teamA": "Floor Bounce 리듬",
+                    "teamB": "Catch & Pass 리듬",
+                    "teamC": "개인기 리듬"
+                }`;
+
+                try {
+                    const res = await callGeminiJSON(prompt);
+                    setRhythmData(res);
+                    setStep(3);
+                } catch (e) { alert('리듬 생성 오류'); } 
+                finally { setIsAnalyzing(false); }
+            };
+
+            // 3단계: 피드백 생성
+            const handleSubmitJournal = async () => {
+                if (!studentJournal) return alert("오늘의 소감을 적어주세요!");
+                setIsAnalyzing(true);
+                
+                const prompt = `학생이 '${selectedEmotion.name}' 상태에서 리듬 운동을 마친 후 다음과 같은 후기를 남겼습니다: "${studentJournal}"
+                당신은 EAIM-SEL 전문가 선생님입니다. 학생의 감정 변화를 칭찬하고 따뜻하게 다독이는 피드백 3문장을 작성하세요.`;
+
+                try {
+                    const res = await callGeminiText(prompt);
+                    setTeacherFeedback(res);
+                    setStep(4);
+                } catch (e) { alert('피드백 생성 오류'); } 
+                finally { setIsAnalyzing(false); }
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col relative shadow-2xl overflow-hidden font-sans">
+                    <header className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 sticky top-0 z-50">
+                        <h1 className="text-lg font-title text-rose-500 uppercase tracking-tight italic">Beat & Ball SEL PRO</h1>
+                        {step > 0 && <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">RESET</button>}
+                    </header>
+
+                    <main className="flex-grow p-6 overflow-y-auto pb-24">
+                        {/* 단계 0: API 설정 */}
+                        {step === 0 && (
+                            <div className="py-10 text-center animate-fadeIn space-y-6">
+                                <div className="text-7xl">🧪🏀</div>
+                                <h2 className="text-xl font-bold">EAIM 2.5 지능형 엔진 접속</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-center outline-none focus:border-rose-500" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_sel_beat_pro', apiKey.trim()); setStep(1); }} className="w-full bg-rose-600 p-4 rounded-2xl font-bold shadow-xl">시스템 가동</button>
+                            </div>
+                        )}
+
+                        {/* 단계 1: 감정 진단 */}
+                        {step === 1 && (
+                            <div className="space-y-8 animate-fadeIn">

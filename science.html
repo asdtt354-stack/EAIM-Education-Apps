@@ -56,7 +56,7 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // ⚡ 속도 최적화가 적용된 API 호출 함수
+            // ⚡ 속도 최적화가 적용된 API 호출 함수 (토큰량 대폭 상향 조절)
             const callGemini = async (prompt, customConfig = {}) => {
                 const cleanKey = apiKey.trim();
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
@@ -67,7 +67,8 @@
                         generationConfig: {
                             temperature: customConfig.temperature ?? 0.4, 
                             topK: customConfig.topK ?? 20,
-                            maxOutputTokens: customConfig.maxTokens ?? 1000
+                            // 💡 에러 방지: 이야기가 중간에 끊기지 않도록 최대 토큰(글자 수)을 2000으로 늘렸습니다!
+                            maxOutputTokens: customConfig.maxTokens ?? 2000
                         }
                     })
                 });
@@ -85,21 +86,27 @@
                 setFeedbackReport(''); setQuizAnswer(''); setQuizReason(''); setScienceHint('');
                 
                 // 💡 일상 에피소드 + 퀴즈 생성 프롬프트
-                const prompt = `중학교 과학 교사로서, 과학 단원 '${scienceUnit}'의 원리가 적용된 일상생활 속 에피소드와, 그 상황에서 주인공이 겪는 '${emotionKeyword}' 감정을 연결한 짧은 이야기를 만들어주세요. 중학생들이 겪을 법한 현실적이고 공감 가는 소재가 좋습니다. 
-                이야기 끝에는 이 상황의 문제를 과학적으로 해결하기 위한 간단한 4지 선다형 퀴즈를 하나 내주세요.
+                const prompt = `중학교 과학 교사로서, 과학 단원 '${scienceUnit}'의 원리가 적용된 일상생활 속 에피소드와, 그 상황에서 주인공이 겪는 '${emotionKeyword}' 감정을 연결한 이야기를 만들어주세요. 중학생들이 겪을 법한 현실적이고 공감 가는 소재가 좋습니다. 
+                이야기 끝에는 이 상황의 문제를 과학적으로 해결하기 위한 4지 선다형 퀴즈를 하나 내주세요.
                 
                 형식:
-                [일상 이야기] (3~4문장)
-                [문제 해결 퀴즈] (1, 2, 3, 4번 보기 포함)
+                [일상 이야기]
+                (이야기 내용)
+                
+                [문제 해결 퀴즈] 
+                (1, 2, 3, 4번 보기 포함)
                 
                 안내말이나 부연 설명 없이 위 형식대로 바로 출력해주세요.`;
 
                 try {
                     // 창의성이 조금 필요하므로 temperature 0.6 설정
-                    const text = await callGemini(prompt, { temperature: 0.6, maxTokens: 800 });
+                    const text = await callGemini(prompt, { temperature: 0.6 });
                     setDailyScenario(text);
                     setStep(2);
-                } catch (e) { alert(`이야기 생성 실패: ${e.message}`); setStep(1); } 
+                } catch (e) { 
+                    alert(`이야기 생성 실패: 데이터가 끊겼을 수 있습니다. 다시 시도해 주세요.`); 
+                    setStep(1); 
+                } 
                 finally { setIsAnalyzing(false); }
             };
 
@@ -107,7 +114,7 @@
                 setIsLoadingHint(true);
                 const prompt = `선생님으로서 다음 상황에 숨겨진 '${scienceUnit}' 원리에 대한 힌트를 딱 1문장으로만 다정하게 주세요. 정답을 직접 말하지는 마세요: ${dailyScenario}`;
                 try {
-                    // 힌트는 빠르게 단답으로 나와야 하므로 설정값 최소화
+                    // 힌트는 빠르게 단답으로 나와야 하므로 설정값 최소화, maxTokens를 작게 제한
                     const text = await callGemini(prompt, { temperature: 0.2, maxTokens: 150 });
                     setScienceHint(text);
                 } catch (e) { setScienceHint('앗, 힌트를 불러오는 데 실패했어요. 다시 눌러볼까요?'); }
@@ -123,10 +130,10 @@
                 
                 다음 두 가지를 포함하여 따뜻하고 다정한 중학교 선생님의 말투로 피드백을 작성해주세요.
                 1. [과학의 시선]: 학생이 고른 정답이 맞는지 알려주고, '${scienceUnit}'의 과학적 원리를 일상과 연결해 쉽게 설명해주세요.
-                2. [마음의 시선]: 학생이 적은 이유를 바탕으로 '${emotionKeyword}' 감정에 깊이 공감해주고, 마음을 다독이는 사회정서학습(SEL)적 위로와 응원을 3문장으로 남겨주세요.`;
+                2. [마음의 시선]: 학생이 적은 이유를 바탕으로 '${emotionKeyword}' 감정에 깊이 공감해주고, 마음을 다독이는 사회정서학습(SEL)적 위로와 응원을 남겨주세요.`;
                 
                 try {
-                    const text = await callGemini(prompt, { temperature: 0.5, maxTokens: 1000 });
+                    const text = await callGemini(prompt, { temperature: 0.5 });
                     setFeedbackReport(text);
                 } catch (e) { setFeedbackReport('피드백 작성 실패'); } 
                 finally { setIsAnalyzing(false); }

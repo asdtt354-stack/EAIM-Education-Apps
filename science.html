@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 일상 과학 탐험대 v3.0</title>
+    <title>EAIM 일상 과학 탐험대 v3.5</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -37,11 +37,11 @@
             const [dailyScenario, setDailyScenario] = useState('');
             const [quizAnswer, setQuizAnswer] = useState('');
             const [scienceReason, setScienceReason] = useState('');
-            const [characterEmotion, setCharacterEmotion] = useState('');
+            const [characterEmpathy, setCharacterEmpathy] = useState('');
             const [feedbackReport, setFeedbackReport] = useState('');
 
             useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_sci_v3');
+                const savedKey = localStorage.getItem('gemini_api_key_sci_v3_5');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
@@ -59,4 +59,121 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            //
+            const generateMission = async () => {
+                if (!scienceUnit) return alert('과학 단원을 입력해주세요!');
+                setIsAnalyzing(true);
+                setDailyScenario('이야기 속 주인공의 마음으로 들어가는 중... 💭');
+                
+                const prompt = `중학교 과학 교사로서, '${scienceUnit}' 원리가 담긴 일상 이야기를 지어줘.
+                [필수 조건]
+                1. 주인공이 과학적 문제 때문에 겪는 '당황함, 속상함, 설렘' 등의 감정 묘사를 아주 구체적으로 포함해줘.
+                2. 이야기를 읽는 학생이 주인공의 감정에 깊이 공감할 수 있는 3~4문장의 스토리를 써줘.
+                3. 이 상황을 해결할 과학 퀴즈(4지선다)를 마지막에 내줘.
+                
+                형식:
+                [주인공의 하루 이야기]
+                (내용)
+                [도전! 과학 미션]
+                (1, 2, 3, 4번 보기)`;
+
+                try {
+                    const text = await callGemini(prompt);
+                    setDailyScenario(text);
+                    setStep(2);
+                } catch (e) { alert('연결 오류'); setStep(1); } 
+                finally { setIsAnalyzing(false); }
+            };
+
+            const solveMission = async () => {
+                if (!quizAnswer || !scienceReason || !characterEmpathy) return alert('모든 내용을 적어주세요!');
+                setIsAnalyzing(true); setStep(3);
+                
+                const prompt = `학생의 답변 보고서입니다:
+                1. 퀴즈 정답 번호: ${quizAnswer}
+                2. 내가 생각한 과학적 원리: ${scienceReason}
+                3. 주인공의 마음을 엿보고 느낀 점: ${characterEmpathy}
+                
+                중학교 선생님으로서 따뜻한 피드백을 써줘.
+                특히 학생이 주인공의 마음에 공감하며 적은 내용에 대해 '네 마음이 정말 따뜻하구나'라는 식의 정서적 지지와 격려를 듬뿍 담아줘.
+                형식: [과학 교사의 조언] / [마음 선생님의 편지]`;
+                
+                try {
+                    const text = await callGemini(prompt);
+                    setFeedbackReport(text);
+                } catch (e) { setFeedbackReport('피드백 전송 실패'); } 
+                finally { setIsAnalyzing(false); }
+            };
+
+            return (
+                <div className="eaim-card">
+                    {step === 0 && (
+                        <div className="text-center space-y-6 animate-fadeIn">
+                            <h2 className="font-bold text-2xl font-hand text-indigo-700 underline decoration-indigo-200 decoration-4">EAIM 일상 과학 탐험 v3.5</h2>
+                            <p className="text-sm text-slate-500">과학을 배우고, 주인공의 마음을 느껴봐요.</p>
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="eaim-input" placeholder="Gemini API Key 입력" />
+                            <button onClick={() => { localStorage.setItem('gemini_api_key_sci_v3_5', apiKey.trim()); setStep(1); }} className="eaim-btn-main shadow-lg">탐험 준비 완료 🚀</button>
+                        </div>
+                    )}
+
+                    {step > 0 && (
+                        <div className="space-y-6">
+                            <header className="flex justify-between items-center border-b border-indigo-100 pb-3">
+                                <span className="font-bold text-indigo-600 font-hand text-xl uppercase tracking-tighter">EAIM 2.5 PRO ENGINE</span>
+                                <button onClick={() => { localStorage.removeItem('gemini_api_key_sci_v3_5'); window.location.reload(); }} className="text-[10px] text-slate-400 border border-slate-200 px-2 py-1 rounded">RESET</button>
+                            </header>
+
+                            {step === 1 && (
+                                <div className="space-y-6 animate-fadeIn">
+                                    <div className="text-center space-y-2">
+                                        <h2 className="text-2xl font-hand text-slate-800">어떤 원리를 탐험할까요?</h2>
+                                        <p className="text-xs text-slate-500 italic">교과서 단원명을 입력해 보세요.</p>
+                                    </div>
+                                    <input type="text" value={scienceUnit} onChange={e => setScienceUnit(e.target.value)} className="eaim-input border-indigo-200" placeholder="예: 소리의 전달, 식물의 구조" />
+                                    <button onClick={generateMission} disabled={isAnalyzing} className="eaim-btn-main">{isAnalyzing ? "마음의 문을 여는 중..." : "탐험 시작하기 ✨"}</button>
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="space-y-6 animate-fadeIn">
+                                    <div className="bg-white p-7 rounded-3xl border-2 border-indigo-200 font-hand text-xl leading-relaxed shadow-sm whitespace-pre-wrap">{dailyScenario}</div>
+                                    
+                                    <div className="space-y-6 bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100 shadow-inner">
+                                        <h3 className="font-bold text-indigo-700 text-lg border-b border-indigo-200 pb-2 flex items-center gap-2"><i className="fa-solid fa-pen-nib"></i> 나의 탐험 일지</h3>
+                                        
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-black text-indigo-500 ml-1">1. 과학 미션 정답 번호</label>
+                                            <input type="number" value={quizAnswer} onChange={e => setQuizAnswer(e.target.value)} className="eaim-input text-center font-black text-indigo-700 w-full" placeholder="1~4번 중 하나" min="1" max="4" />
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-black text-indigo-500 ml-1">2. 왜 그렇게 생각했나요? (과학 원리)</label>
+                                            <textarea value={scienceReason} onChange={e => setScienceReason(e.target.value)} className="eaim-input w-full h-24" placeholder="교과서 지식을 활용해 적어보세요."></textarea>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-black text-rose-500 ml-1">3. 주인공의 마음을 엿보고 느낀 점</label>
+                                            <textarea value={characterEmpathy} onChange={e => setCharacterEmpathy(e.target.value)} className="eaim-input w-full h-28 border-rose-100 focus:border-rose-400 placeholder:text-rose-200" placeholder="이야기 속 주인공이 어떤 기분이었을지, 그 마음을 본 너의 느낌은 어떠니?"></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <button onClick={solveMission} disabled={!quizAnswer || !scienceReason || !characterEmpathy || isAnalyzing} className="eaim-btn-main shadow-2xl">{isAnalyzing ? "선생님이 일지를 분석 중..." : "탐험 보고서 제출하기 📝"}</button>
+                                </div>
+                            )}
+
+                            {step === 3 && (
+                                <div className="space-y-6 animate-fadeIn">
+                                    <div className="bg-white p-8 rounded-[3rem] border-2 border-indigo-200 whitespace-pre-wrap font-hand text-2xl leading-relaxed shadow-xl border-t-[12px] border-t-indigo-500">{feedbackReport}</div>
+                                    <button onClick={() => { setStep(1); setScienceUnit(''); setDailyScenario(''); setQuizAnswer(''); setScienceReason(''); setCharacterEmpathy(''); }} className="eaim-btn-main bg-indigo-500">새로운 탐험 떠나기 🚀</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ScienceEAIMApp />);
+    </script>
+</body>
+</html>

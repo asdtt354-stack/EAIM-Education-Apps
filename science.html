@@ -67,7 +67,8 @@
                             generationConfig: {
                                 temperature: customConfig.temperature ?? 0.4, 
                                 topK: customConfig.topK ?? 20,
-                                maxOutputTokens: customConfig.maxTokens ?? 2000
+                                // 💡 글자 수 제한을 완전히 넉넉하게 8192(최대치)로 풀어서 끊김 방지
+                                maxOutputTokens: customConfig.maxTokens ?? 8192
                             }
                         })
                     });
@@ -113,7 +114,7 @@
                 [문제 해결 퀴즈]
                 (이 상황을 과학적으로 해결하거나 이해하기 위한 4지 선다형 퀴즈. 1, 2, 3, 4번 보기 포함)
                 
-                안내말이나 부연 설명 없이 위 괄호[ ] 제목 형식을 그대로 유지하며 바로 출력해주세요.`;
+                안내말이나 부연 설명 없이 위 괄호[ ] 제목 형식을 그대로 유지하며, 중간에 끊기지 않고 반드시 퀴즈의 4번 보기까지 완벽하게 작성한 후 끝마쳐주세요.`;
 
                 try {
                     const text = await callGemini(prompt, { temperature: 0.6 });
@@ -191,7 +192,6 @@
                                         {dailyScenario}
                                     </div>
 
-                                    {/* 💡 입력 영역 레이아웃 세로형으로 개편 */}
                                     <div className="space-y-5 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100">
                                         <div className="flex justify-between items-center border-b border-indigo-100 pb-2">
                                             <h3 className="font-bold text-indigo-600 text-lg font-hand">나의 생각 적어보기 ✍️</h3>
@@ -203,4 +203,4 @@
                                         <div className="space-y-4">
                                             <div className="space-y-2">
                                                 <label className="text-sm font-bold text-indigo-500 ml-1">1. 내가 생각하는 퀴즈 정답 번호는?</label>
-                                                <input type="number" value={quizAnswer} onChange={e => setQuizAnswer(e.target.value)} className="eaim-input text-center font-bold text-indigo
+                                                <input type="number" value

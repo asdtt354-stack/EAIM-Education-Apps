@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 비트 & 볼 v4.5</title>
+    <title>EAIM 감정 비트 & 볼 v5.0</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,12 +14,11 @@
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
         .font-title { font-family: 'Black Han Sans', sans-serif; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .level-card { transition: 0.3s; cursor: pointer; border: 2px solid transparent; }
-        .level-active { border-color: #f97316; background: rgba(249, 115, 22, 0.15) !important; transform: scale(1.02); }
+        .emotion-btn { transition: 0.2s; border: 2px solid transparent; cursor: pointer; }
+        .emotion-active { border-color: #f97316; transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
         .youtube-box { width: 100%; aspect-ratio: 16/9; border-radius: 1.5rem; overflow: hidden; background: #000; border: 2px solid #334155; }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .bounce-box { border-left: 6px solid #f97316; background: rgba(249, 115, 22, 0.05); }
     </style>
 </head>
 <body>
@@ -28,181 +27,299 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // 유튜브 링크에서 영상 ID만 추출하는 헬퍼 함수
         const getYouTubeId = (url) => {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
         };
 
+        const emotionList = ['화남 😡', '우울함 🌧️', '불안함 😰', '평온함 😌', '신남 😆', '무기력함 🫠'];
+        const colorPalette = [
+            { name: '빨강 (분노/열정)', hex: '#ef4444' }, { name: '주황 (활기/짜증)', hex: '#f97316' },
+            { name: '노랑 (기쁨/불안)', hex: '#eab308' }, { name: '초록 (평화/휴식)', hex: '#22c55e' },
+            { name: '파랑 (우울/차분)', hex: '#3b82f6' }, { name: '보라 (복잡/신비)', hex: '#a855f7' },
+            { name: '무채색 (공허/지침)', hex: '#64748b' }
+        ];
+
         const App = () => {
             const [step, setStep] = useState(0);
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
-            // 기존 musicSearch 대신 youtubeLink로 변경
-            const [youtubeLink, setYoutubeLink] = useState('');
-            const [videoId, setVideoId] = useState(''); // 추출된 영상 ID 저장
+            // 상태 관리
+            const [preEmotion, setPreEmotion] = useState({ word: '', color: '' });
+            const [postEmotion, setPostEmotion] = useState({ word: '', color: '', journal: '' });
+            const [prescription, setPrescription] = useState({ bpm: '', genre: '', explanation: '', searchKeyword: '' });
             
+            const [youtubeLink, setYoutubeLink] = useState('');
+            const [videoId, setVideoId] = useState('');
             const [sport, setSport] = useState('농구 🏀');
-            const [level, setLevel] = useState(1);
-            const [parsedData, setParsedData] = useState({ intro: '', teamA: '', teamB: '', teamC: '' });
-            const [journal, setJournal] = useState('');
-            const [feedback, setFeedback] = useState('');
+            const [rhythmData, setRhythmData] = useState({ intro: '', teamA: '', teamB: '', teamC: '' });
+            const [finalFeedback, setFinalFeedback] = useState('');
 
             useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_beat_v4_5');
+                const savedKey = localStorage.getItem('gemini_api_key_sel_beat');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            const callGemini = async (prompt) => {
+            // ⚡ 속도 최적화 API 호출 (JSON 강제 반환)
+            const callGeminiJSON = async (prompt) => {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.3, topK: 20, maxOutputTokens: 800, responseMimeType: "application/json" }
+                    })
+                });
+                const data = await response.json();
+                return JSON.parse(data.candidates[0].content.parts[0].text);
+            };
+
+            const callGeminiText = async (prompt) => {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+                const response = await fetch(url, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.5, maxOutputTokens: 500 }
+                    })
                 });
                 const data = await response.json();
                 return data.candidates[0].content.parts[0].text;
             };
 
-            const generateRhythm = async () => {
-                if(!youtubeLink) return alert("유튜브 영상 링크를 입력해주세요!");
-                
-                const extractedId = getYouTubeId(youtubeLink);
-                if(!extractedId) return alert("올바른 유튜브 링크가 아닙니다. 영상 주소를 다시 확인해주세요!");
-                
-                setVideoId(extractedId); // 영상 ID 세팅
+            // 1. 감정 분석 및 BPM 음악 처방
+            const analyzePreEmotion = async () => {
+                if (!preEmotion.word || !preEmotion.color) return alert("감정과 색깔을 선택해주세요!");
                 setIsAnalyzing(true);
-                const levelDesc = ["초보용 단체 비트", "역할 분담 비트", "화려한 앙상블"][level - 1];
-
-                // 💡 디렉터님의 '플로어 리듬' 철학을 프롬프트에 주입 (유튜브 링크 반영)
-                const prompt = `당신은 체육교사이자 리듬 안무가입니다. 다음 유튜브 영상(https://youtu.be/${extractedId})의 음악 비트에 맞춰 ${sport} 리듬 체육 대본을 써주세요.
                 
-                [철저 준수 사항]
-                1. 절대 '허벅지'를 치지 마세요. 소리가 안 나고 아픕니다.
-                2. 대신 '강당 바닥'에 공을 튕겨서 웅장한 울림(Bass)을 만드세요.
-                3. 배구의 경우 손으로 서로 공을 주고받는(패스/캐치) 소리를 리듬으로 활용하세요.
-                4. 난이도: ${levelDesc}
-                
-                형식: [도입부] / [A팀 리듬(Floor)] / [B팀 리듬(Catch)] / [C팀 리듬]
-                '쿵(바닥), 탁(손)' 같은 직관적 구음으로 아주 짧게 써줘.`;
+                const prompt = `학생의 운동 전 감정은 '${preEmotion.word}', 색깔은 '${preEmotion.color}'입니다. 
+                감정심리학의 '동질성의 원리(Iso Principle)'에 기반하여 이 감정을 다루기 위한 음악 처방을 내려주세요.
+                다음 JSON 스키마를 엄격히 준수하세요:
+                {
+                    "bpm": "(예: 130-140)",
+                    "genre": "(추천 장르/분위기)",
+                    "searchKeyword": "(유튜브에서 바로 검색할 수 있는 추천 검색어, 예: BPM 140 신나는 팝송 플레이리스트)",
+                    "explanation": "(이 감정에 왜 이 BPM과 장르가 필요한지 다정하게 설명하는 2문장)"
+                }`;
 
                 try {
-                    const text = await callGemini(prompt);
-                    const extract = (tag) => {
-                        const reg = new RegExp(`\\[${tag}\\](.*?)(?=\\[|$)`, 's');
-                        return text.match(reg)?.[1].trim() || '준비 중...';
-                    };
-                    setParsedData({
-                        intro: extract('도입부'),
-                        teamA: extract('A팀 리듬(Floor)'),
-                        teamB: extract('B팀 리듬(Catch)'),
-                        teamC: extract('C팀 리듬')
-                    });
+                    const res = await callGeminiJSON(prompt);
+                    setPrescription(res);
                     setStep(2);
-                } catch (e) { alert('분석 오류: API 키를 확인하거나 잠시 후 다시 시도해주세요.'); } finally { setIsAnalyzing(false); }
+                } catch (e) { alert('처방 오류가 발생했습니다. API 키를 확인해주세요.'); } 
+                finally { setIsAnalyzing(false); }
+            };
+
+            // 2. 선생님이 입력한 유튜브 링크로 리듬 생성
+            const generateRhythmScript = async () => {
+                if (!youtubeLink) return alert("선정된 음악의 유튜브 링크를 넣어주세요!");
+                const extractedId = getYouTubeId(youtubeLink);
+                if (!extractedId) return alert("올바른 유튜브 링크가 아닙니다.");
+                
+                setVideoId(extractedId);
+                setIsAnalyzing(true);
+
+                const prompt = `당신은 리듬 안무가입니다. 학생들의 현재 감정('${preEmotion.word}') 발산을 위해 '${sport}' 종목으로 플로어 바운스 연습 대본을 작성합니다.
+                [조건]
+                1. 절대 허벅지를 치지 말고, 강당 바닥에 공을 튕기는 울림을 활용할 것.
+                2. 구음(쿵, 탁 등)으로 아주 짧고 직관적이게 작성.
+                다음 JSON 스키마 준수:
+                {
+                    "intro": "코치의 시작 격려 멘트 1문장",
+                    "teamA": "공을 바닥에 튀기는 플로어 리듬 (예: 쿵! 쿵! 쿵-탁!)",
+                    "teamB": "공을 패스하거나 잡는 캐치 리듬",
+                    "teamC": "화려한 개인기/스킬 리듬"
+                }`;
+
+                try {
+                    const res = await callGeminiJSON(prompt);
+                    setRhythmData(res);
+                    setStep(3);
+                } catch (e) { alert('리듬 생성 오류'); } 
+                finally { setIsAnalyzing(false); }
+            };
+
+            // 3. 활동 후 피드백
+            const submitPostEmotion = async () => {
+                if (!postEmotion.word || !postEmotion.journal) return alert("변화된 감정과 일지를 작성해주세요!");
+                setIsAnalyzing(true);
+                
+                const prompt = `EAIM(Emotion, Artscape, Interactive, Musicalization) 철학을 바탕으로 지도하는 선생님입니다.
+                운동 전: ${preEmotion.word}(${preEmotion.color})
+                운동 후: ${postEmotion.word}(${postEmotion.color})
+                학생 일지: "${postEmotion.journal}"
+                
+                학생이 신체 활동과 음악을 통해 감정을 훌륭하게 조절해낸 점을 칭찬하는 다정한 위로와 응원의 편지를 3문장으로 써주세요.`;
+
+                try {
+                    const res = await callGeminiText(prompt);
+                    setFinalFeedback(res);
+                    setStep(5);
+                } catch (e) { alert('피드백 생성 오류'); } 
+                finally { setIsAnalyzing(false); }
             };
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col relative shadow-2xl overflow-hidden">
-                    <header className="p-5 border-b border-slate-800 flex justify-between items-center">
-                        <h1 className="text-xl font-title text-orange-500 italic uppercase">Beat & Ball Pro</h1>
-                        {step > 0 && <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">RESET</button>}
+                <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col relative shadow-2xl overflow-hidden font-sans">
+                    <header className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                        <h1 className="text-lg font-title text-orange-500 uppercase tracking-tight">EAIM Beat & SEL</h1>
+                        {step > 0 && <button onClick={() => window.location.reload()} className="text-[10px] text-slate-400 bg-slate-800 px-2 py-1 rounded">RESET</button>}
                     </header>
 
                     <main className="flex-grow p-6 overflow-y-auto pb-24">
+                        {/* 단계 0: 입장 */}
                         {step === 0 && (
                             <div className="py-10 text-center animate-fadeIn space-y-6">
-                                <div className="text-7xl">🏀</div>
-                                <h2 className="text-xl font-bold">플로어 리듬 엔진 가동</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-center" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_beat_v4_5', apiKey.trim()); setStep(1); }} className="w-full bg-indigo-600 p-4 rounded-2xl font-bold">시스템 접속</button>
+                                <div className="text-7xl">🩺🏀</div>
+                                <h2 className="text-xl font-bold">감정 진단 & 리듬 처방실</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-center outline-none focus:border-orange-500" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_sel_beat', apiKey.trim()); setStep(1); }} className="w-full bg-orange-600 p-4 rounded-2xl font-bold">입장하기</button>
                             </div>
                         )}
 
+                        {/* 단계 1: 감정 진단 */}
                         {step === 1 && (
                             <div className="space-y-8 animate-fadeIn">
-                                <section className="space-y-3">
-                                    <label className="text-xs font-bold text-indigo-400 ml-1 uppercase">1. 연습할 음악 (유튜브 링크)</label>
-                                    <input type="text" value={youtubeLink} onChange={e => setYoutubeLink(e.target.value)} placeholder="예: https://youtu.be/..." className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl focus:border-orange-500 outline-none text-sm" />
-                                </section>
-
-                                <section className="space-y-3">
-                                    <label className="text-xs font-bold text-indigo-400 ml-1 uppercase">2. 종목 & 레벨</label>
-                                    <div className="grid grid-cols-2 gap-2 mb-4">
-                                        {['농구 🏀', '배구 🏐', '축구 ⚽', '짐볼 🔵'].map(s => (
-                                            <button key={s} onClick={() => setSport(s)} className={`p-3 rounded-xl font-bold text-xs ${sport === s ? 'bg-orange-600' : 'bg-slate-800 text-slate-500'}`}>{s}</button>
+                                <div className="text-center mb-6">
+                                    <h2 className="text-xl font-title text-slate-200">Before: 지금 내 마음은?</h2>
+                                    <p className="text-xs text-slate-500 mt-1">체육관에 들어온 지금, 솔직한 기분을 골라주세요.</p>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">1. 감정 단어</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {emotionList.map(em => (
+                                            <button key={em} onClick={() => setPreEmotion({...preEmotion, word: em})} className={`emotion-btn p-3 rounded-xl bg-slate-800 text-xs font-bold ${preEmotion.word === em ? 'emotion-active text-white' : 'text-slate-400'}`}>{em}</button>
                                         ))}
                                     </div>
-                                    <div className="space-y-2">
-                                        {[{ lv: 1, title: 'Lv.1 심장 박동' }, { lv: 2, title: 'Lv.2 리듬 조율' }, { lv: 3, title: 'Lv.3 퍼펙트 앙상블' }].map(l => (
-                                            <div key={l.lv} onClick={() => setLevel(l.lv)} className={`level-card p-4 rounded-2xl bg-slate-900 border-slate-800 ${level === l.lv ? 'level-active' : ''}`}>
-                                                <div className="font-bold text-sm text-white">{l.title}</div>
-                                            </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">2. 마음의 색깔</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {colorPalette.map(c => (
+                                            <button key={c.hex} onClick={() => setPreEmotion({...preEmotion, color: c.name})} style={{backgroundColor: c.hex}} className={`h-10 rounded-xl emotion-btn ${preEmotion.color === c.name ? 'emotion-active' : 'opacity-70'}`} title={c.name}></button>
                                         ))}
                                     </div>
-                                </section>
+                                </div>
 
-                                <button onClick={generateRhythm} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-600 p-5 rounded-2xl font-black text-lg shadow-xl">
-                                    {isAnalyzing ? "AI 코치가 리듬 짜는 중..." : "AI 플로어 비트 생성 ✨"}
+                                <button onClick={analyzePreEmotion} disabled={isAnalyzing} className="w-full bg-indigo-600 p-4 rounded-2xl font-bold mt-4 shadow-lg">
+                                    {isAnalyzing ? "마음 주파수 분석 중..." : "AI 음악 처방받기 🎵"}
                                 </button>
                             </div>
                         )}
 
+                        {/* 단계 2: AI 처방 및 링크 입력 */}
                         {step === 2 && (
-                            <div className="space-y-6 animate-fadeIn pb-10">
-                                <div className="youtube-box">
-                                    {/* 유튜브 영상 직접 임베드로 변경됨 */}
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="glass-panel p-6 rounded-3xl border-l-4 border-indigo-500">
+                                    <h3 className="font-title text-indigo-400 mb-4 flex items-center gap-2"><i className="fa-solid fa-notes-medical"></i> 마음 맞춤형 음악 처방전</h3>
+                                    <div className="space-y-4 text-sm">
+                                        <div><span className="text-slate-400 text-xs block">추천 주파수 (BPM)</span><span className="font-black text-white text-lg">{prescription.bpm}</span></div>
+                                        <div><span className="text-slate-400 text-xs block">추천 장르</span><span className="font-bold text-indigo-200">{prescription.genre}</span></div>
+                                        <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                                            <span className="text-orange-400 text-[10px] font-bold uppercase">💡 유튜브 추천 검색어</span>
+                                            <p className="font-bold mt-1 text-slate-200">{prescription.searchKeyword}</p>
+                                        </div>
+                                        <p className="text-slate-300 italic leading-relaxed text-xs">"{prescription.explanation}"</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
+                                    <label className="text-xs font-bold text-orange-400 ml-1 uppercase">선생님이 고른 음악 링크</label>
+                                    <input type="text" value={youtubeLink} onChange={e => setYoutubeLink(e.target.value)} placeholder="유튜브 영상 주소 붙여넣기" className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-sm outline-none focus:border-orange-500" />
+                                    
+                                    <div className="grid grid-cols-4 gap-2 pt-2">
+                                        {['농구 🏀', '배구 🏐', '축구 ⚽', '짐볼 🔵'].map(s => (
+                                            <button key={s} onClick={() => setSport(s)} className={`p-2 rounded-lg font-bold text-[10px] ${sport === s ? 'bg-orange-600' : 'bg-slate-800 text-slate-400'}`}>{s}</button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button onClick={generateRhythmScript} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-orange-500 to-red-600 p-4 rounded-2xl font-black text-lg shadow-xl">
+                                    {isAnalyzing ? "리듬 짜는 중..." : "플로어 비트 생성 ✨"}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* 단계 3: 리듬 체육 활동 */}
+                        {step === 3 && (
+                            <div className="space-y-5 animate-fadeIn pb-10">
+                                <div className="youtube-box shadow-2xl">
                                     <iframe src={`https://www.youtube.com/embed/${videoId}?autoplay=0`} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full"></iframe>
                                 </div>
 
-                                <div className="bounce-box p-4 rounded-2xl">
+                                <div className="border-l-4 border-orange-500 bg-orange-500/10 p-4 rounded-2xl">
                                     <span className="text-[10px] text-orange-500 font-bold uppercase tracking-tighter">Coach Guide</span>
-                                    <p className="text-sm font-bold mt-1 text-slate-200 leading-relaxed">"{parsedData.intro}"</p>
+                                    <p className="text-sm font-bold mt-1 text-slate-200">"{rhythmData.intro}"</p>
                                 </div>
 
                                 <div className="space-y-3">
-                                    <div className="glass-panel p-5 rounded-2xl border-l-4 border-orange-500">
-                                        <h3 className="font-black text-orange-400 text-xs mb-2 uppercase tracking-widest">Team A (Floor Bounce)</h3>
-                                        <p className="text-white text-lg font-black">{parsedData.teamA}</p>
+                                    <div className="glass-panel p-5 rounded-2xl border-l-4 border-rose-500">
+                                        <h3 className="font-black text-rose-400 text-xs mb-1 uppercase tracking-widest">Team A (Floor)</h3>
+                                        <p className="text-white text-lg font-black">{rhythmData.teamA}</p>
                                     </div>
                                     <div className="glass-panel p-5 rounded-2xl border-l-4 border-blue-500">
-                                        <h3 className="font-black text-blue-400 text-xs mb-2 uppercase tracking-widest">Team B (Hand / Pass)</h3>
-                                        <p className="text-white text-lg font-black">{parsedData.teamB}</p>
+                                        <h3 className="font-black text-blue-400 text-xs mb-1 uppercase tracking-widest">Team B (Catch)</h3>
+                                        <p className="text-white text-lg font-black">{rhythmData.teamB}</p>
                                     </div>
-                                    {level > 1 && (
-                                        <div className="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
-                                            <h3 className="font-black text-emerald-400 text-xs mb-2 uppercase tracking-widest">Team C (Skill)</h3>
-                                            <p className="text-white text-lg font-black">{parsedData.teamC}</p>
-                                        </div>
-                                    )}
+                                    <div className="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
+                                        <h3 className="font-black text-emerald-400 text-xs mb-1 uppercase tracking-widest">Team C (Skill)</h3>
+                                        <p className="text-white text-lg font-black">{rhythmData.teamC}</p>
+                                    </div>
                                 </div>
 
-                                <button onClick={() => setStep(3)} className="w-full bg-slate-800 p-5 rounded-2xl font-bold mt-4 border border-slate-700">활동 완료! 마음 기록 👉</button>
+                                <button onClick={() => setStep(4)} className="w-full bg-slate-800 hover:bg-slate-700 p-5 rounded-2xl font-bold mt-4 border border-slate-700">활동 완료! 감정 재진단 👉</button>
                             </div>
                         )}
 
-                        {step === 3 && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <h2 className="text-2xl font-title text-center text-orange-500 mt-10 tracking-tighter uppercase">Rhythm Journal</h2>
-                                <textarea value={journal} onChange={e => setJournal(e.target.value)} className="w-full bg-slate-900 border border-slate-700 p-5 rounded-3xl text-white h-48 focus:border-orange-500 outline-none" placeholder="강당 바닥을 울리며 느낀 우리의 에너지는 어땠나요?"></textarea>
-                                <button onClick={async () => {
-                                    setIsAnalyzing(true);
-                                    const res = await callGemini(`학생 일지: ${journal}. 체육 코치로서 팀의 에너지를 칭찬하는 다정한 답장 3문장 써줘.`);
-                                    setFeedback(res); setStep(4); setIsAnalyzing(false);
-                                }} disabled={!journal || isAnalyzing} className="w-full bg-orange-600 p-5 rounded-2xl font-bold shadow-xl">코치님께 제출 📮</button>
-                            </div>
-                        )}
-
+                        {/* 단계 4: 활동 후 감정 및 일지 */}
                         {step === 4 && (
-                            <div className="space-y-6 animate-fadeIn text-center">
-                                <div className="text-7xl mb-4 mt-10">🏆</div>
-                                <h2 className="text-2xl font-title text-orange-400 uppercase tracking-tighter">Victory Feedback</h2>
-                                <div className="glass-panel p-8 rounded-[2.5rem] text-left">
-                                    <p className="text-lg leading-relaxed italic text-slate-100 font-serif">"{feedback}"</p>
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="text-center mb-6">
+                                    <h2 className="text-xl font-title text-slate-200">After: 땀 흘린 후 내 마음은?</h2>
                                 </div>
-                                <button onClick={() => { setYoutubeLink(''); setStep(1); }} className="w-full bg-slate-800 p-4 rounded-2xl font-bold">새로운 음악 도전</button>
+                                
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">1. 변화된 감정</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {emotionList.map(em => (
+                                            <button key={em} onClick={() => setPostEmotion({...postEmotion, word: em})} className={`emotion-btn p-3 rounded-xl bg-slate-800 text-xs font-bold ${postEmotion.word === em ? 'emotion-active border-emerald-500 text-white' : 'text-slate-400'}`}>{em}</button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">2. 변화된 색깔</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {colorPalette.map(c => (
+                                            <button key={c.hex} onClick={() => setPostEmotion({...postEmotion, color: c.name})} style={{backgroundColor: c.hex}} className={`h-10 rounded-xl emotion-btn ${postEmotion.color === c.name ? 'emotion-active border-emerald-500' : 'opacity-70'}`} title={c.name}></button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 pt-4">
+                                    <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">3. 리듬 일지</label>
+                                    <textarea value={postEmotion.journal} onChange={e => setPostEmotion({...postEmotion, journal: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-white h-32 focus:border-emerald-500 outline-none text-sm" placeholder="바닥을 강하게 울리며 내 마음의 색깔이 어떻게 변했는지 적어보세요."></textarea>
+                                </div>
+
+                                <button onClick={submitPostEmotion} disabled={isAnalyzing} className="w-full bg-emerald-600 p-4 rounded-2xl font-bold shadow-xl">
+                                    {isAnalyzing ? "편지 쓰는 중..." : "코치님께 제출 📮"}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* 단계 5: 피드백 확인 */}
+                        {step === 5 && (
+                            <div className="space-y-6 animate-fadeIn text-center">
+                                <div className="text-7xl mb-4 mt-10">💌</div>
+                                <h2 className="text-2xl font-title text-emerald-400 uppercase tracking-tighter">Victory Feedback</h2>
+                                <div className="glass-panel p-8 rounded-[2.5rem] text-left border-t-4 border-emerald-500">
+                                    <p className="text-base leading-relaxed text-slate-100">{finalFeedback}</p>
+                                </div>
+                                <button onClick={() => { setYoutubeLink(''); setPreEmotion({word:'', color:''}); setPostEmotion({word:'', color:'', journal:''}); setStep(1); }} className="w-full bg-slate-800 p-4 rounded-2xl font-bold">새로운 감정 발산하기</button>
                             </div>
                         )}
                     </main>

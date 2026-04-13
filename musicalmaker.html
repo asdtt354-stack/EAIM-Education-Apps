@@ -236,4 +236,63 @@
                                         <div className="flex border-b border-white/10 mb-6 no-print sticky top-0 bg-[#1a0509] z-10 shadow-lg">
                                             <button onClick={() => setActiveTab('script')} className={`tab-btn ${activeTab === 'script' ? 'tab-active' : ''}`}><i className="fa-solid fa-scroll"></i>📜 극본</button>
                                             <button onClick={() => setActiveTab('image')} className={`tab-btn ${activeTab === 'image' ? 'tab-active' : ''}`}><i className="fa-solid fa-palette"></i>🎨 장면 배경</button>
-                                            <button onClick={() => setActiveTab('suno')} className={`tab-btn ${activeTab === 'suno' ? 'tab-active' : ''}`}><i className="fa-solid
+                                            <button onClick={() => setActiveTab('suno')} className={`tab-btn ${activeTab === 'suno' ? 'tab-active' : ''}`}><i className="fa-solid fa-music"></i>🎵 Suno</button>
+                                        </div>
+
+                                        <div className="bg-white p-6 sm:p-8 rounded-3xl text-black shadow-2xl min-h-[400px]">
+                                            <div className="flex justify-between items-center mb-6 no-print">
+                                                <span className="text-[10px] font-bold text-rose-800 bg-rose-100 px-3 py-1 rounded-full">{activeTab === 'script' ? 'Musical Script' : activeTab === 'image' ? 'Visual Style' : 'Music Style'}</span>
+                                                <button onClick={() => window.print()} className="bg-black hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">🖨️ 인쇄/저장</button>
+                                            </div>
+                                            
+                                            {activeTab === 'script' ? (
+                                                <div className="animate-fadeIn">
+                                                    <h2 className="text-xl font-show mb-6 text-center border-b-2 border-black pb-4">{title}</h2>
+                                                    <pre className="font-drama text-[13px] leading-relaxed text-gray-800">
+                                                        {finalScript}
+                                                    </pre>
+                                                </div>
+                                            ) : activeTab === 'image' ? (
+                                                <div className="animate-fadeIn space-y-4 font-serif text-slate-700 text-[12px]">
+                                                    <h3 className="text-lg text-pink-800 font-bold mb-5 flex items-center gap-2"><i className="fa-solid fa-magic"></i> 각 장면별 이미지 생성 가이드</h3>
+                                                    <div className="suno-card bg-slate-50 border-slate-200 text-slate-800 p-5 rounded-xl border whitespace-pre-wrap leading-loose">
+                                                        {imagePrompts}
+                                                    </div>
+                                                    <p className="mt-4 text-[10px] text-slate-400 italic text-center">※ 영문 프롬프트를 복사하여 미드저니/DALL-E에 입력하세요.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="animate-fadeIn space-y-4 font-serif text-slate-700 text-[12px]">
+                                                    <h3 className="text-lg text-rose-800 font-bold mb-5 flex items-center gap-2"><i className="fa-solid fa-compact-disc"></i> 넘버별 음악 스타일 가이드</h3>
+                                                    <div className="suno-card whitespace-pre-wrap leading-loose p-5 bg-slate-50 border border-slate-200 text-slate-800 rounded-xl">
+                                                        {sunoPrompts}
+                                                    </div>
+                                                    <p className="mt-4 text-[10px] text-slate-400 italic text-center">※ 영문 프롬프트를 복사하여 Suno AI의 'Style of Music'에 넣으세요.</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-8 flex gap-3 no-print">
+                                            <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-4 rounded-2xl text-xs font-bold">새 기획</button>
+                                            <button onClick={()=>{ 
+                                                const copyText = activeTab === 'script' ? finalScript : activeTab === 'image' ? imagePrompts : sunoPrompts;
+                                                navigator.clipboard.writeText(copyText); 
+                                                alert(`${activeTab === 'script' ? '대본' : activeTab === 'image' ? '장면 배경' : 'Suno'} 프롬프트가 복사되었습니다!`); 
+                                            }} className="flex-1 bg-green-700 py-4 rounded-2xl text-xs font-bold">전체 복사 📋</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+                    <footer className="p-4 bg-black/40 text-center text-[10px] text-gray-600 opacity-40 no-print border-t border-white/5 mt-auto">
+                        &copy; 2026 EAIM Studio | Integrated Creative AI Engine v5.5
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

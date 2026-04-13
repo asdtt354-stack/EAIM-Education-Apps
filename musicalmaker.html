@@ -146,4 +146,103 @@
                             <div className="space-y-6 py-10 text-center animate-fadeIn">
                                 <h2 className="text-xl font-bold text-[#FCD34D]">AI 창작 시스템 접속</h2>
                                 <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="ticket-input text-center rounded-2xl" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F12
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-5 rounded-2xl font-bold">시스템 동기화</button>
+                            </div>
+                        )}
+
+                        {step === 1 && (
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="space-y-6 bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-inner">
+                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">뮤지컬 주제</label><input className="ticket-input rounded-2xl text-base" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 성장통" /></div>
+                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">공연 배경</label><input className="ticket-input rounded-2xl text-base" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 중학교 강당" /></div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center mb-1"><label className="text-xs text-amber-300 font-bold uppercase ml-1">뮤지컬 제목</label><button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn">{isGenerating ? "생성 중..." : "추천받기 ✨"}</button></div>
+                                        <input className="ticket-input rounded-2xl text-lg font-black border-yellow-500/30 text-yellow-100" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요" />
+                                    </div>
+                                </div>
+                                <button onClick={()=>setStep(2)} className="w-full bg-gradient-to-r from-rose-800 to-rose-950 py-5 rounded-2xl font-bold shadow-2xl">배역 설정 👉</button>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="space-y-5 animate-fadeIn">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h2 className="font-bold text-[#FCD34D] text-sm uppercase">Casting Center</h2>
+                                    <button onClick={suggestCharacters} disabled={isGenerating} className="magic-btn text-[10px] py-1.5 px-3">캐릭터 추천 ✨</button>
+                                </div>
+                                {castList.map((c, i) => (
+                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex gap-3 border border-white/5 animate-fadeIn">
+                                        <input className="w-1/3 bg-transparent border-b border-rose-900 text-yellow-300 font-bold text-sm outline-none" value={c.role} placeholder="배역" onChange={e=>{const n=[...castList]; n[i].role=e.target.value; setCastList(n);}} />
+                                        <input className="flex-1 bg-transparent border-b border-rose-900 text-xs text-white outline-none" value={c.desc} placeholder="특징" onChange={e=>{const n=[...castList]; n[i].desc=e.target.value; setCastList(n);}} />
+                                        <button onClick={()=>setCastList(castList.filter((_,idx)=>idx!==i))} className="text-rose-900"><i className="fa-solid fa-minus-circle"></i></button>
+                                    </div>
+                                ))}
+                                <button onClick={()=>setCastList([...castList, {role:'', desc:''}])} className="w-full py-4 border-2 border-dashed border-rose-900/30 text-rose-700 text-xs rounded-2xl font-bold">+ 배역 추가</button>
+                                <div className="flex gap-3 pt-6">
+                                    <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-5 rounded-2xl text-xs font-bold">이전</button>
+                                    <button onClick={generateAIScript} className="flex-[2] bg-[#9F1239] py-5 rounded-2xl font-bold shadow-xl">전막 집필 시작 🎬</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="space-y-6 animate-fadeIn pb-10">
+                                {isAnalyzing ? (
+                                    <div className="text-center py-24">
+                                        <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-[#FCD34D] mx-auto mb-6"></div>
+                                        <p className="text-[#FCD34D] font-drama animate-pulse italic">{loadingMsg}</p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div className="flex border-b border-white/10 mb-6 sticky top-0 bg-[#1a0509] z-20">
+                                            <button onClick={() => setActiveTab('script')} className={`tab-btn ${activeTab === 'script' ? 'tab-active' : ''}`}>극본</button>
+                                            <button onClick={() => setActiveTab('image')} className={`tab-btn ${activeTab === 'image' ? 'tab-active' : ''}`}>이미지</button>
+                                            <button onClick={() => setActiveTab('suno')} className={`tab-btn ${activeTab === 'suno' ? 'tab-active' : ''}`}>음악</button>
+                                        </div>
+                                        <div className="bg-white p-7 rounded-3xl text-black shadow-2xl min-h-[500px] mb-10">
+                                            <div className="animate-fadeIn">
+                                                {activeTab === 'script' && (
+                                                    <div>
+                                                        <h2 className="text-2xl font-show mb-6 text-center border-b-2 border-black pb-4">{title}</h2>
+                                                        <pre className="font-drama text-sm leading-relaxed text-gray-800">{finalScript}</pre>
+                                                    </div>
+                                                )}
+                                                {activeTab === 'image' && (
+                                                    <div className="space-y-4">
+                                                        <h3 className="text-lg font-bold text-rose-800 mb-4 border-l-4 border-rose-800 pl-3">AI 비주얼 가이드</h3>
+                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{imagePrompts || '이미지 프롬프트를 생성할 수 없습니다.'}</div>
+                                                    </div>
+                                                )}
+                                                {activeTab === 'suno' && (
+                                                    <div className="space-y-4">
+                                                        <h3 className="text-lg font-bold text-rose-800 mb-4 border-l-4 border-rose-800 pl-3">Suno 스타일 가이드</h3>
+                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{sunoPrompts || '수노 프롬프트를 생성할 수 없습니다.'}</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="mt-8 flex gap-3 no-print">
+                                            <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-5 rounded-2xl text-xs font-bold">새 창작</button>
+                                            <button onClick={()=>{ 
+                                                const copyText = activeTab === 'script' ? finalScript : activeTab === 'image' ? imagePrompts : sunoPrompts;
+                                                navigator.clipboard.writeText(copyText); 
+                                                alert("복사되었습니다!"); 
+                                            }} className="flex-1 bg-green-700 py-5 rounded-2xl text-xs font-bold">전체 복사 📋</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+                    <footer className="p-4 bg-black/40 text-center text-[10px] text-gray-600 opacity-40 no-print border-t border-white/5 mt-auto">
+                        &copy; 2026 EAIM Studio | Gemini 2.5 Flash PRO (v6.0)
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

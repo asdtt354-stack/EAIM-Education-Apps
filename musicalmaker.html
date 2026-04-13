@@ -49,7 +49,7 @@
             
             const [activeTab, setActiveTab] = useState('script'); // 'script', 'image', 'suno'
             const [finalScript, setFinalScript] = useState('');
-            const [imagePrompts, setImagePrompts] = useState(''); // 💡 이미지 프롬프트 상태
+            const [imagePrompts, setImagePrompts] = useState('');
             const [sunoPrompts, setSunoPrompts] = useState('');
 
             useEffect(() => {
@@ -57,12 +57,20 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            const callGemini = async (prompt) => {
+            // ⚡ 속도 최적화: 작업 성격에 맞게 generationConfig를 동적으로 받아 처리하도록 개선
+            const callGemini = async (prompt, customConfig = {}) => {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: customConfig.temperature ?? 0.3,      // 기본적으로 창의성보다 정밀도와 속도 우선
+                            topK: customConfig.topK ?? 20,                     // 단어 탐색 풀 제한
+                            maxOutputTokens: customConfig.maxTokens ?? 2500    // 대본의 경우 충분히 길게, 나머지는 짧게
+                        }
+                    })
                 });
                 const data = await response.json();
                 return data.candidates[0].content.parts[0].text;
@@ -72,7 +80,8 @@
                 if (!topic || !place) return alert("주제와 배경을 먼저 입력해주세요!");
                 setIsGenerating(true);
                 try {
-                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘.`);
+                    // ⚡ 제목은 창의성이 필요하지만 매우 짧아야 하므로 글자 수를 확 줄여서 속도 극대화
+                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. 부연설명 절대 금지.`, { temperature: 0.7, maxTokens: 40 });
                     setTitle(result.trim().replace(/["']/g, ""));
                 } catch (e) { alert("제목 생성 오류"); }
                 finally { setIsGenerating(false); }
@@ -82,7 +91,8 @@
                 if (!title) return alert("제목이 확정되어야 합니다!");
                 setIsGenerating(true);
                 try {
-                    const result = await callGemini(`뮤지컬 '${title}'(주제:${topic})에 어울리는 조연 캐릭터 3명을 [역할명: 특징] 형식으로 추천해줘.`);
+                    // ⚡ 캐릭터 추천도 리스트 형식으로만 빠르게 받아오도록 제한
+                    const result = await callGemini(`뮤지컬 '${title}'(주제:${topic})에 어울리는 조연 캐릭터 3명을 [역할명: 특징] 형식으로 추천해줘. 부연설명 금지.`, { temperature: 0.6, maxTokens: 200 });
                     const lines = result.split('\n').filter(l => l.includes(':'));
                     const newCasts = lines.map(line => {
                         const [role, desc] = line.replace(/[\[\]\d.]/g, "").split(':');
@@ -96,7 +106,9 @@
             const generateAIScript = async () => {
                 setIsAnalyzing(true);
                 setStep(3);
-                const prompt = `베테랑 뮤지컬 연출가로서 다음 조건의 뮤지컬 극본을 집필하세요.
+                
+                // 💡 프롬프트 최적화: 군더더기 말 차단 및 출력 형식을 엄격하게 통제하여 렌더링 지연 방지
+                const prompt = `베테랑 뮤지컬 연출가로서 다음 조건의 뮤지컬 극본을 집필해. 인사말이나 부연설명은 절대 금지하고 즉시 극본만 출력해.
                 제목: ${title} / 주제: ${topic} / 배경: ${place}
                 배역: ${castList.map(c=>c.role + '('+c.desc+')').join(', ')}
 
@@ -113,7 +125,8 @@
                 극본 내에는 가사만 깔끔하게 나오도록 SEL(사회정서학습) 관점에서 감동적으로 집필해줘.`;
 
                 try {
-                    const text = await callGemini(prompt);
+                    // ⚡ 종합 집필은 글자 수가 많으므로 maxTokens를 넉넉하게 주고, temperature를 낮춰 안정적이고 빠르게 출력 유도
+                    const text = await callGemini(prompt, { temperature: 0.3, maxTokens: 3000 });
                     const [tempPart1, sunoPart] = text.split('---SUNO_PROMPTS---');
                     const [scriptPart, imagePart] = tempPart1.split('---IMAGE_PROMPTS---');
                     
@@ -148,7 +161,7 @@
                                     <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">우리가 정한 주제</label><input className="w-full p-4 rounded-2xl ticket-input text-sm" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예:마음의 용기" /></div>
                                     <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">우리가 정한 배경</label><input className="w-full p-4 rounded-2xl ticket-input text-sm" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예:조선시대 달나라" /></div>
                                     <div className="space-y-2 relative">
-                                        <div className="flex justify-between items-center mb-1"><label className="text-xs text-amber-300 font-bold uppercase ml-1">📜 최종 제목</label><button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn text-[10px] py-1 px-3 shadow-lg">{isGenerating ? "..." : "추천받기 ✨"}</button></div>
+                                        <div className="flex justify-between items-center mb-1"><label className="text-xs text-amber-300 font-bold uppercase ml-1">📜 최종 제목</label><button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn text-[10px] py-1 px-3 shadow-lg">{isGenerating ? "추천 중..." : "추천받기 ✨"}</button></div>
                                         <input className="w-full p-4 rounded-2xl ticket-input text-sm border-yellow-500/20 font-bold" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하거나 버튼을 터치하세요" />
                                     </div>
                                 </div>
@@ -160,7 +173,7 @@
                             <div className="space-y-5 animate-fadeIn">
                                 <div className="flex justify-between items-center mb-2">
                                     <h2 className="font-bold text-[#FCD34D] text-sm uppercase">Casting Board</h2>
-                                    <button onClick={suggestCharacters} disabled={isGenerating} className="cast-suggest-btn text-yellow-500 text-[10px] px-3 py-1.5 rounded-full border border-yellow-500 animate-pulse">친구들 추천 ✨</button>
+                                    <button onClick={suggestCharacters} disabled={isGenerating} className="cast-suggest-btn text-yellow-500 text-[10px] px-3 py-1.5 rounded-full border border-yellow-500 animate-pulse">{isGenerating ? "모집 중..." : "친구들 추천 ✨"}</button>
                                 </div>
                                 {castList.map((c, i) => (
                                     <div key={i} className="bg-white/5 p-4 rounded-2xl flex gap-3 border border-white/5 animate-fadeIn">
@@ -186,7 +199,6 @@
                                     </div>
                                 ) : (
                                     <div className="print-area pb-10">
-                                        {/* 💡 종합 기획 탭 시스템 추가 */}
                                         <div className="flex border-b border-white/10 mb-6 no-print sticky top-0 bg-[#1a0509] z-10 shadow-lg">
                                             <button onClick={() => setActiveTab('script')} className={`tab-btn ${activeTab === 'script' ? 'tab-active' : ''}`}><i className="fa-solid fa-scroll"></i>📜 극본</button>
                                             <button onClick={() => setActiveTab('image')} className={`tab-btn ${activeTab === 'image' ? 'tab-active' : ''}`}><i className="fa-solid fa-palette"></i>🎨 장면 배경</button>

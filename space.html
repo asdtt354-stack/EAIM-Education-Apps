@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM Space Voyager v10.0</title>
+    <title>EAIM Space Voyager v10.5</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,7 +13,6 @@
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
         .font-serif { font-family: 'Gowun Dodum', serif; }
         
-        /* 🚀 태양계 시뮬레이터 배경 */
         .solar-system { 
             position: relative; width: 100%; height: 420px; 
             background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); 
@@ -61,7 +60,7 @@
             const [tempKey, setTempKey] = useState('');
             const [obsDate, setObsDate] = useState(new Date().toISOString().split('T')[0]);
             const [selectedPlanet, setSelectedPlanet] = useState(null);
-            const [briefing, setBriefing] = useState({ temp: '', atmos: '', aiMsg: '', constName: '' });
+            const [briefing, setBriefing] = useState({ temp: '', atmos: '', msg: '', constName: '' });
             const [isLoading, setIsLoading] = useState(false);
 
             const planets = [
@@ -72,7 +71,7 @@
                 { id: 5, name: '화성', size: 10, orbit: 200, revTime: 45, rotTime: 3, color: '#ef4444' },
                 { id: 6, name: '목성', size: 28, orbit: 260, revTime: 80, rotTime: 1, color: '#d97706' },
                 { id: 7, name: '토성', size: 24, orbit: 320, revTime: 120, rotTime: 1.2, color: '#fde047' },
-                { id: 8, name: '명왕성', size: 6, orbit: 380, revTime: 180, rotTime: 6, color: '#64748b' }
+                { id: 8, name: '해왕성', size: 18, orbit: 380, revTime: 180, rotTime: 6, color: '#3b82f6' }
             ];
 
             const handleConnect = () => {
@@ -91,7 +90,7 @@
                 return { key: "겨울", name: "오리온자리" };
             };
 
-            // ⚡ 속도 최적화: JSON 강제 출력 및 단어 탐색 제한 적용
+            // ⚡ 디렉터님 인증 모델 'gemini-2.5-flash' 적용 및 토큰 무제한 모드
             const callGemini = async (prompt) => {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`, {
                     method: 'POST',
@@ -99,10 +98,10 @@
                     body: JSON.stringify({ 
                         contents: [{ parts: [{ text: prompt }] }],
                         generationConfig: {
-                            temperature: 0.4,       // 감성 메시지 작성을 위한 약간의 유연성
-                            topK: 20,               // 단어 검색 폭을 줄여 속도 확보
-                            maxOutputTokens: 250,   // 필요한 만큼만 출력 후 즉각 종료
-                            responseMimeType: "application/json" // 💡 가장 빠른 응답! AI가 부연 설명 없이 완벽한 JSON만 리턴함
+                            temperature: 0.4,
+                            topK: 20,
+                            maxOutputTokens: 8192, // 💡 잘림 방지 최대화
+                            responseMimeType: "application/json" 
                         }
                     })
                 });
@@ -114,18 +113,15 @@
                 setIsLoading(true); setSelectedPlanet(planet); setStep(3);
                 const season = getSeasonData();
                 try {
-                    // 프롬프트를 JSON 포맷에 맞게 명확하게 지시
                     const prompt = `관측일: ${obsDate}, 대상 행성: ${planet.name}, 계절 별자리: ${season.name}. 
                     이 정보들을 바탕으로 과학적 사실(온도, 대기)과 중학생을 위한 따뜻한 감성 SEL 메시지를 작성해. 
                     다음 JSON 스키마를 엄격히 준수해: {"temp":"(행성의 실제 온도)", "atmos":"(행성의 주요 대기성분)", "msg":"(별자리와 행성의 특징을 엮은 감성 메시지)"}`;
                     
                     const res = await callGemini(prompt);
-                    // responseMimeType 설정 덕분에 정규식으로 자를 필요 없이 바로 파싱 가능
                     const json = JSON.parse(res); 
                     setBriefing({ ...json, constName: season.name });
                 } catch (e) { 
-                    console.error(e);
-                    setBriefing({ temp: "데이터 로딩 중", atmos: "분석 중", msg: "우주와 통신 중 장애가 발생했습니다.", constName: season.name }); 
+                    setBriefing({ temp: "데이터 분석 중", atmos: "연결 중", msg: "우주의 메시지를 불러오는 중입니다. 다시 시도해 주세요.", constName: season.name }); 
                 }
                 finally { setIsLoading(false); }
             };
@@ -139,42 +135,29 @@
                 <div className="max-w-md mx-auto min-h-screen bg-[#020617] flex flex-col relative shadow-2xl">
                     {(step === 0 || !apiKey) && (
                         <div className="absolute inset-0 bg-slate-900 z-[100] flex flex-col justify-center p-10 text-center animate-fadeIn space-y-8">
-                            <div className="text-7xl">🛰️</div>
-                            <h2 className="text-2xl font-bold text-indigo-400 font-serif uppercase tracking-widest">EAIM 관제 센터 연결</h2>
+                            <div className="text-7xl">🌌</div>
+                            <h2 className="text-2xl font-bold text-indigo-400 font-serif uppercase tracking-widest">EAIM 2.5 PRO<br/>우주 관제 센터</h2>
                             <div className="space-y-4">
-                                <input 
-                                    type="password" 
-                                    value={tempKey}
-                                    onChange={e => setTempKey(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && handleConnect()}
-                                    placeholder="Gemini API Key 입력" 
-                                    className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center outline-none border border-slate-700 focus:border-indigo-500 transition-all shadow-inner" 
-                                />
-                                <button 
-                                    onClick={handleConnect}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white p-5 rounded-2xl font-bold text-lg shadow-xl"
-                                >
-                                    시스템 연결하기 ✨
-                                </button>
+                                <input type="password" value={tempKey} onChange={e => setTempKey(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleConnect()} placeholder="Gemini API Key" className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center outline-none border border-slate-700 focus:border-indigo-500" />
+                                <button onClick={handleConnect} className="w-full bg-indigo-600 p-5 rounded-2xl font-bold text-lg shadow-xl">시스템 동기화 🚀</button>
                             </div>
-                            <p className="text-[10px] text-slate-500 italic">※ API 키를 입력한 후 버튼을 누르거나 엔터를 치세요.</p>
                         </div>
                     )}
 
                     <header className="p-6 flex justify-between items-center border-b border-white/5">
                         <h1 className="text-xl font-black text-indigo-400 font-serif tracking-tighter uppercase">EAIM Space Voyager</h1>
-                        {step > 1 && <button onClick={() => setStep(2)} className="text-[10px] bg-slate-800 px-3 py-1 rounded-full border border-white/10 uppercase font-bold">Observer</button>}
+                        {step > 1 && <button onClick={() => setStep(2)} className="text-[10px] bg-slate-800 px-3 py-1 rounded-full border border-white/10 uppercase font-bold">Planet List</button>}
                     </header>
 
                     <main className="flex-grow p-6 overflow-y-auto pb-20">
                         {step === 1 && (
                             <div className="flex flex-col items-center justify-center py-20 space-y-12 animate-fadeIn text-center">
                                 <div className="space-y-4">
-                                    <h2 className="text-4xl font-black font-serif">Astro Station</h2>
-                                    <p className="text-slate-500 text-sm tracking-wide">날짜별 행성과 별자리를 동기화합니다.</p>
+                                    <h2 className="text-4xl font-black font-serif text-white">READY TO EXPLORE</h2>
+                                    <p className="text-slate-500 text-sm">태양계 시뮬레이터가 2.5 엔진과 연결되었습니다.</p>
                                 </div>
                                 <button onClick={() => setStep(2)} className="w-60 h-60 rounded-full bg-gradient-to-tr from-indigo-700 via-indigo-500 to-rose-600 flex items-center justify-center text-2xl font-black shadow-2xl border-4 border-white/10 hover:scale-105 transition-all">
-                                    관측소 입장 🔭
+                                    우주 탐사 시작 🚀
                                 </button>
                             </div>
                         )}
@@ -182,7 +165,7 @@
                         {step === 2 && (
                             <div className="space-y-8 animate-fadeIn">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Observation Date</label>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">관측 날짜 설정</label>
                                     <input type="date" value={obsDate} onChange={e => setObsDate(e.target.value)} className="w-full bg-slate-900 p-4 rounded-2xl text-white text-center border border-indigo-500/20 font-black shadow-inner" />
                                 </div>
                                 <div className="solar-system shadow-2xl relative">
@@ -191,10 +174,7 @@
                                     {planets.map(p => (
                                         <div key={p.id} className="orbit" style={{ width: p.orbit, height: p.orbit, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
                                             <div className="rev-track" style={{ animationDuration: `${p.revTime}s`, ...getStartPos(p.revTime) }}>
-                                                <div className="planet" style={{ 
-                                                    width: p.size, height: p.size, backgroundColor: p.color,
-                                                    animationDuration: `${Math.abs(p.rotTime)}s`
-                                                }} onClick={() => getBriefing(p)}></div>
+                                                <div className="planet" style={{ width: p.size, height: p.size, backgroundColor: p.color }} onClick={() => getBriefing(p)}></div>
                                             </div>
                                         </div>
                                     ))}
@@ -209,7 +189,7 @@
                             <div className="space-y-6 animate-fadeIn pb-10">
                                 <div className="text-center space-y-1">
                                     <h2 className="text-5xl font-black text-white">{selectedPlanet.name}</h2>
-                                    <p className="text-indigo-400 text-[10px] font-bold tracking-widest uppercase">{obsDate} 미션 중</p>
+                                    <p className="text-indigo-400 text-[10px] font-bold tracking-widest uppercase">{obsDate} 미션 분석</p>
                                 </div>
 
                                 <div className="relative py-4">
@@ -232,13 +212,16 @@
                                         <h3 className="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>AI Cosmic Briefing
                                         </h3>
-                                        {isLoading ? <div className="animate-pulse h-20 bg-white/5 rounded-xl"></div> : <p className="text-[14px] leading-relaxed text-indigo-50 font-serif italic italic">"{briefing.msg}"</p>}
+                                        {isLoading ? <div className="animate-pulse h-20 bg-white/5 rounded-xl"></div> : <p className="text-[14px] leading-relaxed text-indigo-50 font-serif italic">"{briefing.msg}"</p>}
                                     </div>
                                 </div>
-                                <button onClick={() => setStep(2)} className="w-full bg-slate-800 p-5 rounded-3xl font-bold text-slate-400 border border-slate-700 shadow-xl">전체 성도로 복귀</button>
+                                <button onClick={() => setStep(2)} className="w-full bg-slate-800 p-5 rounded-3xl font-bold text-slate-400 border border-slate-700 shadow-xl">성도(星圖)로 돌아가기</button>
                             </div>
                         )}
                     </main>
+                    <footer className="p-4 bg-black/40 text-center text-[10px] text-gray-600 opacity-40 no-print border-t border-white/5 mt-auto">
+                        &copy; 2026 EAIM Space Voyager | Gemini 2.5 Flash PRO
+                    </footer>
                 </div>
             );
         };

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 뮤지컬 메이커 v5.9</title>
+    <title>EAIM 뮤지컬 메이커 v6.0</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -15,24 +15,11 @@
         .font-drama { font-family: 'Gowun Batang', serif; }
         .font-show { font-family: 'Black Han Sans', sans-serif; }
         .stage-curtain { background: linear-gradient(to bottom, #9F1239, #881337); border-bottom: 4px solid #FCD34D; }
-        
-        .ticket-input { 
-            background: rgba(255, 255, 255, 0.08); 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            color: white; 
-            transition: 0.3s; 
-            outline: none;
-            line-height: 1.6;
-            min-height: 3.5rem;
-            width: 100%;
-            padding: 1rem 1.2rem;
-        }
+        .ticket-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: 0.3s; outline: none; line-height: 1.6; min-height: 3.5rem; width: 100%; padding: 1rem 1.2rem; }
         .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
-        
         .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; font-size: 0.75rem; padding: 0.6rem 1rem; }
         .tab-btn { padding: 1rem 0.5rem; flex: 1; font-weight: bold; font-size: 0.8rem; transition: 0.3s; border-bottom: 3px solid transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
         .tab-active { color: #FCD34D; border-bottom-color: #FCD34D; background: rgba(252, 211, 77, 0.07); }
-        
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         pre { white-space: pre-wrap; line-height: 1.8; color: #FDE68A; }
@@ -49,6 +36,7 @@
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [isGenerating, setIsGenerating] = useState(false);
+            const [loadingMsg, setLoadingMsg] = useState('');
 
             const [topic, setTopic] = useState('');
             const [place, setPlace] = useState('');
@@ -76,7 +64,6 @@
                             generationConfig: {
                                 temperature: customConfig.temperature ?? 0.4,
                                 topK: 20,
-                                // 💡 모든 생성 작업에 대해 토큰 제한을 넉넉하게 상향 조정
                                 maxOutputTokens: customConfig.maxTokens ?? 8192
                             }
                         })
@@ -90,4 +77,73 @@
                 if (!topic || !place) return alert("주제와 배경을 먼저 입력해주세요!");
                 setIsGenerating(true);
                 try {
-                    // 💡 제목 생성
+                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. 부연설명 절대 금지.`, { temperature: 0.8, maxTokens: 200 });
+                    setTitle(result.trim().replace(/["']/g, ""));
+                } catch (e) { alert("제목 생성 실패"); }
+                finally { setIsGenerating(false); }
+            };
+
+            const suggestCharacters = async () => {
+                if (!title) return alert("제목이 확정되어야 합니다!");
+                setIsGenerating(true);
+                try {
+                    const result = await callGemini(`뮤지컬 '${title}'(주제:${topic})에 어울리는 조연 캐릭터 3명을 [역할명: 특징] 형식으로 추천해줘.`, { temperature: 0.6, maxTokens: 500 });
+                    const lines = result.split('\n').filter(l => l.includes(':'));
+                    const newCasts = lines.map(line => {
+                        const [role, desc] = line.replace(/[\[\]\d.]/g, "").split(':');
+                        return { role: role.trim(), desc: desc.trim() };
+                    });
+                    setCastList([...castList, ...newCasts]);
+                } catch (e) { alert("캐릭터 추천 실패"); }
+                finally { setIsGenerating(false); }
+            };
+
+            // 💡 프롬프트가 누락되지 않도록 분리해서 요청하는 핵심 로직
+            const generateAIScript = async () => {
+                setIsAnalyzing(true);
+                setStep(3);
+                
+                try {
+                    // 1단계: 대본 집필
+                    setLoadingMsg('1단계: 대본(가사)을 집필하고 있습니다...');
+                    const scriptPrompt = `베테랑 뮤지컬 연출가로서 다음 조건의 뮤지컬 대본(1막~4막, 오프닝~커튼콜)을 집필해줘. 
+                    제목: ${title} / 주제: ${topic} / 배경: ${place}
+                    배역: ${castList.map(c=>c.role + '('+c.desc+')').join(', ')}
+                    인사말 없이 본문 대본만 출력해줘.`;
+                    const scriptResult = await callGemini(scriptPrompt);
+                    setFinalScript(scriptResult);
+
+                    // 2단계: 이미지 프롬프트 생성 (자동)
+                    setLoadingMsg('2단계: 장면별 시각 가이드를 생성 중입니다...');
+                    const imagePromptReq = `방금 작성된 뮤지컬 대본 [${scriptResult}]을 읽고, 각 막의 분위기를 상징하는 미드저니/DALL-E용 영문 이미지 생성 프롬프트 리스트를 작성해줘. 설명 없이 프롬프트만.`;
+                    const imageResult = await callGemini(imagePromptReq);
+                    setImagePrompts(imageResult);
+
+                    // 3단계: 수노 프롬프트 생성 (자동)
+                    setLoadingMsg('3단계: 음악 스타일 가이드를 생성 중입니다...');
+                    const sunoPromptReq = `방금 작성된 뮤지컬 대본 [${scriptResult}]의 넘버들을 위해 Suno AI용 영문 음악 스타일(Style, Mood) 프롬프트 리스트를 작성해줘. 가사는 제외하고 스타일 정보만.`;
+                    const sunoResult = await callGemini(sunoPromptReq);
+                    setSunoPrompts(sunoResult);
+
+                } catch (e) { 
+                    alert('집필 중 오류가 발생했습니다. 다시 시도해 주세요.'); 
+                    setStep(1); 
+                } finally { 
+                    setIsAnalyzing(false); 
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-[#1a0509] flex flex-col relative border-x-2 border-[#4a0410] shadow-2xl">
+                    <header className="stage-curtain p-6 flex justify-between items-center shadow-xl">
+                        <div onClick={() => window.location.reload()} className="text-[#FCD34D] cursor-pointer hover:scale-110"><i className="fa-solid fa-masks-theater text-2xl"></i></div>
+                        <h1 className="text-xl text-[#FCD34D] font-show uppercase tracking-tighter">EAIM 2.5 MUSICAL v6.0</h1>
+                        <div onClick={() => { localStorage.removeItem('gemini_api_key_musical_v5_5'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer text-[10px] border border-[#FCD34D] px-2 py-1 rounded">RESET</div>
+                    </header>
+
+                    <main className="flex-grow p-6 overflow-y-auto pb-10">
+                        {step === 0 && (
+                            <div className="space-y-6 py-10 text-center animate-fadeIn">
+                                <h2 className="text-xl font-bold text-[#FCD34D]">AI 창작 시스템 접속</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="ticket-input text-center rounded-2xl" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F12

@@ -56,7 +56,6 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // ⚡ 속도 최적화 및 튼튼한 에러 방어 코드가 적용된 API 호출 함수
             const callGemini = async (prompt, customConfig = {}) => {
                 const cleanKey = apiKey.trim();
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
@@ -76,7 +75,6 @@
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error?.message || '연결 오류가 발생했습니다.');
 
-                    // 💡 안전장치: AI가 안전 문제로 차단하거나 빈 응답을 줄 때 앱이 뻗지 않도록 방어
                     const candidate = data.candidates?.[0];
                     if (!candidate) throw new Error('AI가 응답을 생성하지 못했습니다. 키워드를 살짝 바꿔보세요.');
                     if (candidate.finishReason === 'SAFETY') throw new Error('안전 필터에 의해 이야기가 차단되었습니다. 다른 단어로 시도해주세요.');
@@ -99,7 +97,6 @@
                 setDailyScenario('일상 속 이야기를 구상 중입니다... 💭');
                 setFeedbackReport(''); setQuizAnswer(''); setQuizReason(''); setScienceHint('');
                 
-                // 💡 디렉터님의 제안을 완벽히 반영한 4단계 스토리텔링 프롬프트
                 const prompt = `당신은 중학교 과학 선생님입니다. 학생이 입력한 과학 단원 '${scienceUnit}'과 감정 '${emotionKeyword}'을 연결하여 일상 속 에피소드를 만들어주세요.
                 
                 다음 4가지 순서와 형식을 엄격하게 지켜서 작성해주세요:
@@ -190,51 +187,20 @@
                                 <div className="space-y-6 animate-fadeIn print-hidden">
                                     <h2 className="text-2xl font-hand text-center text-slate-800">어떤 일이 일어났을까요? 🧐</h2>
                                     
-                                    {/* 일상 이야기 및 퀴즈 출력 영역 */}
                                     <div className="bg-white p-6 rounded-3xl border-2 border-indigo-200 font-hand text-lg leading-relaxed shadow-sm whitespace-pre-wrap">
                                         {dailyScenario}
                                     </div>
 
-                                    <div className="space-y-4 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100">
-                                        <div className="flex justify-between items-center ml-1">
-                                            <h3 className="font-bold text-indigo-600">나의 생각 적어보기</h3>
+                                    {/* 💡 입력 영역 레이아웃 세로형으로 개편 */}
+                                    <div className="space-y-5 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100">
+                                        <div className="flex justify-between items-center border-b border-indigo-100 pb-2">
+                                            <h3 className="font-bold text-indigo-600 text-lg font-hand">나의 생각 적어보기 ✍️</h3>
                                             {!scienceHint && <button onClick={getHint} disabled={isLoadingHint} className="text-xs bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full font-bold shadow hover:bg-yellow-300 transition-colors">💡 선생님 찬스</button>}
                                         </div>
                                         
                                         {scienceHint && <div className="bg-yellow-50 p-3 rounded-2xl border border-yellow-200 text-sm font-hand text-yellow-800 animate-fadeIn">👩‍🏫 선생님: {scienceHint}</div>}
                                         
-                                        <div className="flex gap-2">
-                                            <input type="number" value={quizAnswer} onChange={e => setQuizAnswer(e.target.value)} className="eaim-input w-24 text-center font-bold text-indigo-700" placeholder="정답 번호" min="1" max="4" />
-                                            <textarea value={quizReason} onChange={e => setQuizReason(e.target.value)} className="eaim-input flex-1 h-20 text-sm" placeholder="왜 그렇게 생각했나요? 이때 주인공의 마음은 어땠을지 함께 적어보세요."></textarea>
-                                        </div>
-                                    </div>
-                                    
-                                    <button onClick={solveQuiz} disabled={!quizAnswer || !quizReason || isAnalyzing} className="eaim-btn-main mt-6">{isAnalyzing ? "선생님이 피드백을 적는 중..." : "선생님께 제출하기 📝"}</button>
-                                </div>
-                            )}
-
-                            {step === 3 && (
-                                <div className="space-y-6 animate-fadeIn print-area">
-                                    <h2 className="text-3xl font-hand text-center text-indigo-600">선생님의 다정한 피드백 💌</h2>
-                                    
-                                    <div className="bg-white p-8 rounded-3xl border-2 border-indigo-200 whitespace-pre-wrap font-hand text-xl leading-relaxed shadow-sm">
-                                        {isAnalyzing ? "피드백을 작성하고 있습니다..." : feedbackReport}
-                                    </div>
-                                    
-                                    <div className="flex gap-3 print-hidden">
-                                        <button onClick={() => window.print()} className="flex-1 eaim-btn-main bg-slate-400 hover:bg-slate-500 text-sm">🖨️ 인쇄 / 저장</button>
-                                        <button onClick={() => { setStep(1); setFeedbackReport(''); setQuizAnswer(''); setQuizReason(''); setScienceHint(''); setDailyScenario(''); }} className="flex-[2] eaim-btn-main bg-indigo-500 hover:bg-indigo-600 text-sm">새로운 이야기 탐험하기 🚀</button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<ScienceEAIMApp />);
-    </script>
-</body>
-</html>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-indigo-500 ml-1">1. 내가 생각하는 퀴즈 정답 번호는?</label>
+                                                <input type="number" value={quizAnswer} onChange={e => setQuizAnswer(e.target.value)} className="eaim-input text-center font-bold text-indigo

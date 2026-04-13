@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 뮤지컬 메이커 v5.8</title>
+    <title>EAIM 뮤지컬 메이커 v5.9</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -23,17 +23,13 @@
             transition: 0.3s; 
             outline: none;
             line-height: 1.6;
-            height: auto;
-            min-height: 3.8rem;
+            min-height: 3.5rem;
             width: 100%;
             padding: 1rem 1.2rem;
-            box-sizing: border-box;
         }
         .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
         
         .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; font-size: 0.75rem; padding: 0.6rem 1rem; }
-        .magic-btn:active { transform: scale(0.95); }
-        
         .tab-btn { padding: 1rem 0.5rem; flex: 1; font-weight: bold; font-size: 0.8rem; transition: 0.3s; border-bottom: 3px solid transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
         .tab-active { color: #FCD34D; border-bottom-color: #FCD34D; background: rgba(252, 211, 77, 0.07); }
         
@@ -79,109 +75,19 @@
                             contents: [{ parts: [{ text: prompt }] }],
                             generationConfig: {
                                 temperature: customConfig.temperature ?? 0.4,
-                                topK: customConfig.topK ?? 20,
+                                topK: 20,
+                                // 💡 모든 생성 작업에 대해 토큰 제한을 넉넉하게 상향 조정
                                 maxOutputTokens: customConfig.maxTokens ?? 8192
                             }
                         })
                     });
                     const data = await response.json();
                     return data.candidates[0].content.parts[0].text;
-                } catch (error) {
-                    throw error;
-                }
+                } catch (error) { throw error; }
             };
 
             const generateAutoTitle = async () => {
                 if (!topic || !place) return alert("주제와 배경을 먼저 입력해주세요!");
                 setIsGenerating(true);
                 try {
-                    // 💡 AI에게 '사춘'이 아닌 '사춘기'처럼 완성된 단어를 쓰도록 지시 강화
-                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 '완성된 형태'의 한국어 뮤지컬 제목을 딱 하나만 추천해줘. '사춘'처럼 단어가 끊기지 않게 '사춘기'와 같이 정확한 명사를 사용해줘. 부연설명 절대 금지.`, { temperature: 0.8, maxTokens: 60 });
-                    setTitle(result.trim().replace(/["']/g, ""));
-                } catch (e) { alert("제목 생성 실패"); }
-                finally { setIsGenerating(false); }
-            };
-
-            const suggestCharacters = async () => {
-                if (!title) return alert("제목이 확정되어야 합니다!");
-                setIsGenerating(true);
-                try {
-                    const result = await callGemini(`뮤지컬 '${title}'(주제:${topic})에 어울리는 조연 캐릭터 3명을 [역할명: 특징] 형식으로 추천해줘. 부연설명 금지.`, { temperature: 0.6, maxTokens: 400 });
-                    const lines = result.split('\n').filter(l => l.includes(':'));
-                    const newCasts = lines.map(line => {
-                        const [role, desc] = line.replace(/[\[\]\d.]/g, "").split(':');
-                        return { role: role.trim(), desc: desc.trim() };
-                    });
-                    setCastList([...castList, ...newCasts]);
-                } catch (e) { alert("캐릭터 추천 실패"); }
-                finally { setIsGenerating(false); }
-            };
-
-            const generateAIScript = async () => {
-                setIsAnalyzing(true);
-                setStep(3);
-                const prompt = `베테랑 뮤지컬 연출가로서 다음 뮤지컬의 전체 기획안(1막~4막 대본, 이미지/음악 프롬프트)을 집필해줘.
-                제목: ${title} / 주제: ${topic} / 배경: ${place}
-                배역: ${castList.map(c=>c.role + '('+c.desc+')').join(', ')}
-                형식 분리 필수: ---IMAGE_PROMPTS--- 와 ---SUNO_PROMPTS--- 를 꼭 사용해줘.`;
-
-                try {
-                    const text = await callGemini(prompt);
-                    let scriptPart = text;
-                    let imagePart = "";
-                    let sunoPart = "";
-
-                    if (text.includes('---IMAGE_PROMPTS---')) {
-                        const parts = text.split('---IMAGE_PROMPTS---');
-                        scriptPart = parts[0].trim();
-                        if (parts[1].includes('---SUNO_PROMPTS---')) {
-                            const subParts = parts[1].split('---SUNO_PROMPTS---');
-                            imagePart = subParts[0].trim();
-                            sunoPart = subParts[1].trim();
-                        } else {
-                            imagePart = parts[1].trim();
-                        }
-                    }
-                    setFinalScript(scriptPart);
-                    setImagePrompts(imagePart);
-                    setSunoPrompts(sunoPart);
-                } catch (e) { alert('집필 중 오류 발생'); setStep(1); }
-                finally { setIsAnalyzing(false); }
-            };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen bg-[#1a0509] flex flex-col relative border-x-2 border-[#4a0410] shadow-2xl">
-                    <header className="stage-curtain p-6 flex justify-between items-center shadow-xl">
-                        <div onClick={() => window.location.reload()} className="text-[#FCD34D] cursor-pointer hover:scale-110"><i className="fa-solid fa-masks-theater text-2xl"></i></div>
-                        <h1 className="text-xl text-[#FCD34D] font-show uppercase tracking-tighter">EAIM 2.5 MUSICAL</h1>
-                        <div onClick={() => { localStorage.removeItem('gemini_api_key_musical_v5_5'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer text-[10px] border border-[#FCD34D] px-2 py-1 rounded">RESET</div>
-                    </header>
-
-                    <main className="flex-grow p-6 overflow-y-auto">
-                        {step === 0 && (
-                            <div className="space-y-6 py-10 text-center animate-fadeIn">
-                                <h2 className="text-xl font-bold text-[#FCD34D]">AI 창작 엔진 가동</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="ticket-input text-center rounded-2xl" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-5 rounded-2xl font-bold">시스템 접속</button>
-                            </div>
-                        )}
-
-                        {step === 1 && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <div className="space-y-6 bg-white/5 p-6 rounded-[2.5rem] border border-white/10">
-                                    <div className="space-y-2">
-                                        <label className="text-xs text-rose-300 font-bold uppercase ml-1">뮤지컬 주제</label>
-                                        <input className="ticket-input rounded-2xl text-base" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 우정과 용기" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs text-rose-300 font-bold uppercase ml-1">공연 배경</label>
-                                        <input className="ticket-input rounded-2xl text-base" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 2050년 미래 학교" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs text-amber-300 font-bold uppercase ml-1">최종 제목 (완성된 단어)</label>
-                                            <button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn">{isGenerating ? "추천 중..." : "제목 추천받기 ✨"}</button>
-                                        </div>
-                                        <input className="ticket-input rounded-2xl text-lg font-black border-yellow-500/30 text-yellow-100" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하거나 추천받으세요" />
-                                    </div>
-                                </div>
+                    // 💡 제목 생성

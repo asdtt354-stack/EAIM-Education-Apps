@@ -53,8 +53,8 @@
             const [searchQuery, setSearchQuery] = useState('');
             const [currentTime, setCurrentTime] = useState(0);
             const [timeline, setTimeline] = useState([]);
-            const [effectEnabled, setEffectEnabled] = useState(true); // 💡 이펙트 온오프 상태
-            const [isFlash, setIsFlash] = useState(false); // 💡 번쩍임 트리거
+            const [effectEnabled, setEffectEnabled] = useState(true);
+            const [isFlash, setIsFlash] = useState(false);
             const playerRef = useRef(null);
             const lastTimeRef = useRef(-1);
 
@@ -72,7 +72,6 @@
                             const now = playerRef.current.getCurrentTime();
                             setCurrentTime(now);
 
-                            // 💡 4초 간격 데이터에서 마디가 바뀌었는지 확인
                             const currentIdx = timeline.findIndex((item, index) => {
                                 const nextItem = timeline[index + 1];
                                 return now >= item.time && (!nextItem || now < nextItem.time);
@@ -120,8 +119,22 @@
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                     const response = await fetch(url, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: `곡 '${searchQuery}' 분석해 4초 간격 JSON으로 출력해. [{"time":0, "chord":"C5", "wind":"도", "guitar":["도","솔"], "key":["도","미","솔"], "perc":"🥁쿵 👏팍"}]` }] }] })
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            contents: [{ 
+                                parts: [{ 
+                                    // 💡 프롬프트를 더 단호하게 수정하여 군더더기 텍스트 생성을 차단
+                                    text: `유튜브 영상 '${searchQuery}'의 음악을 분석해서 4초 간격의 데이터를 순수한 JSON 배열 형식으로만 출력해. 부연 설명은 절대 하지 마. \n형식 예시: [{"time":0, "chord":"C5", "wind":"도", "guitar":["도","솔"], "key":["도","미","솔"], "perc":"🥁쿵 👏팍"}]` 
+                                }] 
+                            }],
+                            // ⚡ 속도 최적화: 창의성은 없애고, 필요한 만큼만 빠르게 답변하도록 설정
+                            generationConfig: {
+                                temperature: 0.1,        // 데이터를 기계적으로 뽑아내도록 창의성 최하로 고정
+                                maxOutputTokens: 1500,   // 곡 길이에 대비해 토큰을 충분히 주되 무한정 길어지지 않게 방지
+                                topK: 10                 // 단어 선택 풀을 좁혀 연산 속도 극대화
+                            }
+                        })
                     });
                     const data = await response.json();
                     const match = data.candidates[0].content.parts[0].text.match(/\[.*\]/s);
@@ -177,7 +190,6 @@
                                 </div>
                             </div>
 
-                            {/* 💡 연주 스테이션 영역 (isFlash 상태에 따라 번쩍임 적용) */}
                             <div className="flex-grow flex flex-col px-4 pb-4 space-y-2 overflow-y-auto">
                                 <div className={`station-card flex items-center justify-between border-amber-500/30 ${isFlash ? 'flash-active' : ''}`}>
                                     <div className="flex flex-col"><span className="text-[9px] font-bold text-amber-500 uppercase">Percussion</span><span className="text-lg font-black text-amber-200">{currentData.perc}</span></div>
@@ -207,7 +219,6 @@
                                 </div>
                             </div>
 
-                            {/* 💡 하단 컨트롤 센터 (번쩍임 토글 스위치 포함) */}
                             <div className="p-3 bg-slate-900 border-t border-white/5 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                     <label className="switch">

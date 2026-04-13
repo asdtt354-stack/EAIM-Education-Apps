@@ -3,24 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 뮤지컬 메이커 v5.6</title>
+    <title>EAIM 뮤지컬 메이커 v5.8</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #1a0509; color: #FFF; margin: 0; padding: 0; overflow-x: hidden; }
         .font-drama { font-family: 'Gowun Batang', serif; }
         .font-show { font-family: 'Black Han Sans', sans-serif; }
         .stage-curtain { background: linear-gradient(to bottom, #9F1239, #881337); border-bottom: 4px solid #FCD34D; }
-        .ticket-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: 0.3s; outline: none; }
-        .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
-        .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.5rem; font-weight: bold; font-size: 0.75rem; padding: 0.5rem 0.8rem; }
-        .cast-suggest-btn { background: rgba(252, 211, 77, 0.1); border: 1px solid #FCD34D; color: #FCD34D; font-size: 0.7rem; padding: 4px 10px; border-radius: 99px; }
         
-        .tab-btn { padding: 0.8rem 0.5rem; flex: 1; font-weight: bold; font-size: 0.75rem; transition: 0.3s; border-bottom: 3px solid transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+        .ticket-input { 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            color: white; 
+            transition: 0.3s; 
+            outline: none;
+            line-height: 1.6;
+            height: auto;
+            min-height: 3.8rem;
+            width: 100%;
+            padding: 1rem 1.2rem;
+            box-sizing: border-box;
+        }
+        .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
+        
+        .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; font-size: 0.75rem; padding: 0.6rem 1rem; }
+        .magic-btn:active { transform: scale(0.95); }
+        
+        .tab-btn { padding: 1rem 0.5rem; flex: 1; font-weight: bold; font-size: 0.8rem; transition: 0.3s; border-bottom: 3px solid transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
         .tab-active { color: #FCD34D; border-bottom-color: #FCD34D; background: rgba(252, 211, 77, 0.07); }
         
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
@@ -55,10 +69,8 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // ⚡ 디렉터님의 환경에 최적화된 2.5-flash 모델 적용
             const callGemini = async (prompt, customConfig = {}) => {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-                
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
@@ -68,22 +80,13 @@
                             generationConfig: {
                                 temperature: customConfig.temperature ?? 0.4,
                                 topK: customConfig.topK ?? 20,
-                                // 💡 대본 잘림 방지를 위해 토큰 수를 8192로 대폭 늘렸습니다.
                                 maxOutputTokens: customConfig.maxTokens ?? 8192
                             }
                         })
                     });
-                    
-                    if (!response.ok) throw new Error("네트워크 연결이 원활하지 않습니다.");
                     const data = await response.json();
-                    
-                    if (!data.candidates || !data.candidates[0].content) {
-                        throw new Error("AI가 응답을 생성하지 못했습니다. 키워드를 확인해 주세요.");
-                    }
-                    
                     return data.candidates[0].content.parts[0].text;
                 } catch (error) {
-                    console.error(error);
                     throw error;
                 }
             };
@@ -92,9 +95,10 @@
                 if (!topic || !place) return alert("주제와 배경을 먼저 입력해주세요!");
                 setIsGenerating(true);
                 try {
-                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. 부연설명 절대 금지.`, { temperature: 0.7, maxTokens: 50 });
+                    // 💡 AI에게 '사춘'이 아닌 '사춘기'처럼 완성된 단어를 쓰도록 지시 강화
+                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 '완성된 형태'의 한국어 뮤지컬 제목을 딱 하나만 추천해줘. '사춘'처럼 단어가 끊기지 않게 '사춘기'와 같이 정확한 명사를 사용해줘. 부연설명 절대 금지.`, { temperature: 0.8, maxTokens: 60 });
                     setTitle(result.trim().replace(/["']/g, ""));
-                } catch (e) { alert("제목 생성 실패: " + e.message); }
+                } catch (e) { alert("제목 생성 실패"); }
                 finally { setIsGenerating(false); }
             };
 
@@ -109,65 +113,46 @@
                         return { role: role.trim(), desc: desc.trim() };
                     });
                     setCastList([...castList, ...newCasts]);
-                } catch (e) { alert("캐릭터 추천 실패: " + e.message); }
+                } catch (e) { alert("캐릭터 추천 실패"); }
                 finally { setIsGenerating(false); }
             };
 
             const generateAIScript = async () => {
                 setIsAnalyzing(true);
                 setStep(3);
-                
-                const prompt = `베테랑 뮤지컬 연출가로서 다음 조건의 뮤지컬 종합 기획안을 집필해. 인사말은 생략하고 즉시 내용을 출력해.
+                const prompt = `베테랑 뮤지컬 연출가로서 다음 뮤지컬의 전체 기획안(1막~4막 대본, 이미지/음악 프롬프트)을 집필해줘.
                 제목: ${title} / 주제: ${topic} / 배경: ${place}
                 배역: ${castList.map(c=>c.role + '('+c.desc+')').join(', ')}
-
-                [집필 가이드라인]
-                1. 구조: 오프닝 코러스 -> 1막~4막 -> 커튼콜 완결형.
-                2. 감성: SEL 관점에서 관객의 마음을 울리는 감동적인 대사와 핵심 가사 위주로 집필.
-                3. 형식 분리(필수): 아래 구분자를 정확히 사용하여 내용을 나누어줘.
-
-                ---IMAGE_PROMPTS---
-                (각 막의 분위기를 시각화하는 미드저니/DALL-E용 영문 이미지 생성 프롬프트 리스트)
-                ---SUNO_PROMPTS---
-                (각 넘버별 음악 스타일을 정의하는 Suno AI용 영문 프롬프트 리스트. 가사 정보 제외)
-
-                반드시 중간에 끊기지 말고 커튼콜과 프롬프트 리스트 끝까지 완벽하게 작성해줘.`;
+                형식 분리 필수: ---IMAGE_PROMPTS--- 와 ---SUNO_PROMPTS--- 를 꼭 사용해줘.`;
 
                 try {
-                    const text = await callGemini(prompt, { temperature: 0.4 });
-                    
-                    // 💡 안전한 텍스트 파싱 로직 (구분자 누락 대응)
+                    const text = await callGemini(prompt);
                     let scriptPart = text;
-                    let imagePart = "AI가 이미지 가이드를 작성 중입니다. 잠시 후 다시 시도해 주세요.";
-                    let sunoPart = "AI가 음악 스타일 가이드를 작성 중입니다.";
+                    let imagePart = "";
+                    let sunoPart = "";
 
                     if (text.includes('---IMAGE_PROMPTS---')) {
-                        const firstSplit = text.split('---IMAGE_PROMPTS---');
-                        scriptPart = firstSplit[0].trim();
-                        
-                        if (firstSplit[1].includes('---SUNO_PROMPTS---')) {
-                            const secondSplit = firstSplit[1].split('---SUNO_PROMPTS---');
-                            imagePart = secondSplit[0].trim();
-                            sunoPart = secondSplit[1].trim();
+                        const parts = text.split('---IMAGE_PROMPTS---');
+                        scriptPart = parts[0].trim();
+                        if (parts[1].includes('---SUNO_PROMPTS---')) {
+                            const subParts = parts[1].split('---SUNO_PROMPTS---');
+                            imagePart = subParts[0].trim();
+                            sunoPart = subParts[1].trim();
                         } else {
-                            imagePart = firstSplit[1].trim();
+                            imagePart = parts[1].trim();
                         }
                     }
-
                     setFinalScript(scriptPart);
                     setImagePrompts(imagePart);
                     setSunoPrompts(sunoPart);
-                } catch (e) { 
-                    alert('집필 중 오류가 발생했습니다: ' + e.message); 
-                    setStep(1); 
-                }
+                } catch (e) { alert('집필 중 오류 발생'); setStep(1); }
                 finally { setIsAnalyzing(false); }
             };
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-[#1a0509] flex flex-col relative border-x-2 border-[#4a0410] shadow-2xl">
-                    <header className="stage-curtain p-6 flex justify-between items-center no-print shadow-xl relative">
-                        <div onClick={() => window.location.reload()} className="text-[#FCD34D] cursor-pointer hover:scale-110 transition-transform"><i className="fa-solid fa-masks-theater text-2xl"></i></div>
+                    <header className="stage-curtain p-6 flex justify-between items-center shadow-xl">
+                        <div onClick={() => window.location.reload()} className="text-[#FCD34D] cursor-pointer hover:scale-110"><i className="fa-solid fa-masks-theater text-2xl"></i></div>
                         <h1 className="text-xl text-[#FCD34D] font-show uppercase tracking-tighter">EAIM 2.5 MUSICAL</h1>
                         <div onClick={() => { localStorage.removeItem('gemini_api_key_musical_v5_5'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer text-[10px] border border-[#FCD34D] px-2 py-1 rounded">RESET</div>
                     </header>
@@ -175,113 +160,28 @@
                     <main className="flex-grow p-6 overflow-y-auto">
                         {step === 0 && (
                             <div className="space-y-6 py-10 text-center animate-fadeIn">
-                                <div className="text-7xl mb-4">🎭✨🎬</div>
-                                <h2 className="text-xl font-bold text-[#FCD34D]">뮤지컬 창작 엔진 가동</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key 입력" className="w-full p-4 rounded-xl ticket-input text-center" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-4 rounded-xl font-bold">시스템 접속</button>
+                                <h2 className="text-xl font-bold text-[#FCD34D]">AI 창작 엔진 가동</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="ticket-input text-center rounded-2xl" />
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-5 rounded-2xl font-bold">시스템 접속</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-6 animate-fadeIn">
-                                <div className="space-y-5 bg-white/5 p-6 rounded-3xl border border-white/10 shadow-inner">
-                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">주제</label><input className="w-full p-4 rounded-2xl ticket-input text-sm" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="어떤 이야기를 하고 싶나요?" /></div>
-                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">배경</label><input className="w-full p-4 rounded-2xl ticket-input text-sm" value={place} onChange={e=>setPlace(e.target.value)} placeholder="어디서 일어나는 일인가요?" /></div>
+                                <div className="space-y-6 bg-white/5 p-6 rounded-[2.5rem] border border-white/10">
                                     <div className="space-y-2">
-                                        <div className="flex justify-between items-center mb-1"><label className="text-xs text-amber-300 font-bold uppercase ml-1">제목</label><button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn shadow-lg">{isGenerating ? "추천 중..." : "제목 추천받기 ✨"}</button></div>
-                                        <input className="w-full p-4 rounded-2xl ticket-input text-sm font-bold border-yellow-500/20" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 정해주세요" />
+                                        <label className="text-xs text-rose-300 font-bold uppercase ml-1">뮤지컬 주제</label>
+                                        <input className="ticket-input rounded-2xl text-base" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 우정과 용기" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-rose-300 font-bold uppercase ml-1">공연 배경</label>
+                                        <input className="ticket-input rounded-2xl text-base" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 2050년 미래 학교" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-xs text-amber-300 font-bold uppercase ml-1">최종 제목 (완성된 단어)</label>
+                                            <button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn">{isGenerating ? "추천 중..." : "제목 추천받기 ✨"}</button>
+                                        </div>
+                                        <input className="ticket-input rounded-2xl text-lg font-black border-yellow-500/30 text-yellow-100" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하거나 추천받으세요" />
                                     </div>
                                 </div>
-                                <button onClick={()=>setStep(2)} className="w-full bg-gradient-to-r from-rose-800 to-rose-950 py-5 rounded-2xl font-bold shadow-xl">배역 설정하러 가기 👉</button>
-                            </div>
-                        )}
-
-                        {step === 2 && (
-                            <div className="space-y-5 animate-fadeIn">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h2 className="font-bold text-[#FCD34D] text-sm uppercase">Casting Center</h2>
-                                    <button onClick={suggestCharacters} disabled={isGenerating} className="cast-suggest-btn animate-pulse">{isGenerating ? "캐릭터 모집 중..." : "친구들 자동 추천 ✨"}</button>
-                                </div>
-                                {castList.map((c, i) => (
-                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex gap-3 border border-white/5 animate-fadeIn">
-                                        <input className="w-1/3 bg-transparent border-b border-rose-900 text-yellow-300 font-bold text-sm outline-none" value={c.role} placeholder="배역" onChange={e=>{const n=[...castList]; n[i].role=e.target.value; setCastList(n);}} />
-                                        <input className="flex-1 bg-transparent border-b border-rose-900 text-xs text-white outline-none" value={c.desc} placeholder="특징" onChange={e=>{const n=[...castList]; n[i].desc=e.target.value; setCastList(n);}} />
-                                        <button onClick={()=>setCastList(castList.filter((_,idx)=>idx!==i))} className="text-rose-900"><i className="fa-solid fa-minus-circle"></i></button>
-                                    </div>
-                                ))}
-                                <button onClick={()=>setCastList([...castList, {role:'', desc:''}])} className="w-full py-3 border-2 border-dashed border-rose-900/30 text-rose-700 text-xs rounded-2xl">+ 배역 추가</button>
-                                <div className="flex gap-3 pt-6">
-                                    <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-4 rounded-2xl text-xs">이전</button>
-                                    <button onClick={generateAIScript} className="flex-[2] bg-[#9F1239] py-4 rounded-2xl font-bold shadow-xl">뮤지컬 극본 완성하기 🎬</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {step === 3 && (
-                            <div className="space-y-6 animate-fadeIn pb-10">
-                                {isAnalyzing ? (
-                                    <div className="text-center py-24">
-                                        <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-[#FCD34D] mx-auto mb-6"></div>
-                                        <p className="text-[#FCD34D] font-drama animate-pulse italic">최첨단 2.5 엔진으로<br/>웅장한 뮤지컬을 집필하고 있습니다...</p>
-                                    </div>
-                                ) : (
-                                    <div className="print-area pb-10">
-                                        <div className="flex border-b border-white/10 mb-6 no-print sticky top-0 bg-[#1a0509] z-20 shadow-lg">
-                                            <button onClick={() => setActiveTab('script')} className={`tab-btn ${activeTab === 'script' ? 'tab-active' : ''}`}><i className="fa-solid fa-scroll"></i>극본</button>
-                                            <button onClick={() => setActiveTab('image')} className={`tab-btn ${activeTab === 'image' ? 'tab-active' : ''}`}><i className="fa-solid fa-palette"></i>이미지</button>
-                                            <button onClick={() => setActiveTab('suno')} className={`tab-btn ${activeTab === 'suno' ? 'tab-active' : ''}`}><i className="fa-solid fa-music"></i>Suno</button>
-                                        </div>
-
-                                        <div className="bg-white p-6 sm:p-8 rounded-3xl text-black shadow-2xl min-h-[500px]">
-                                            <div className="flex justify-between items-center mb-6 no-print">
-                                                <span className="text-[10px] font-bold text-rose-800 bg-rose-100 px-3 py-1 rounded-full">{activeTab.toUpperCase()} PLAN</span>
-                                                <button onClick={() => window.print()} className="bg-black text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">🖨️ 인쇄/저장</button>
-                                            </div>
-                                            
-                                            <div className="animate-fadeIn">
-                                                {activeTab === 'script' && (
-                                                    <div>
-                                                        <h2 className="text-xl font-show mb-6 text-center border-b-2 border-black pb-4">{title}</h2>
-                                                        <pre className="font-drama text-[13px] leading-relaxed text-gray-800">{finalScript}</pre>
-                                                    </div>
-                                                )}
-                                                {activeTab === 'image' && (
-                                                    <div className="space-y-4">
-                                                        <h3 className="text-lg font-bold text-rose-800 mb-4 border-l-4 border-rose-800 pl-3">AI 장면 프롬프트</h3>
-                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{imagePrompts}</div>
-                                                    </div>
-                                                )}
-                                                {activeTab === 'suno' && (
-                                                    <div className="space-y-4">
-                                                        <h3 className="text-lg font-bold text-rose-800 mb-4 border-l-4 border-rose-800 pl-3">Suno 음악 스타일 가이드</h3>
-                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{sunoPrompts}</div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-8 flex gap-3 no-print">
-                                            <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-4 rounded-2xl text-xs font-bold">새 창작</button>
-                                            <button onClick={()=>{ 
-                                                const copyText = activeTab === 'script' ? finalScript : activeTab === 'image' ? imagePrompts : sunoPrompts;
-                                                navigator.clipboard.writeText(copyText); 
-                                                alert("클립보드에 복사되었습니다!"); 
-                                            }} className="flex-1 bg-green-700 py-4 rounded-2xl text-xs font-bold">전체 복사 📋</button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </main>
-                    <footer className="p-4 bg-black/40 text-center text-[10px] text-gray-600 opacity-40 no-print border-t border-white/5 mt-auto">
-                        &copy; 2026 EAIM Studio | Powered by Gemini 2.5 Flash
-                    </footer>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>

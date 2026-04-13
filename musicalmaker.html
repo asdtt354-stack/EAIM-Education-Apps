@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 뮤지컬 메이커 v6.0</title>
+    <title>EAIM 뮤지컬 메이커 v6.1</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -23,6 +23,8 @@
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         pre { white-space: pre-wrap; line-height: 1.8; color: #FDE68A; }
+        .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body>
@@ -33,7 +35,7 @@
 
         const App = () => {
             const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState('');
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_musical_v5_5') || '');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [isGenerating, setIsGenerating] = useState(false);
             const [loadingMsg, setLoadingMsg] = useState('');
@@ -48,12 +50,8 @@
             const [imagePrompts, setImagePrompts] = useState('');
             const [sunoPrompts, setSunoPrompts] = useState('');
 
-            useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_musical_v5_5');
-                if (savedKey) { setApiKey(savedKey); setStep(1); }
-            }, []);
-
-            const callGemini = async (prompt, customConfig = {}) => {
+            // ⚡ 디렉터님 전용 2.5-flash 호출 엔진
+            const callGemini = async (prompt, customTokens = 8192) => {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 try {
                     const response = await fetch(url, {
@@ -62,24 +60,31 @@
                         body: JSON.stringify({ 
                             contents: [{ parts: [{ text: prompt }] }],
                             generationConfig: {
-                                temperature: customConfig.temperature ?? 0.4,
+                                temperature: 0.5,
                                 topK: 20,
-                                maxOutputTokens: customConfig.maxTokens ?? 8192
+                                maxOutputTokens: customTokens
                             }
                         })
                     });
+                    
                     const data = await response.json();
+                    if (!data.candidates || data.candidates.length === 0) {
+                        throw new Error("AI가 응답을 거부했습니다. 다시 시도해 주세요.");
+                    }
                     return data.candidates[0].content.parts[0].text;
-                } catch (error) { throw error; }
+                } catch (error) {
+                    console.error("API Error:", error);
+                    throw error;
+                }
             };
 
             const generateAutoTitle = async () => {
                 if (!topic || !place) return alert("주제와 배경을 먼저 입력해주세요!");
                 setIsGenerating(true);
                 try {
-                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. 부연설명 절대 금지.`, { temperature: 0.8, maxTokens: 200 });
+                    const result = await callGemini(`주제 '${topic}'과 배경 '${place}'에 어울리는 창의적인 뮤지컬 제목을 딱 하나만 추천해줘. '사춘기'처럼 단어 끝이 잘리지 않게 완성된 제목으로 출력해줘.`, 200);
                     setTitle(result.trim().replace(/["']/g, ""));
-                } catch (e) { alert("제목 생성 실패"); }
+                } catch (e) { alert("제목 생성 중 오류가 발생했습니다."); }
                 finally { setIsGenerating(false); }
             };
 
@@ -87,7 +92,7 @@
                 if (!title) return alert("제목이 확정되어야 합니다!");
                 setIsGenerating(true);
                 try {
-                    const result = await callGemini(`뮤지컬 '${title}'(주제:${topic})에 어울리는 조연 캐릭터 3명을 [역할명: 특징] 형식으로 추천해줘.`, { temperature: 0.6, maxTokens: 500 });
+                    const result = await callGemini(`뮤지컬 '${title}'(주제:${topic})에 어울리는 조연 캐릭터 3명을 [역할명: 특징] 형식으로 추천해줘.`, 500);
                     const lines = result.split('\n').filter(l => l.includes(':'));
                     const newCasts = lines.map(line => {
                         const [role, desc] = line.replace(/[\[\]\d.]/g, "").split(':');
@@ -98,35 +103,34 @@
                 finally { setIsGenerating(false); }
             };
 
-            // 💡 프롬프트가 누락되지 않도록 분리해서 요청하는 핵심 로직
+            // 💡 분리 집필 시스템 (Poet 앱의 성공 방식 도입)
             const generateAIScript = async () => {
                 setIsAnalyzing(true);
                 setStep(3);
+                setFinalScript(''); setImagePrompts(''); setSunoPrompts('');
                 
                 try {
                     // 1단계: 대본 집필
-                    setLoadingMsg('1단계: 대본(가사)을 집필하고 있습니다...');
-                    const scriptPrompt = `베테랑 뮤지컬 연출가로서 다음 조건의 뮤지컬 대본(1막~4막, 오프닝~커튼콜)을 집필해줘. 
+                    setLoadingMsg('1단계: 2.5 PRO 엔진이 대본을 집필 중입니다...');
+                    const scriptPrompt = `베테랑 뮤지컬 연출가로서 다음 조건의 전막 대본(1막~4막, 가사 포함)을 집필해줘. 
                     제목: ${title} / 주제: ${topic} / 배경: ${place}
                     배역: ${castList.map(c=>c.role + '('+c.desc+')').join(', ')}
-                    인사말 없이 본문 대본만 출력해줘.`;
-                    const scriptResult = await callGemini(scriptPrompt);
+                    인사말 없이 본문만 출력해.`;
+                    const scriptResult = await callGemini(scriptPrompt, 8192);
                     setFinalScript(scriptResult);
 
-                    // 2단계: 이미지 프롬프트 생성 (자동)
-                    setLoadingMsg('2단계: 장면별 시각 가이드를 생성 중입니다...');
-                    const imagePromptReq = `방금 작성된 뮤지컬 대본 [${scriptResult}]을 읽고, 각 막의 분위기를 상징하는 미드저니/DALL-E용 영문 이미지 생성 프롬프트 리스트를 작성해줘. 설명 없이 프롬프트만.`;
-                    const imageResult = await callGemini(imagePromptReq);
+                    // 2단계: 이미지 생성 가이드
+                    setLoadingMsg('2단계: 각 장면의 비주얼 가이드를 생성 중입니다...');
+                    const imageResult = await callGemini(`다음 대본을 보고 각 막에 어울리는 미드저니용 영문 이미지 프롬프트 리스트를 작성해줘: [${scriptResult.substring(0, 2000)}]`, 2000);
                     setImagePrompts(imageResult);
 
-                    // 3단계: 수노 프롬프트 생성 (자동)
-                    setLoadingMsg('3단계: 음악 스타일 가이드를 생성 중입니다...');
-                    const sunoPromptReq = `방금 작성된 뮤지컬 대본 [${scriptResult}]의 넘버들을 위해 Suno AI용 영문 음악 스타일(Style, Mood) 프롬프트 리스트를 작성해줘. 가사는 제외하고 스타일 정보만.`;
-                    const sunoResult = await callGemini(sunoPromptReq);
+                    // 3단계: Suno 스타일 가이드
+                    setLoadingMsg('3단계: 넘버별 음악 스타일을 분석 중입니다...');
+                    const sunoResult = await callGemini(`다음 대본의 가사들에 어울리는 Suno AI용 영문 음악 스타일(Mood, Tempo)을 작성해줘: [${scriptResult.substring(0, 2000)}]`, 2000);
                     setSunoPrompts(sunoResult);
 
                 } catch (e) { 
-                    alert('집필 중 오류가 발생했습니다. 다시 시도해 주세요.'); 
+                    alert('집필 중 통신 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'); 
                     setStep(1); 
                 } finally { 
                     setIsAnalyzing(false); 
@@ -137,27 +141,27 @@
                 <div className="max-w-md mx-auto min-h-screen bg-[#1a0509] flex flex-col relative border-x-2 border-[#4a0410] shadow-2xl">
                     <header className="stage-curtain p-6 flex justify-between items-center shadow-xl">
                         <div onClick={() => window.location.reload()} className="text-[#FCD34D] cursor-pointer hover:scale-110"><i className="fa-solid fa-masks-theater text-2xl"></i></div>
-                        <h1 className="text-xl text-[#FCD34D] font-show uppercase tracking-tighter">EAIM 2.5 MUSICAL v6.0</h1>
+                        <h1 className="text-xl text-[#FCD34D] font-show uppercase tracking-tighter">EAIM 2.5 MUSICAL v6.1</h1>
                         <div onClick={() => { localStorage.removeItem('gemini_api_key_musical_v5_5'); window.location.reload(); }} className="text-[#FCD34D] cursor-pointer text-[10px] border border-[#FCD34D] px-2 py-1 rounded">RESET</div>
                     </header>
 
                     <main className="flex-grow p-6 overflow-y-auto pb-10">
                         {step === 0 && (
                             <div className="space-y-6 py-10 text-center animate-fadeIn">
-                                <h2 className="text-xl font-bold text-[#FCD34D]">AI 창작 시스템 접속</h2>
+                                <h2 className="text-xl font-bold text-[#FCD34D]">AI 뮤지컬 메이커 접속</h2>
                                 <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="ticket-input text-center rounded-2xl" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-5 rounded-2xl font-bold">시스템 동기화</button>
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_musical_v5_5', apiKey.trim()); setStep(1); }} className="w-full bg-[#9F1239] py-5 rounded-2xl font-bold">창작실 입장</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-6 animate-fadeIn">
                                 <div className="space-y-6 bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-inner">
-                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">뮤지컬 주제</label><input className="ticket-input rounded-2xl text-base" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 성장통" /></div>
-                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">공연 배경</label><input className="ticket-input rounded-2xl text-base" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 중학교 강당" /></div>
+                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">공연 주제</label><input className="ticket-input rounded-2xl text-base" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="예: 우주 탐험" /></div>
+                                    <div className="space-y-2"><label className="text-xs text-rose-300 font-bold uppercase ml-1">공연 배경</label><input className="ticket-input rounded-2xl text-base" value={place} onChange={e=>setPlace(e.target.value)} placeholder="예: 미래 도시" /></div>
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center mb-1"><label className="text-xs text-amber-300 font-bold uppercase ml-1">뮤지컬 제목</label><button onClick={generateAutoTitle} disabled={isGenerating} className="magic-btn">{isGenerating ? "생성 중..." : "추천받기 ✨"}</button></div>
-                                        <input className="ticket-input rounded-2xl text-lg font-black border-yellow-500/30 text-yellow-100" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요" />
+                                        <input className="ticket-input rounded-2xl text-lg font-black border-yellow-500/30 text-yellow-100" value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 완성하세요" />
                                     </div>
                                 </div>
                                 <button onClick={()=>setStep(2)} className="w-full bg-gradient-to-r from-rose-800 to-rose-950 py-5 rounded-2xl font-bold shadow-2xl">배역 설정 👉</button>
@@ -187,10 +191,10 @@
 
                         {step === 3 && (
                             <div className="space-y-6 animate-fadeIn pb-10">
-                                {isAnalyzing ? (
-                                    <div className="text-center py-24">
-                                        <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-[#FCD34D] mx-auto mb-6"></div>
-                                        <p className="text-[#FCD34D] font-drama animate-pulse italic">{loadingMsg}</p>
+                                {isAnalyzing && !finalScript ? (
+                                    <div className="text-center py-24 space-y-4">
+                                        <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-[#FCD34D] mx-auto"></div>
+                                        <p className="text-[#FCD34D] font-drama loading-pulse italic">{loadingMsg}</p>
                                     </div>
                                 ) : (
                                     <div>
@@ -204,38 +208,43 @@
                                                 {activeTab === 'script' && (
                                                     <div>
                                                         <h2 className="text-2xl font-show mb-6 text-center border-b-2 border-black pb-4">{title}</h2>
-                                                        <pre className="font-drama text-sm leading-relaxed text-gray-800">{finalScript}</pre>
+                                                        <pre className="font-drama text-sm leading-relaxed text-gray-800">{finalScript || '대본을 집필 중입니다...'}</pre>
                                                     </div>
                                                 )}
                                                 {activeTab === 'image' && (
                                                     <div className="space-y-4">
                                                         <h3 className="text-lg font-bold text-rose-800 mb-4 border-l-4 border-rose-800 pl-3">AI 비주얼 가이드</h3>
-                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{imagePrompts || '이미지 프롬프트를 생성할 수 없습니다.'}</div>
+                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{imagePrompts || '이미지 가이드를 생성 중입니다...'}</div>
                                                     </div>
                                                 )}
                                                 {activeTab === 'suno' && (
                                                     <div className="space-y-4">
                                                         <h3 className="text-lg font-bold text-rose-800 mb-4 border-l-4 border-rose-800 pl-3">Suno 스타일 가이드</h3>
-                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{sunoPrompts || '수노 프롬프트를 생성할 수 없습니다.'}</div>
+                                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 leading-loose">{sunoPrompts || '음악 가이드를 생성 중입니다...'}</div>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
+                                        {isAnalyzing && (
+                                            <div className="text-center py-4 text-xs text-rose-300 animate-pulse font-bold">
+                                                <i className="fa-solid fa-spinner fa-spin mr-2"></i>{loadingMsg}
+                                            </div>
+                                        )}
                                         <div className="mt-8 flex gap-3 no-print">
                                             <button onClick={()=>setStep(1)} className="flex-1 bg-gray-800 py-5 rounded-2xl text-xs font-bold">새 창작</button>
                                             <button onClick={()=>{ 
                                                 const copyText = activeTab === 'script' ? finalScript : activeTab === 'image' ? imagePrompts : sunoPrompts;
                                                 navigator.clipboard.writeText(copyText); 
                                                 alert("복사되었습니다!"); 
-                                            }} className="flex-1 bg-green-700 py-5 rounded-2xl text-xs font-bold">전체 복사 📋</button>
+                                            }} className="flex-1 bg-green-700 py-5 rounded-2xl text-xs font-bold">현재 탭 복사 📋</button>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         )}
                     </main>
-                    <footer className="p-4 bg-black/40 text-center text-[10px] text-gray-600 opacity-40 no-print border-t border-white/5 mt-auto">
-                        &copy; 2026 EAIM Studio | Gemini 2.5 Flash PRO (v6.0)
+                    <footer className="p-4 bg-black/40 text-center text-[10px] text-gray-600 opacity-40 mt-auto">
+                        &copy; 2026 EAIM Studio | Gemini 2.5 Flash PRO (v6.1)
                     </footer>
                 </div>
             );

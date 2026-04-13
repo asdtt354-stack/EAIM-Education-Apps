@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 과학 탐정대</title>
+    <title>EAIM 일상 과학 탐험대</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #dcfce7 0%, #e0f2fe 100%); min-height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center; color: #334155; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #fdf4ff 0%, #e0e7ff 100%); min-height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center; color: #334155; }
         .font-hand { font-family: 'Gaegu', cursive; }
         .eaim-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 3rem; box-shadow: 0 20px 50px rgba(0,0,0,0.08); border: 2px solid white; width: 100%; max-width: 550px; padding: 2.5rem; margin: 2rem 0; }
-        .eaim-input { width: 100%; border: 2px solid #e2e8f0; border-radius: 1.2rem; padding: 1rem; text-align: center; background: white !important; font-size: 1.1rem; }
+        .eaim-input { width: 100%; border: 2px solid #e2e8f0; border-radius: 1.2rem; padding: 1rem; text-align: center; background: white !important; font-size: 1.1rem; transition: 0.3s; }
+        .eaim-input:focus { border-color: #818cf8; outline: none; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
         textarea.eaim-input { text-align: left; resize: none; }
-        .eaim-btn-main { background: #14b8a6 !important; color: white !important; border-radius: 1.5rem; padding: 1.1rem; font-weight: bold; width: 100%; transition: 0.3s; font-size: 1.1rem; border: none; cursor: pointer; }
+        .eaim-btn-main { background: #6366f1 !important; color: white !important; border-radius: 1.5rem; padding: 1.1rem; font-weight: bold; width: 100%; transition: 0.3s; font-size: 1.1rem; border: none; cursor: pointer; }
         .eaim-btn-main:disabled { background: #cbd5e1 !important; cursor: not-allowed; }
-        .eaim-btn-main:hover:not(:disabled) { background: #0d9488 !important; transform: scale(1.02); }
+        .eaim-btn-main:hover:not(:disabled) { background: #4f46e5 !important; transform: scale(1.02); }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media print {
@@ -38,84 +39,96 @@
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
-            const [scienceUnit, setScienceUnit] = useState('기체의 압력');
-            const [emotionKeyword, setEmotionKeyword] = useState('고마움');
-            const [caseStory, setCaseStory] = useState('');
-            const [isFreezingCase, setIsFreezingCase] = useState(false); // 액체가 어는 트릭 유무
-
-            const [scienceClue, setScienceClue] = useState('');
+            const [scienceUnit, setScienceUnit] = useState('');
+            const [emotionKeyword, setEmotionKeyword] = useState('');
+            
+            const [dailyScenario, setDailyScenario] = useState('');
+            
+            const [quizAnswer, setQuizAnswer] = useState('');
+            const [quizReason, setQuizReason] = useState('');
             const [scienceHint, setScienceHint] = useState('');
             const [isLoadingHint, setIsLoadingHint] = useState(false);
             
-            const [emotionClue, setEmotionClue] = useState('');
-            const [evidenceImage, setEvidenceImage] = useState(''); // AI 증거 사진 파일명
-            const [finalReport, setFinalReport] = useState('');
+            const [feedbackReport, setFeedbackReport] = useState('');
 
             useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_sci');
+                const savedKey = localStorage.getItem('gemini_api_key_sci_v2');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            const callGemini = async (prompt) => {
+            // ⚡ 속도 최적화가 적용된 API 호출 함수
+            const callGemini = async (prompt, customConfig = {}) => {
                 const cleanKey = apiKey.trim();
-                // 💡 가장 확실한 2.5 엔진 + v1beta 통신망 적용!
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
                 const response = await fetch(url, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: customConfig.temperature ?? 0.4, 
+                            topK: customConfig.topK ?? 20,
+                            maxOutputTokens: customConfig.maxTokens ?? 1000
+                        }
+                    })
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || '연결 오류');
                 return data.candidates[0].content.parts[0].text;
             };
 
-            const generateCase = async () => {
+            const generateScenario = async () => {
                 if (!apiKey) return alert('API 키를 확인해주세요.');
-                setIsAnalyzing(true);
-                setCaseStory('사건 파일을 분석 중입니다... 📂');
-                setFinalReport(''); setScienceClue(''); setEmotionClue(''); setScienceHint(''); setEvidenceImage('');
+                if (!scienceUnit || !emotionKeyword) return alert('과학 단원과 감정 키워드를 모두 입력해주세요.');
                 
-                // 💡 고도화된 1단계 프롬프트 (더 세밀하고 트릭을 명확히 함)
-                const prompt = `중학교 과학 교사이자 추리소설 작가입니다. 중학교 과학의 '${scienceUnit}' 단원과 사람의 '${emotionKeyword}'이라는 감정을 융합한, 아주 세밀하고 흥미진진한 미스터리 사건을 중학생 수준에 맞춰서 4~5문장으로 작성해줘. 범인은 오해나 서툰 감정 표현 때문이어야 하며, 과학적 트릭(핵심KEYWORDS: 고체, 얼음, 어는, 응고, 냉각)을 포함시켜. 등장인물과 배경을 명확히 설정해줘.`;
+                setIsAnalyzing(true);
+                setDailyScenario('일상 속 이야기를 구상 중입니다... 💭');
+                setFeedbackReport(''); setQuizAnswer(''); setQuizReason(''); setScienceHint('');
+                
+                // 💡 일상 에피소드 + 퀴즈 생성 프롬프트
+                const prompt = `중학교 과학 교사로서, 과학 단원 '${scienceUnit}'의 원리가 적용된 일상생활 속 에피소드와, 그 상황에서 주인공이 겪는 '${emotionKeyword}' 감정을 연결한 짧은 이야기를 만들어주세요. 중학생들이 겪을 법한 현실적이고 공감 가는 소재가 좋습니다. 
+                이야기 끝에는 이 상황의 문제를 과학적으로 해결하기 위한 간단한 4지 선다형 퀴즈를 하나 내주세요.
+                
+                형식:
+                [일상 이야기] (3~4문장)
+                [문제 해결 퀴즈] (1, 2, 3, 4번 보기 포함)
+                
+                안내말이나 부연 설명 없이 위 형식대로 바로 출력해주세요.`;
 
                 try {
-                    const text = await callGemini(prompt);
-                    setCaseStory(text);
-                    
-                    // 💡 디렉터님의 아이디어! 어는 트릭 유무 감지
-                    const freezingKeywords = ['고체', '얼음', '어는', '응고', '냉각'];
-                    const hasFreezing = freezingKeywords.some(keyword => text.includes(keyword));
-                    setIsFreezingCase(hasFreezing);
-                    
-                    if (hasFreezing) {
-                        setEvidenceImage('image_0.png'); // 어는 트릭일 때 보여줄 시뮬레이션 이미지
-                    }
-
+                    // 창의성이 조금 필요하므로 temperature 0.6 설정
+                    const text = await callGemini(prompt, { temperature: 0.6, maxTokens: 800 });
+                    setDailyScenario(text);
                     setStep(2);
-                } catch (e) { alert(`사건 생성 실패: ${e.message}`); setStep(1); } 
+                } catch (e) { alert(`이야기 생성 실패: ${e.message}`); setStep(1); } 
                 finally { setIsAnalyzing(false); }
             };
 
             const getHint = async () => {
                 setIsLoadingHint(true);
-                const prompt = `탐정 대장으로서 다음 사건에 숨겨진 '${scienceUnit}' 원리에 대한 힌트를 1문장으로만 줘. 답을 말하지 말고 핵심 원리를 떠올릴 수 있게 다정하게 무전해줘: ${caseStory}`;
+                const prompt = `선생님으로서 다음 상황에 숨겨진 '${scienceUnit}' 원리에 대한 힌트를 딱 1문장으로만 다정하게 주세요. 정답을 직접 말하지는 마세요: ${dailyScenario}`;
                 try {
-                    const text = await callGemini(prompt);
+                    // 힌트는 빠르게 단답으로 나와야 하므로 설정값 최소화
+                    const text = await callGemini(prompt, { temperature: 0.2, maxTokens: 150 });
                     setScienceHint(text);
-                } catch (e) { setScienceHint('🎙️ 통신 실패! 다시 시도해봐.'); }
+                } catch (e) { setScienceHint('앗, 힌트를 불러오는 데 실패했어요. 다시 눌러볼까요?'); }
                 finally { setIsLoadingHint(false); }
             };
 
-            const solveCase = async () => {
-                if (!scienceClue || !emotionClue) return alert('과학 단서와 마음 추리를 모두 입력해주세요.');
-                setIsAnalyzing(true); setStep(4);
+            const solveQuiz = async () => {
+                if (!quizAnswer || !quizReason) return alert('퀴즈 정답과 그렇게 생각한 이유를 모두 적어주세요!');
+                setIsAnalyzing(true); setStep(3);
                 
-                const prompt = `CSI 과학 탐정대 대장입니다. 학생 탐정의 수사 결과(사건: ${caseStory} / 과학추리: ${scienceClue} / 마음추리: ${emotionClue})를 바탕으로 '최종 사건 해결 보고서'를 아주 훈훈하고 따뜻한 중학생 말투로 작성해줘. [과학적 트릭의 전말], [범인의 숨겨진 마음], [화해의 미션] 태그를 포함해야 합니다.`;
+                // 💡 정답 확인 및 감정 공감(SEL) 피드백 프롬프트
+                const prompt = `학생이 방금 전의 퀴즈 정답으로 '${quizAnswer}'번을 선택했고, 그 이유와 자신의 마음을 '${quizReason}'라고 적었습니다.
+                
+                다음 두 가지를 포함하여 따뜻하고 다정한 중학교 선생님의 말투로 피드백을 작성해주세요.
+                1. [과학의 시선]: 학생이 고른 정답이 맞는지 알려주고, '${scienceUnit}'의 과학적 원리를 일상과 연결해 쉽게 설명해주세요.
+                2. [마음의 시선]: 학생이 적은 이유를 바탕으로 '${emotionKeyword}' 감정에 깊이 공감해주고, 마음을 다독이는 사회정서학습(SEL)적 위로와 응원을 3문장으로 남겨주세요.`;
                 
                 try {
-                    const text = await callGemini(prompt);
-                    setFinalReport(text);
-                } catch (e) { setFinalReport('보고서 작성 실패'); } 
+                    const text = await callGemini(prompt, { temperature: 0.5, maxTokens: 1000 });
+                    setFeedbackReport(text);
+                } catch (e) { setFeedbackReport('피드백 작성 실패'); } 
                 finally { setIsAnalyzing(false); }
             };
 
@@ -123,79 +136,70 @@
                 <div className="eaim-card">
                     {step === 0 && (
                         <div className="text-center space-y-6 animate-fadeIn">
-                            <h2 className="font-bold text-2xl font-hand text-slate-700">EAIM 과학 탐정대 설정</h2>
+                            <h2 className="font-bold text-2xl font-hand text-indigo-700">EAIM 일상 과학 탐험대</h2>
+                            <p className="text-sm text-slate-500">과학으로 일상의 문제를 풀고, 마음을 나눠요.</p>
                             <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="eaim-input" placeholder="발급받은 API 키 입력" />
-                            <button onClick={() => { localStorage.setItem('gemini_api_key_sci', apiKey.trim()); setStep(1); }} className="eaim-btn-main shadow-lg">시스템 가동 🚀</button>
+                            <button onClick={() => { localStorage.setItem('gemini_api_key_sci_v2', apiKey.trim()); setStep(1); }} className="eaim-btn-main shadow-lg">수업 준비 완료 🚀</button>
                         </div>
                     )}
 
                     {step > 0 && (
                         <div className="space-y-6">
-                            <header className="flex justify-between items-center mb-6 print-hidden border-b pb-3">
-                                <span className="font-bold text-teal-600 font-hand text-xl">EAIM 과학 탐정대 🕵️‍♂️</span>
-                                <button onClick={() => { localStorage.removeItem('gemini_api_key_sci'); setStep(0); window.location.reload(); }} className="text-xs text-slate-400 underline">키 재설정</button>
+                            <header className="flex justify-between items-center mb-6 print-hidden border-b border-indigo-100 pb-3">
+                                <span className="font-bold text-indigo-600 font-hand text-xl">EAIM 일상 과학 탐험대 🔬</span>
+                                <button onClick={() => { localStorage.removeItem('gemini_api_key_sci_v2'); setStep(0); window.location.reload(); }} className="text-xs text-slate-400 underline">키 재설정</button>
                             </header>
 
                             {step === 1 && (
                                 <div className="space-y-6 animate-fadeIn print-hidden">
                                     <div className="text-center">
-                                        <h2 className="text-2xl font-hand text-slate-800 mb-2">사건 파일 생성 📂</h2>
-                                        <p className="text-sm text-slate-500">배울 과학 원리와 친구의 마음을 골라주세요.</p>
+                                        <h2 className="text-2xl font-hand text-slate-800 mb-2">일상 속 과학과 마음 발견 🔍</h2>
+                                        <p className="text-sm text-slate-500">오늘 배울 과학 원리와, 나누고 싶은 감정을 적어주세요.</p>
                                     </div>
-                                    <input type="text" value={scienceUnit} onChange={e => setScienceUnit(e.target.value)} className="eaim-input" placeholder="과학 원리 (예: 기체의 압력)" />
-                                    <input type="text" value={emotionKeyword} onChange={e => setEmotionKeyword(e.target.value)} className="eaim-input" placeholder="감정 키워드 (예: 고마움)" />
-                                    <button onClick={generateCase} disabled={isAnalyzing} className="eaim-btn-main">{isAnalyzing ? "사건 구성 중..." : "AI 사건 만들기 ✨"}</button>
+                                    <input type="text" value={scienceUnit} onChange={e => setScienceUnit(e.target.value)} className="eaim-input" placeholder="과학 단원 (예: 기체의 압력)" />
+                                    <input type="text" value={emotionKeyword} onChange={e => setEmotionKeyword(e.target.value)} className="eaim-input" placeholder="감정 키워드 (예: 속상함, 고마움)" />
+                                    <button onClick={generateScenario} disabled={isAnalyzing} className="eaim-btn-main">{isAnalyzing ? "이야기 구상 중..." : "일상 퀴즈 만들기 ✨"}</button>
                                 </div>
                             )}
 
                             {step === 2 && (
                                 <div className="space-y-6 animate-fadeIn print-hidden">
-                                    <h2 className="text-2xl font-hand text-center text-slate-800">1단계: 사건 발생 및 현장 관찰 🚨</h2>
-                                    <div className="bg-white/70 p-6 rounded-3xl border-2 border-teal-200 font-hand text-lg leading-relaxed">{caseStory}</div>
-                                    <button onClick={() => setStep(3)} className="eaim-btn-main bg-teal-500 mt-2">정밀 수사로 이동 (2단계) 👉</button>
+                                    <h2 className="text-2xl font-hand text-center text-slate-800">어떤 일이 일어났을까요? 🧐</h2>
+                                    
+                                    {/* 일상 이야기 및 퀴즈 출력 영역 */}
+                                    <div className="bg-white p-6 rounded-3xl border-2 border-indigo-200 font-hand text-lg leading-relaxed shadow-sm whitespace-pre-wrap">
+                                        {dailyScenario}
+                                    </div>
+
+                                    <div className="space-y-4 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100">
+                                        <div className="flex justify-between items-center ml-1">
+                                            <h3 className="font-bold text-indigo-600">나의 생각 적어보기</h3>
+                                            {!scienceHint && <button onClick={getHint} disabled={isLoadingHint} className="text-xs bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full font-bold shadow hover:bg-yellow-300 transition-colors">💡 선생님 찬스</button>}
+                                        </div>
+                                        
+                                        {scienceHint && <div className="bg-yellow-50 p-3 rounded-2xl border border-yellow-200 text-sm font-hand text-yellow-800 animate-fadeIn">👩‍🏫 선생님: {scienceHint}</div>}
+                                        
+                                        <div className="flex gap-2">
+                                            <input type="number" value={quizAnswer} onChange={e => setQuizAnswer(e.target.value)} className="eaim-input w-24 text-center font-bold text-indigo-700" placeholder="정답 번호" min="1" max="4" />
+                                            <textarea value={quizReason} onChange={e => setQuizReason(e.target.value)} className="eaim-input flex-1 h-20 text-sm" placeholder="왜 그렇게 생각했나요? 이때 주인공의 마음은 어땠을지 함께 적어보세요."></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <button onClick={solveQuiz} disabled={!quizAnswer || !quizReason || isAnalyzing} className="eaim-btn-main mt-6">{isAnalyzing ? "선생님이 피드백을 적는 중..." : "선생님께 제출하기 📝"}</button>
                                 </div>
                             )}
 
                             {step === 3 && (
-                                <div className="space-y-6 animate-fadeIn print-hidden">
-                                    <h2 className="text-2xl font-hand text-center text-slate-800">2단계: 정밀 수사 (과학 & 감정) 💓</h2>
-                                    <div className="space-y-4">
-                                        <div className="glass-panel p-5 rounded-3xl border-l-4 border-l-teal-500 shadow-inner">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <h3 className="font-bold text-teal-600">이성적 수사 - 과학 단서 추리</h3>
-                                                {!scienceHint && <button onClick={getHint} disabled={isLoadingHint} className="text-xs bg-yellow-400 px-3 py-1 rounded-full font-bold shadow">💡 힌트</button>}
-                                            </div>
-                                            {scienceHint && <div className="bg-yellow-50 p-3 rounded-2xl border border-yellow-200 text-sm font-hand text-yellow-800 mb-2 animate-fadeIn">🎙️ 대장 무전: {scienceHint}</div>}
-                                            <textarea value={scienceClue} onChange={e => setScienceClue(e.target.value)} className="eaim-input h-24" placeholder="현장에서 발견한 과학적 단서는? (예: 찌그러진 페트병)"></textarea>
-                                        </div>
-
-                                        <div className="glass-panel p-5 rounded-3xl border-l-4 border-l-pink-500 shadow-inner">
-                                            <h3 className="font-bold text-pink-600 mb-3 ml-2">감성적 수사 - 마음 프로파일링</h3>
-                                            <textarea value={emotionClue} onChange={e => setEmotionClue(e.target.value)} className="eaim-input h-24" placeholder="범인은 왜 그랬을까? 친구의 마음을 상상해봐."></textarea>
-                                        </div>
-                                    </div>
-                                    <button onClick={solveCase} disabled={!scienceClue || !emotionClue || isAnalyzing} className="eaim-btn-main mt-6">{isAnalyzing ? "분석 중..." : "최종 보고서 요청하기 📝"}</button>
-                                </div>
-                            )}
-
-                            {step === 4 && (
                                 <div className="space-y-6 animate-fadeIn print-area">
-                                    <h2 className="text-3xl font-hand text-center text-teal-600">3단계: 사건 해결 및 증거 ✨</h2>
+                                    <h2 className="text-3xl font-hand text-center text-indigo-600">선생님의 다정한 피드백 💌</h2>
                                     
-                                    {/* 💡 디렉터님의 핵심 아이디어! 어는 경우 그림 보여주기 */}
-                                    {isFreezingCase && evidenceImage && (
-                                        <div className="bg-white p-4 rounded-3xl border-2 border-orange-300 shadow-inner animate-fadeIn">
-                                            <img src={evidenceImage} alt="AI 증거 사진: 상태 변화 트릭 시각화" className="rounded-2xl w-full h-auto object-cover max-h-64 mx-auto" />
-                                            <p className="text-center text-orange-600 text-sm mt-3 font-hand font-bold">🔍 AI 증거 사진: 액체가 어는 순간 포착</p>
-                                        </div>
-                                    )}
-
-                                    <div className="bg-white p-8 rounded-3xl border-2 border-teal-200 whitespace-pre-wrap font-hand text-xl leading-relaxed shadow-sm">
-                                        {isAnalyzing ? "대장이 보고서를 정리 중..." : finalReport}
+                                    <div className="bg-white p-8 rounded-3xl border-2 border-indigo-200 whitespace-pre-wrap font-hand text-xl leading-relaxed shadow-sm">
+                                        {isAnalyzing ? "피드백을 작성하고 있습니다..." : feedbackReport}
                                     </div>
+                                    
                                     <div className="flex gap-3 print-hidden">
-                                        <button onClick={() => window.print()} className="flex-1 eaim-btn-main bg-slate-400">🖨️ 인쇄</button>
-                                        <button onClick={() => { setStep(1); setFinalReport(''); setScienceClue(''); setEmotionClue(''); setScienceHint(''); setEvidenceImage(''); }} className="flex-1 eaim-btn-main bg-teal-500">새 사건 수사 🕵️</button>
+                                        <button onClick={() => window.print()} className="flex-1 eaim-btn-main bg-slate-400 hover:bg-slate-500 text-sm">🖨️ 인쇄 / 저장</button>
+                                        <button onClick={() => { setStep(1); setFeedbackReport(''); setQuizAnswer(''); setQuizReason(''); setScienceHint(''); setDailyScenario(''); }} className="flex-[2] eaim-btn-main bg-indigo-500 hover:bg-indigo-600 text-sm">새로운 이야기 탐험하기 🚀</button>
                                     </div>
                                 </div>
                             )}

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 4-BAND PERFECT SYNC v10.5</title>
+    <title>EAIM 4-BAND PERFECT SYNC v10.6</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,7 +16,6 @@
         .station-card { background: rgba(30, 41, 59, 0.5); border: 2px solid #1e293b; border-radius: 1.25rem; padding: 1rem; transition: 0.3s; position: relative; overflow: hidden; }
         .active-station { border-color: #f43f5e; box-shadow: 0 0 25px rgba(244, 63, 94, 0.15); }
         
-        /* 💡 시각적 번쩍임 효과 (Flash Pulse) */
         .flash-active { animation: flash-pulse 0.4s ease-out; }
         @keyframes flash-pulse {
             0% { background-color: rgba(255, 255, 255, 0.2); transform: scale(1.02); }
@@ -29,7 +28,6 @@
         .youtube-container { width: 100%; aspect-ratio: 16/9; border-radius: 1.5rem; overflow: hidden; background: #000; border: 2px solid #334155; position: relative; }
         #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         
-        /* 토글 스위치 스타일 */
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 20px; }
@@ -63,7 +61,6 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // 0.1초 단위 모니터링 및 마디 변경 감지
             useEffect(() => {
                 let interval;
                 if (step === 3) {
@@ -77,7 +74,7 @@
                                 return now >= item.time && (!nextItem || now < nextItem.time);
                             });
 
-                            if (currentIdx !== lastTimeRef.current) {
+                            if (currentIdx !== lastTimeRef.current && currentIdx !== -1) {
                                 if (effectEnabled) {
                                     setIsFlash(true);
                                     setTimeout(() => setIsFlash(false), 400);
@@ -118,29 +115,33 @@
                 const videoId = extractVideoId(searchQuery);
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+                    
                     const response = await fetch(url, {
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             contents: [{ 
                                 parts: [{ 
-                                    // 💡 프롬프트를 더 단호하게 수정하여 군더더기 텍스트 생성을 차단
-                                    text: `유튜브 영상 '${searchQuery}'의 음악을 분석해서 4초 간격의 데이터를 순수한 JSON 배열 형식으로만 출력해. 부연 설명은 절대 하지 마. \n형식 예시: [{"time":0, "chord":"C5", "wind":"도", "guitar":["도","솔"], "key":["도","미","솔"], "perc":"🥁쿵 👏팍"}]` 
+                                    text: `음악 '${searchQuery}'을 분석해서 전체 곡에 대해 4초 간격의 데이터를 순수한 JSON 배열로 출력해. 반드시 곡이 끝날 때까지 모든 데이터를 포함해야 해. 
+                                    응답 예시: [{"time":0, "chord":"C5", "wind":"도", "guitar":["도","솔"], "key":["도","미","솔"], "perc":"🥁쿵 👏팍"}]` 
                                 }] 
                             }],
-                            // ⚡ 속도 최적화: 창의성은 없애고, 필요한 만큼만 빠르게 답변하도록 설정
                             generationConfig: {
-                                temperature: 0.1,        // 데이터를 기계적으로 뽑아내도록 창의성 최하로 고정
-                                maxOutputTokens: 1500,   // 곡 길이에 대비해 토큰을 충분히 주되 무한정 길어지지 않게 방지
-                                topK: 10                 // 단어 선택 풀을 좁혀 연산 속도 극대화
+                                temperature: 0.1,
+                                topK: 10,
+                                maxOutputTokens: 8192, // 💡 잘림 방지를 위해 최대치 설정
+                                responseMimeType: "application/json" // 💡 속도 향상을 위한 JSON 모드
                             }
                         })
                     });
+                    
                     const data = await response.json();
-                    const match = data.candidates[0].content.parts[0].text.match(/\[.*\]/s);
-                    setTimeline(JSON.parse(match[0]));
+                    const rawText = data.candidates[0].content.parts[0].text;
+                    setTimeline(JSON.parse(rawText));
                     initYouTubePlayer(videoId);
                 } catch (e) {
+                    console.error(e);
+                    alert("분석 중 오류가 발생했습니다. 기본 루프로 시작합니다.");
                     setTimeline([{time:0, chord:"C5", wind:"도", guitar:["도","솔"], key:["도","미","솔"], perc:"🥁쿵 👏팍"}]);
                     initYouTubePlayer(videoId);
                 }
@@ -155,8 +156,8 @@
                 <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col relative shadow-2xl overflow-hidden">
                     {step === 0 && (
                         <div className="flex-grow flex flex-col justify-center p-10 text-center space-y-6">
-                            <h2 className="text-2xl font-bold text-rose-500 font-title uppercase">EAIM Sync Pro</h2>
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key 입력" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-center text-white" />
+                            <h2 className="text-2xl font-bold text-rose-500 font-title uppercase">EAIM Sync PRO 2.5</h2>
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-center text-white" />
                             <button onClick={() => { localStorage.setItem('gemini_api_key_ensemble', apiKey.trim()); setStep(1); }} className="w-full bg-rose-600 p-4 rounded-xl font-bold">시스템 연결</button>
                         </div>
                     )}
@@ -164,8 +165,8 @@
                     {step === 1 && (
                         <div className="flex-grow flex flex-col justify-center p-8 text-center animate-fadeIn space-y-8">
                             <div className="text-6xl">🎹🥁🎸</div>
-                            <h2 className="text-2xl font-bold font-title text-indigo-300 uppercase">앙상블 분석기</h2>
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center font-bold" placeholder="유튜브 주소 복사+붙여넣기" />
+                            <h2 className="text-2xl font-bold font-title text-indigo-300 uppercase">앙상블 분석기 2.5</h2>
+                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center font-bold" placeholder="유튜브 주소 붙여넣기" />
                             <button onClick={handleAnalyze} className="w-full bg-indigo-600 p-5 rounded-2xl font-bold text-xl shadow-xl">분석 시작 🔍</button>
                         </div>
                     )}
@@ -173,14 +174,14 @@
                     {step === 2 && (
                         <div className="flex-grow flex flex-col justify-center items-center space-y-4">
                             <div className="w-14 h-14 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                            <p className="text-indigo-400 font-bold animate-pulse font-title">AI SYNCHRONIZING...</p>
+                            <p className="text-indigo-400 font-bold animate-pulse font-title">2.5 PRO ENGINE ANALYZING...</p>
                         </div>
                     )}
 
                     {step === 3 && (
                         <div className="flex-grow flex flex-col animate-fadeIn">
                             <header className="p-4 flex justify-between items-center font-title text-indigo-400">
-                                <span className="text-lg">EAIM LIVE ORCHESTRA</span>
+                                <span className="text-lg">EAIM PERFECT SYNC</span>
                                 <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline uppercase">Reset</button>
                             </header>
 
@@ -197,10 +198,10 @@
                                 </div>
 
                                 <div className={`station-card active-station flex items-center justify-between ${isFlash ? 'flash-active' : ''}`}>
-                                    <div className="flex flex-col"><span className="text-[9px] font-bold text-rose-400 uppercase">Guitar</span><span className="text-2xl font-black text-white">{currentData.chord}</span></div>
+                                    <div className="flex flex-col"><span className="text-[9px] font-bold text-rose-400 uppercase">Guitar (EAIM 4)</span><span className="text-2xl font-black text-white">{currentData.chord}</span></div>
                                     <div className="flex gap-2">
-                                        <div className="power-bubble note-1"><span className="text-[8px] opacity-70">1도</span>{currentData.guitar[0]}</div>
-                                        <div className="power-bubble note-5"><span className="text-[8px] opacity-70">5도</span>{currentData.guitar[1]}</div>
+                                        <div className="power-bubble note-1"><span className="text-[8px] opacity-70">ROOT</span>{currentData.guitar[0]}</div>
+                                        <div className="power-bubble note-5"><span className="text-[8px] opacity-70">5TH</span>{currentData.guitar[1]}</div>
                                     </div>
                                 </div>
 
@@ -212,9 +213,9 @@
                                 <div className={`station-card flex items-center justify-between py-4 ${isFlash ? 'flash-active' : ''}`}>
                                     <span className="text-[9px] font-bold text-pink-400 uppercase tracking-widest">Piano Team</span>
                                     <div className="flex gap-2">
-                                        {currentData.key.map((n, i) => (
+                                        {Array.isArray(currentData.key) ? currentData.key.map((n, i) => (
                                             <span key={i} className="text-sm font-bold text-pink-200 bg-pink-900/40 px-3 py-1.5 rounded-lg border border-pink-500/20">{n}</span>
-                                        ))}
+                                        )) : <span className="text-sm font-bold text-pink-200">-</span>}
                                     </div>
                                 </div>
                             </div>
@@ -225,11 +226,9 @@
                                         <input type="checkbox" checked={effectEnabled} onChange={e => setEffectEnabled(e.target.checked)} />
                                         <span className="slider"></span>
                                     </label>
-                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                                        Visual Pulse: {effectEnabled ? 'ON' : 'OFF'}
-                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-bold">Visual Pulse: {effectEnabled ? 'ON' : 'OFF'}</span>
                                 </div>
-                                <span className="text-[10px] text-indigo-400 font-bold bg-indigo-900/40 px-3 py-1 rounded-full uppercase">Sync: {Math.floor(currentTime)}s</span>
+                                <span className="text-[10px] text-indigo-400 font-bold bg-indigo-900/40 px-3 py-1 rounded-full">TIME: {Math.floor(currentTime)}s</span>
                             </div>
                         </div>
                     )}

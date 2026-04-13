@@ -28,12 +28,22 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // 유튜브 링크에서 영상 ID만 추출하는 헬퍼 함수
+        const getYouTubeId = (url) => {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        };
+
         const App = () => {
             const [step, setStep] = useState(0);
             const [apiKey, setApiKey] = useState('');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
-            const [musicSearch, setMusicSearch] = useState('');
+            // 기존 musicSearch 대신 youtubeLink로 변경
+            const [youtubeLink, setYoutubeLink] = useState('');
+            const [videoId, setVideoId] = useState(''); // 추출된 영상 ID 저장
+            
             const [sport, setSport] = useState('농구 🏀');
             const [level, setLevel] = useState(1);
             const [parsedData, setParsedData] = useState({ intro: '', teamA: '', teamB: '', teamC: '' });
@@ -57,12 +67,17 @@
             };
 
             const generateRhythm = async () => {
-                if(!musicSearch) return alert("연습할 음악 제목을 입력해주세요!");
+                if(!youtubeLink) return alert("유튜브 영상 링크를 입력해주세요!");
+                
+                const extractedId = getYouTubeId(youtubeLink);
+                if(!extractedId) return alert("올바른 유튜브 링크가 아닙니다. 영상 주소를 다시 확인해주세요!");
+                
+                setVideoId(extractedId); // 영상 ID 세팅
                 setIsAnalyzing(true);
                 const levelDesc = ["초보용 단체 비트", "역할 분담 비트", "화려한 앙상블"][level - 1];
 
-                // 💡 디렉터님의 '플로어 리듬' 철학을 프롬프트에 주입
-                const prompt = `당신은 체육교사이자 리듬 안무가입니다. 음악 '${musicSearch}'에 맞춰 ${sport} 리듬 체육 대본을 써주세요.
+                // 💡 디렉터님의 '플로어 리듬' 철학을 프롬프트에 주입 (유튜브 링크 반영)
+                const prompt = `당신은 체육교사이자 리듬 안무가입니다. 다음 유튜브 영상(https://youtu.be/${extractedId})의 음악 비트에 맞춰 ${sport} 리듬 체육 대본을 써주세요.
                 
                 [철저 준수 사항]
                 1. 절대 '허벅지'를 치지 마세요. 소리가 안 나고 아픕니다.
@@ -86,7 +101,7 @@
                         teamC: extract('C팀 리듬')
                     });
                     setStep(2);
-                } catch (e) { alert('분석 오류'); } finally { setIsAnalyzing(false); }
+                } catch (e) { alert('분석 오류: API 키를 확인하거나 잠시 후 다시 시도해주세요.'); } finally { setIsAnalyzing(false); }
             };
 
             return (
@@ -109,8 +124,8 @@
                         {step === 1 && (
                             <div className="space-y-8 animate-fadeIn">
                                 <section className="space-y-3">
-                                    <label className="text-xs font-bold text-indigo-400 ml-1 uppercase">1. 음악 검색 (유튜브)</label>
-                                    <input type="text" value={musicSearch} onChange={e => setMusicSearch(e.target.value)} placeholder="노래 제목 입력" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl focus:border-orange-500 outline-none" />
+                                    <label className="text-xs font-bold text-indigo-400 ml-1 uppercase">1. 연습할 음악 (유튜브 링크)</label>
+                                    <input type="text" value={youtubeLink} onChange={e => setYoutubeLink(e.target.value)} placeholder="예: https://youtu.be/..." className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl focus:border-orange-500 outline-none text-sm" />
                                 </section>
 
                                 <section className="space-y-3">
@@ -138,7 +153,8 @@
                         {step === 2 && (
                             <div className="space-y-6 animate-fadeIn pb-10">
                                 <div className="youtube-box">
-                                    <iframe src={`https://www.youtube.com/embed?listType=search&list=${musicSearch}`} frameBorder="0" allowFullScreen className="w-full h-full"></iframe>
+                                    {/* 유튜브 영상 직접 임베드로 변경됨 */}
+                                    <iframe src={`https://www.youtube.com/embed/${videoId}?autoplay=0`} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full"></iframe>
                                 </div>
 
                                 <div className="bounce-box p-4 rounded-2xl">
@@ -186,7 +202,7 @@
                                 <div className="glass-panel p-8 rounded-[2.5rem] text-left">
                                     <p className="text-lg leading-relaxed italic text-slate-100 font-serif">"{feedback}"</p>
                                 </div>
-                                <button onClick={() => setStep(1)} className="w-full bg-slate-800 p-4 rounded-2xl font-bold">새로운 음악 도전</button>
+                                <button onClick={() => { setYoutubeLink(''); setStep(1); }} className="w-full bg-slate-800 p-4 rounded-2xl font-bold">새로운 음악 도전</button>
                             </div>
                         )}
                     </main>

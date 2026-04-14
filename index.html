@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EAIM AI Education Platform</title>
     <style>
-        /* 기본 레이아웃 설정 */
         body {
             margin: 0;
             padding: 0;
             font-family: 'Pretendard', sans-serif;
             background: linear-gradient(135deg, #6e8efb, #a777e3);
-            min-height: 100vh; /* height 대신 min-height 사용으로 내용물 수용 */
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -20,40 +19,24 @@
             text-align: center;
         }
 
-        /* 헤더 섹션: 간격 축소 */
-        header {
-            margin-top: 20px;
-        }
-        header h1 {
-            font-size: 2rem; /* 크기 약간 줄임 */
-            margin-bottom: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        header p {
-            font-size: 1rem;
-            opacity: 0.9;
-            margin-bottom: 25px; /* 여백 축소 */
-        }
+        header { margin-top: 20px; }
+        header h1 { font-size: 2rem; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        header p { font-size: 1rem; opacity: 0.9; margin-bottom: 25px; }
 
-        /* 그리드 컨테이너: 간격 최적화 */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px; /* 카드 간 간격 축소 */
+            gap: 15px;
             width: 95%;
             max-width: 900px;
             margin-bottom: 30px;
         }
 
-        /* 개별 카드 디자인: 패딩 대폭 축소 */
         .card {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             border-radius: 15px;
-            padding: 15px 10px; /* 기존 30px -> 15px로 축소 */
+            padding: 15px 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             transition: transform 0.3s ease;
             text-decoration: none;
@@ -69,47 +52,19 @@
             background: rgba(255, 255, 255, 0.25);
         }
 
-        /* 아이콘 및 텍스트 크기 미세 조정 */
-        .icon {
-            font-size: 2.2rem; /* 3rem -> 2.2rem 축소 */
-            margin-bottom: 8px;
-        }
+        .icon { font-size: 2.2rem; margin-bottom: 8px; }
+        .title { font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; }
+        .subtitle { font-size: 0.8rem; opacity: 0.8; white-space: nowrap; }
 
-        .title {
-            font-size: 1.1rem; /* 1.3rem -> 1.1rem 축소 */
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
+        footer { padding-bottom: 20px; font-size: 0.8rem; opacity: 0.7; }
 
-        .subtitle {
-            font-size: 0.8rem; /* 0.9rem -> 0.8rem 축소 */
-            opacity: 0.8;
-            white-space: nowrap; /* 글자가 옆으로 퍼지게 */
-        }
-
-        /* 하단 카피라이트 */
-        footer {
-            padding-bottom: 20px;
-            font-size: 0.8rem;
-            opacity: 0.7;
-        }
-
-        /* 📱 모바일 및 태블릿 대응 (반응형) */
         @media (max-width: 768px) {
-            .grid-container {
-                grid-template-columns: repeat(2, 1fr); /* 모바일 2열 */
-                gap: 10px;
-            }
+            .grid-container { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             header h1 { font-size: 1.6rem; }
-            .icon { font-size: 2rem; }
-            .title { font-size: 1rem; }
         }
 
         @media (max-width: 480px) {
-            .grid-container {
-                grid-template-columns: repeat(1, 1fr); /* 초소형 화면 1열 */
-                width: 80%;
-            }
+            .grid-container { grid-template-columns: repeat(1, 1fr); width: 80%; }
         }
     </style>
 </head>
@@ -121,37 +76,37 @@
     </header>
 
     <div class="grid-container">
-        <a href="#" class="card">
+        <a href="korean.html" class="card">
             <span class="icon">📖</span>
             <span class="title">EAIM 감정 시인</span>
             <span class="subtitle">내 마음을 읊는 시간</span>
         </a>
 
-        <a href="#" class="card">
+        <a href="science.html" class="card">
             <span class="icon">🕵️‍♂️</span>
-            <span class="title">EAIM 생활 과학 공감 톡</span>
+            <span class="title">EAIM 과학 탐정대</span>
             <span class="subtitle">이성과 감성의 추리</span>
         </a>
 
-        <a href="#" class="card">
+        <a href="space.html" class="card">
             <span class="icon">🚀</span>
             <span class="title">EAIM 우주 탐험대</span>
             <span class="subtitle">3D 우주 관찰 일지</span>
         </a>
 
-        <a href="#" class="card">
+        <a href="musicalmaker.html" class="card">
             <span class="icon">🎭</span>
             <span class="title">EAIM 뮤지컬 메이커</span>
             <span class="subtitle">창작 뮤지컬 시나리오</span>
         </a>
 
-        <a href="#" class="card">
+        <a href="eaim-ensemble.html" class="card">
             <span class="icon">🎸</span>
             <span class="title">EAIM 앙상블</span>
             <span class="subtitle">화성압축 연주</span>
         </a>
 
-        <a href="#" class="card">
+        <a href="sports.html" class="card">
             <span class="icon">🏀</span>
             <span class="title">EAIM 비트 & 볼</span>
             <span class="subtitle">다 함께 바디 퍼커션</span>

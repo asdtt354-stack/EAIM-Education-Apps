@@ -3,160 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EAIM 우주탐험대 - 지능형 관측 시스템</title>
+    <title>EAIM 우주탐험대 - Ver 2.5 지능형 관측 시스템</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
         :root { --main-color: #00d4ff; --bg-dark: #020205; }
-        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; display: flex; }
         
-        /* 천문대 선택 사이드바 */
-        #control-panel { position: absolute; left: 0; top: 0; width: 300px; height: 100vh; background: rgba(10, 10, 20, 0.9); border-right: 1px solid #333; z-index: 100; padding: 20px; box-sizing: border-box; }
+        /* 왼쪽 제어판 */
+        #control-panel { width: 320px; height: 100vh; background: rgba(15, 15, 25, 0.95); border-right: 1px solid #333; padding: 25px; box-sizing: border-box; overflow-y: auto; }
         
-        /* 메인 뷰포트 */
-        #main-view { margin-left: 300px; width: calc(100% - 300px); height: 100vh; position: relative; }
-        #canvas-container { width: 100%; height: 60%; background: radial-gradient(circle, #1a1a2e 0%, #000 100%); }
-        
-        /* 하단 상호작용 구역 */
-        #interaction-area { height: 40%; background: #0a0a12; padding: 20px; border-top: 2px solid #1a1a2e; overflow-y: auto; }
-        
-        select, input, button { width: 100%; padding: 12px; margin-bottom: 15px; background: #161625; border: 1px solid #444; color: white; border-radius: 4px; }
-        button { background: var(--main-color); color: #000; font-weight: bold; cursor: pointer; border: none; }
-        .log-item { padding: 10px; border-bottom: 1px solid #222; font-size: 0.9em; cursor: pointer; }
-        .log-item:hover { background: #1a1a2e; }
-        #ai-response { background: #111120; padding: 15px; border-radius: 8px; border: 1px dashed #444; }
+        /* 오른쪽 뷰포트 */
+        #main-view { flex: 1; height: 100vh; display: flex; flex-direction: column; }
+        #canvas-container { flex: 1.5; background: radial-gradient(circle, #0a0a1a 0%, #000 100%); position: relative; }
+        #interaction-area { flex: 1; background: #080810; padding: 30px; border-top: 2px solid #1a1a2e; overflow-y: auto; }
+
+        h2, h3 { color: var(--main-color); margin-top: 0; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9em; color: #aaa; }
+        select, input, button { width: 100%; padding: 12px; margin-bottom: 20px; background: #1a1a2e; border: 1px solid #444; color: white; border-radius: 6px; font-size: 1em; }
+        button { background: var(--main-color); color: #000; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        button:hover { background: #00b8e6; transform: translateY(-2px); }
+
+        #obs-details { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-size: 0.85em; line-height: 1.6; border: 1px solid #222; }
+        #ai-response { margin-top: 20px; padding: 20px; border-radius: 10px; background: #111120; border: 1px dashed #444; min-height: 80px; }
+        .loading { color: var(--main-color); animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="control-panel">
-    <h2 style="color:var(--main-color)">🔭 관측 스케줄</h2>
-    <p><small>실제 천문대 네트워크 연결됨</small></p>
+    <h2>🔭 탐사 설정</h2>
+    <p style="font-size:0.8em; color:#666; margin-bottom:25px;">EAIM Intelligent System v2.5</p>
     
-    <label>날짜 선택</label>
+    <label>📅 관측 날짜</label>
     <select id="date-select" onchange="updateObservation()">
-        <option value="2026-04-14">2026-04-14 (오늘)</option>
-        <option value="2026-04-10">2026-04-10 (4일 전)</option>
-    </select>
-
-    <label>지역별 천문대</label>
-    <select id="obs-select" onchange="updateObservation()">
-        <option value="KOR_BOAO">대한민국 - 보현산 천문대</option>
-        <option value="USA_MAUNA">미국 하와이 - 마우나케아</option>
-        <option value="CHL_VLT">칠레 - VLT 천문대</option>
-    </select>
-
-    <label>관측 대상</label>
-    <select id="target-select" onchange="updateObservation()">
-        <option value="jupiter">목성 (Jupiter)</option>
-        <option value="mars">화성 (Mars)</option>
-        <option value="saturn">토성 (Saturn)</option>
-    </select>
-
-    <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px;">
-        <strong>📡 수신된 관측 정보</strong>
-        <div id="obs-details" style="font-size:0.85em; margin-top:10px; color:#aaa;">
-            선택된 정보가 여기에 표시됩니다.
-        </div>
-    </div>
-</div>
-
-<div id="main-view">
-    <div id="canvas-container"></div>
-    <div id="interaction-area">
-        <h3 id="mission-title">🚀 에임 탐사 미션</h3>
-        <p id="question">천문대를 선택하면 해당 지역에서 관측된 데이터 기반 질문이 생성됩니다.</p>
-        <div style="display:flex; gap:10px;">
-            <input type="text" id="student-answer" placeholder="교과서에서 배운 내용을 입력하세요...">
-            <button style="width:150px;" onclick="runGemini25()">데이터 분석</button>
-        </div>
-        <div id="ai-response">답변을 기다리고 있습니다...</div>
-    </div>
-</div>
-
-<script>
-    // 1. 관측 데이터베이스 (대표님의 로직 반영)
-    const obsData = {
-        "KOR_BOAO": { name: "보현산 천문대", lat: "36.16° N", instrument: "1.8m 반사망원경", jupiter: "목성의 대적점이 매우 선명하게 관측됨" },
-        "USA_MAUNA": { name: "마우나케아 천문대", lat: "19.82° N", instrument: "케크 망원경 (Keck)", jupiter: "목성의 4대 위성이 일렬로 배치됨" },
-        "CHL_VLT": { name: "칠레 초거대 망원경", lat: "24.62° S", instrument: "VLT 고해상도 분광기", jupiter: "남반구 고위도 구름층 패턴 분석 중" }
-    };
-
-    function updateObservation() {
-        const obsKey = document.getElementById('obs-select').value;
-        const target = document.getElementById('target-select').value;
-        const date = document.getElementById('date-select').value;
-        
-        const data = obsData[obsKey];
-        document.getElementById('obs-details').innerHTML = `
-            천문대: ${data.name}<br>
-            장비: ${data.instrument}<br>
-            특이사항: ${data[target]}<br>
-            날짜: ${date}
-        `;
-        
-        document.getElementById('question').innerHTML = `"${data.name}에서 관측한 결과, ${data[target]} 현상이 보입니다. 이 현상이 일어나는 과학적 원리는 무엇일까요?"`;
-        
-        // 여기에 행성 텍스처 변경 로직 등을 추가할 수 있습니다.
-    }
-
-    // 2. Three.js 엔진 (기존 동일)
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, (window.innerWidth-300) / (window.innerHeight*0.6), 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth - 300, window.innerHeight * 0.6);
-    document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-    const planetGeo = new THREE.SphereGeometry(3, 64, 64);
-    const planetMat = new THREE.MeshPhongMaterial({ 
-        map: new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg') 
-    });
-    const planet = new THREE.Mesh(planetGeo, planetMat);
-    scene.add(planet);
-
-    const light = new THREE.DirectionalLight(0xffffff, 1.2);
-    light.position.set(5, 3, 5);
-    scene.add(light);
-    camera.position.z = 7;
-
-    function animate() {
-        requestAnimationFrame(animate);
-        planet.rotation.y += 0.003;
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    // 3. Gemini 2.5 로직 연동
-    const API_KEY = "본인의_API_키"; 
-
-    async function runGemini25() {
-        const answer = document.getElementById('student-answer').value;
-        const responseDiv = document.getElementById('ai-response');
-        const obsInfo = document.getElementById('obs-details').innerText;
-
-        responseDiv.innerHTML = "🛰️ 에임 위성 분석 중...";
-
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `당신은 ${obsInfo} 데이터를 분석하는 에임 우주 가이드입니다. 학생의 답변 "${answer}"에 대해 교과서 개념을 포함하여 칭찬과 피드백을 해주세요.`
-                        }]
-                    }]
-                })
-            });
-            const data = await res.json();
-            responseDiv.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-        } catch (e) {
-            responseDiv.innerHTML = "오류 발생: API 키를 확인해주세요.";
-        }
-    }
-
-    // 초기 실행
-    updateObservation();
-</script>
-
-</body>
-</html>
+        <option value="2026-04-14">2026-04-14 (음력 27일)</option>
+        <option

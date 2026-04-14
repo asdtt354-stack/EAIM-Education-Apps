@@ -2,16 +2,25 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>EAIM 앙상블 v3.0 - Engine 2.5 Flash</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <title>EAIM 앙상블 v2.5 - Music & Color & YouTube</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #050505; color: white; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #050505; color: white; margin: 0; }
         .diet-chord-card { background: linear-gradient(145deg, #1a1a2e, #0a0a15); border: 1px solid #333; }
         .gradient-text { background: linear-gradient(90deg, #00d4ff, #2ecc71); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .color-dot { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: 0.3s; border: 2px solid transparent; }
+        .color-dot:hover { transform: scale(1.2); }
+        .color-dot.active { border-color: white; transform: scale(1.2); box-shadow: 0 0 15px currentColor; }
+        .emotion-chip { padding: 8px 16px; border-radius: 20px; background: #1a1a1a; border: 1px solid #333; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
+        .emotion-chip:hover { background: #2a2a2a; }
+        .emotion-chip.active { background: #00d4ff; color: black; font-weight: bold; border-color: #00d4ff; }
+        .yt-input { background: rgba(255,255,255,0.05); border: 1px solid #444; color: white; border-radius: 12px; width: 100%; padding: 12px; outline: none; transition: 0.3s; }
+        .yt-input:focus { border-color: #ff0000; background: rgba(255,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -22,25 +31,31 @@
 
         const EnsembleApp = () => {
             const [step, setStep] = useState(0);
-            const [apiKey, setApiKey] = useState('');
-            const [emotion, setEmotion] = useState('');
-            const [recommendations, setRecommendations] = useState([]);
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v25') || '');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
+            const [recommendations, setRecommendations] = useState([]);
 
-            useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_v25');
-                if (savedKey) { setApiKey(savedKey); setStep(1); }
-            }, []);
+            // 감정 및 입력 데이터
+            const [selectedEmotion, setSelectedEmotion] = useState('');
+            const [selectedColor, setSelectedColor] = useState({ name: '', code: '' });
+            const [youtubeUrl, setYoutubeUrl] = useState('');
+
+            const emotionWords = ['신나는', '평온한', '설레는', '우울한', '웅장한', '몽환적인', '차분한', '파워풀한', '따뜻한'];
+            const colorPalette = [
+                { name: '열정의 빨강', code: '#ef4444' }, { name: '활기찬 주황', code: '#f97316' },
+                { name: '행복한 노랑', code: '#eab308' }, { name: '편안한 초록', code: '#22c55e' },
+                { name: '신비로운 파랑', code: '#3b82f6' }, { name: '깊은 보라', code: '#a855f7' },
+                { name: '순수한 하양', code: '#ffffff' }, { name: '고독한 검정', code: '#18181b' }
+            ];
 
             const saveApiKey = () => {
-                if (!apiKey) return alert("키를 입력하세요!");
+                if (!apiKey) return alert("API 키를 입력하세요!");
                 localStorage.setItem('gemini_api_key_v25', apiKey);
                 setStep(1);
             };
 
-            // ★★★ 핵심: 제미나이 2.5 플래시 엔진 강제 고정 함수 ★★★
             const callGemini25 = async (prompt) => {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
@@ -50,16 +65,35 @@
                         })
                     });
                     const data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
                     return data.candidates[0].content.parts[0].text;
                 } catch (e) {
-                    alert("2.5 Flash 엔진 연결 실패!");
+                    alert("2.5 Flash 엔진 연결 실패! 키를 확인해주세요.");
                     return null;
                 }
             };
 
-            const getSongs = async () => {
+            const processAnalysis = async () => {
                 setIsAnalyzing(true);
-                const prompt = `[EAIM 감정 분석] 현재 기분: "${emotion}". 이 기분에 어울리는 K-POP 3곡 추천. JSON: [{"title": "곡명-가수", "reason": "이유"}]`;
+                let prompt = "";
+
+                if (youtubeUrl.trim()) {
+                    // 유튜브 링크 입력 시
+                    prompt = `[EAIM 직접 분석] 사용자가 입력한 유튜브 링크: "${youtubeUrl}". 
+                    이 영상의 곡을 분석하여, 초보자가 원곡(AR)과 합주하기 위해 필요한 '다이어트 코드' 구성 방향을 설명해줘.
+                    JSON 형식: [{"title": "입력하신 유튜브 곡", "reason": "유튜브 영상을 분석한 음악적 특징과 합주 가이드"}]`;
+                } else {
+                    // 감정/색상 선택 시
+                    if (!selectedEmotion || !selectedColor.name) {
+                        alert("단어와 색상을 선택하거나 유튜브 링크를 입력해주세요!");
+                        setIsAnalyzing(false);
+                        return;
+                    }
+                    prompt = `[EAIM 감정 분석] 상태: "${selectedEmotion}", 색상: "${selectedColor.name}". 
+                    이 무드에 어울리는 K-POP 3곡 추천. 
+                    JSON 형식: [{"title": "곡명-가수", "reason": "추천 이유"}]`;
+                }
+
                 const result = await callGemini25(prompt);
                 if (result) {
                     try {
@@ -72,57 +106,100 @@
             };
 
             return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-                    {/* 단계별 화면 렌더링 */}
+                <div className="min-h-screen flex flex-col items-center justify-center p-6">
                     {step === 0 && (
-                        <div className="max-w-md w-full bg-zinc-900 p-8 rounded-2xl border border-zinc-800">
-                            <h1 className="text-2xl font-bold mb-6 gradient-text">에임앙상블 v3.0</h1>
-                            <p className="text-zinc-400 mb-6 text-sm">Gemini 2.5 Flash 엔진 인증이 필요합니다.</p>
+                        <div className="max-w-md w-full bg-zinc-900 p-8 rounded-3xl border border-zinc-800 text-center">
+                            <h1 className="text-2xl font-bold mb-2 gradient-text italic">EAIM ENSEMBLE v2.5</h1>
+                            <p className="text-zinc-500 mb-6 text-sm">Gemini 2.5 Flash Engine Locked</p>
                             <input 
                                 type="password" 
-                                className="w-full p-3 bg-black border border-zinc-700 rounded-lg mb-4 text-white"
-                                placeholder="API 키를 입력하세요"
+                                className="w-full p-4 bg-black border border-zinc-700 rounded-xl mb-4 text-white text-center"
+                                placeholder="인증 키를 입력하세요"
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
                             />
-                            <button onClick={saveApiKey} className="w-full py-3 bg-sky-500 rounded-lg font-bold hover:bg-sky-400">인증 및 시작</button>
+                            <button onClick={saveApiKey} className="w-full py-4 bg-sky-500 rounded-xl font-bold hover:bg-sky-400 transition">입장하기</button>
                         </div>
                     )}
 
                     {step === 1 && (
-                        <div className="max-w-lg w-full">
-                            <h2 className="text-3xl font-bold mb-2">오늘 어떤 <span className="gradient-text">기분</span>이신가요?</h2>
-                            <p className="text-zinc-500 mb-8 font-light">에임 가이드가 당신을 위한 합주곡을 찾아드립니다.</p>
-                            <input 
-                                className="w-full p-4 bg-zinc-900 border border-zinc-800 rounded-xl mb-4 text-xl"
-                                placeholder="예) 비 오는 날 창가에서 치기 좋은 차분한 기분"
-                                value={emotion}
-                                onChange={(e) => setEmotion(e.target.value)}
-                            />
+                        <div className="max-w-xl w-full animate-fadeIn space-y-12">
+                            <div className="text-center">
+                                <h2 className="text-3xl font-bold mb-2">마음 <span className="gradient-text">컬러링 & 합주</span></h2>
+                                <p className="text-zinc-500 font-light">감정을 선택하거나 원하는 곡의 링크를 직접 넣으세요.</p>
+                            </div>
+                            
+                            {/* 섹션 1: 감정/색상 선택 */}
+                            <div className="space-y-8 bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
+                                <div>
+                                    <p className="text-xs font-bold text-sky-400 mb-4 uppercase text-center">Option 1. 감정 상태 선택</p>
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {emotionWords.map(word => (
+                                            <button key={word} onClick={() => {setSelectedEmotion(word); setYoutubeUrl('');}}
+                                                className={`emotion-chip ${selectedEmotion === word ? 'active' : ''}`}>{word}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="flex justify-center gap-3">
+                                    {colorPalette.map(color => (
+                                        <div key={color.name} onClick={() => {setSelectedColor(color); setYoutubeUrl('');}}
+                                            className={`color-dot ${selectedColor.name === color.name ? 'active' : ''}`}
+                                            style={{ backgroundColor: color.code, color: color.code }} />
+                                    ))}
+                                </div>
+                                {selectedColor.name && <p className="text-center text-xs text-zinc-400">{selectedEmotion} {selectedColor.name}</p>}
+                            </div>
+
+                            {/* 섹션 2: 유튜브 링크 입력 */}
+                            <div className="space-y-4 bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
+                                <p className="text-xs font-bold text-red-500 mb-2 uppercase text-center">Option 2. 유튜브 직접 입력 (추천보다 우선)</p>
+                                <div className="relative">
+                                    <i className="fab fa-youtube absolute left-4 top-4 text-red-500 text-xl"></i>
+                                    <input 
+                                        type="text" 
+                                        className="yt-input pl-12"
+                                        placeholder="https://www.youtube.com/watch?v=..."
+                                        value={youtubeUrl}
+                                        onChange={(e) => {
+                                            setYoutubeUrl(e.target.value);
+                                            setSelectedEmotion(''); setSelectedColor({name:'', code:''});
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
                             <button 
-                                onClick={getSongs}
+                                onClick={processAnalysis}
                                 disabled={isAnalyzing}
-                                className={`w-full py-4 rounded-xl font-bold text-lg transition ${isAnalyzing ? 'bg-zinc-700' : 'bg-sky-500 hover:scale-105'}`}
+                                className={`w-full py-5 rounded-2xl font-bold text-xl transition-all shadow-xl ${isAnalyzing ? 'bg-zinc-800 text-zinc-500' : 'bg-white text-black hover:scale-[1.02]'}`}
                             >
-                                {isAnalyzing ? '📡 제미나이 2.5 플래시가 분석 중...' : '합주곡 추천받기'}
+                                {isAnalyzing ? '📡 v2.5 플래시가 음악 세계를 탐색 중...' : '합주 분석 시작하기'}
                             </button>
                         </div>
                     )}
 
                     {step === 2 && (
-                        <div className="w-full max-w-4xl animate-fade-in">
-                            <h2 className="text-2xl font-bold mb-8">당신을 위한 <span className="gradient-text">에임 추천 리스트</span></h2>
+                        <div className="w-full max-w-5xl animate-fadeIn">
+                            <div className="text-center mb-10">
+                                <h2 className="text-3xl font-bold mb-2">에임 <span className="gradient-text">합주 가이드</span></h2>
+                                <p className="text-zinc-400">제미나이 2.5 플래시가 분석한 합주 정보입니다.</p>
+                            </div>
+                            
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {recommendations.map((song, i) => (
-                                    <div key={i} className="diet-chord-card p-6 rounded-2xl text-left hover:border-sky-500 transition cursor-pointer">
-                                        <div className="text-sky-400 font-bold mb-2">Step 0{i+1}</div>
-                                        <div className="text-xl font-bold mb-3">{song.title}</div>
-                                        <p className="text-zinc-400 text-sm leading-relaxed mb-6">{song.reason}</p>
-                                        <button className="w-full py-2 bg-white text-black rounded-lg font-bold text-sm">다이어트 코드 분석</button>
+                                    <div key={i} className="diet-chord-card p-8 rounded-3xl text-left border-zinc-800 group hover:border-sky-500 transition-all">
+                                        <div className="text-sky-400 font-bold mb-2">Analysis 0{i+1}</div>
+                                        <div className="text-xl font-bold mb-4 group-hover:text-sky-300 transition-colors">{song.title}</div>
+                                        <p className="text-zinc-400 text-sm leading-relaxed mb-8 min-h-[80px]">{song.reason}</p>
+                                        <button className="w-full py-3 bg-zinc-800 text-white rounded-xl font-bold text-sm hover:bg-sky-500 hover:text-black transition-all">
+                                            다이어트 코드 악보보기
+                                        </button>
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={() => setStep(1)} className="mt-12 text-zinc-500 hover:text-white transition">← 다시 추천받기</button>
+                            <div className="text-center mt-12">
+                                <button onClick={() => {setStep(1); setYoutubeUrl('');}} className="text-zinc-500 hover:text-white underline underline-offset-8 transition">뒤로 가기</button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -130,7 +207,7 @@
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<EnsembleApp />);
+        root.render(<App />);
     </script>
 </body>
 </html>

@@ -10,18 +10,36 @@
             padding: 0;
             font-family: 'Pretendard', sans-serif;
             background: linear-gradient(135deg, #6e8efb, #a777e3);
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            /* justify-content: center; 대신 아래 설정으로 위쪽으로 살짝 올림 */
+            justify-content: flex-start; 
+            padding-top: 8vh; /* 화면 상단에서 8% 정도만 띄워서 위로 올림 */
             color: white;
             text-align: center;
+            box-sizing: border-box;
         }
 
-        header { margin-top: 20px; }
-        header h1 { font-size: 2rem; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        header p { font-size: 1rem; opacity: 0.9; margin-bottom: 25px; }
+        header {
+            margin-bottom: 30px; /* 헤더와 카드 사이 간격 */
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin: 0 0 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
 
         .grid-container {
             display: grid;
@@ -29,14 +47,13 @@
             gap: 15px;
             width: 95%;
             max-width: 900px;
-            margin-bottom: 30px;
         }
 
         .card {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             border-radius: 15px;
-            padding: 15px 10px;
+            padding: 20px 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             transition: transform 0.3s ease;
             text-decoration: none;
@@ -54,17 +71,24 @@
 
         .icon { font-size: 2.2rem; margin-bottom: 8px; }
         .title { font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; }
-        .subtitle { font-size: 0.8rem; opacity: 0.8; white-space: nowrap; }
+        .subtitle { font-size: 0.8rem; opacity: 0.8; }
 
-        footer { padding-bottom: 20px; font-size: 0.8rem; opacity: 0.7; }
+        footer {
+            margin-top: auto; /* 하단 카피라이트를 화면 맨 아래로 밀어냄 */
+            padding-bottom: 20px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
 
+        /* 반응형 설정 */
         @media (max-width: 768px) {
-            .grid-container { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            header h1 { font-size: 1.6rem; }
+            body { padding-top: 5vh; } /* 모바일에선 상단 여백 더 줄임 */
+            .grid-container { grid-template-columns: repeat(2, 1fr); }
+            header h1 { font-size: 1.8rem; }
         }
 
         @media (max-width: 480px) {
-            .grid-container { grid-template-columns: repeat(1, 1fr); width: 80%; }
+            .grid-container { grid-template-columns: repeat(1, 1fr); width: 85%; }
         }
     </style>
 </head>
@@ -108,7 +132,7 @@
 
         <a href="sports.html" class="card">
             <span class="icon">🏀</span>
-            <span class="title">EAIM 비트 & 바스켓</span>
+            <span class="title">EAIM 비트 & 볼</span>
             <span class="subtitle">다 함께 바디 퍼커션</span>
         </a>
     </div>

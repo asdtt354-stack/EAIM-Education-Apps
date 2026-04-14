@@ -54,10 +54,22 @@
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
+            // 💡 정제 로직 추가: AI 응답에서 순수 JSON만 추출
+            const parseRobustJSON = (text) => {
+                try {
+                    const match = text.match(/\{[\s\S]*\}/);
+                    if (match) return JSON.parse(match[0]);
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("JSON 파싱 에러:", text);
+                    return null;
+                }
+            };
+
             const callGemini = async (prompt, isJSON = false) => {
-                // Gemini 2.5 Flash 엔진 적용
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 const config = { temperature: 0.7, maxOutputTokens: 1000 };
+                // 💡 JSON 모드 명시적 활성화
                 if (isJSON) config.responseMimeType = "application/json";
 
                 const response = await fetch(url, {
@@ -69,22 +81,25 @@
                 if (!response.ok) throw new Error("API 연결 실패");
                 const data = await response.json();
                 const rawText = data.candidates[0].content.parts[0].text;
-                return isJSON ? JSON.parse(rawText) : rawText;
+                
+                return isJSON ? parseRobustJSON(rawText) : rawText;
             };
 
             const handleEmotionSelect = async (emotion) => {
+                if (isAnalyzing) return;
                 setSelectedEmotion(emotion);
                 setIsAnalyzing(true);
                 setStep(2);
-                const prompt = `학생 감정: '${emotion.name}'. 이 감정을 신나게 풀어줄 농구 활동용 음악 한 곡 추천(JSON): {"songTitle":"제목","bpm":"숫자","msg":"코치의 응원문구"}`;
+                const prompt = `학생 감정: '${emotion.name}'. 이 감정을 승화할 농구 활동용 음악 한 곡 추천(JSON): {"songTitle":"제목","bpm":"숫자","msg":"응원문구"}`;
                 try {
                     const res = await callGemini(prompt, true);
-                    setPrescription(res);
-                } catch (e) { alert('데이터 오류'); setStep(1); } 
+                    if (res) setPrescription(res);
+                } catch (e) { alert('분석 실패. 다시 시도해 주세요.'); setStep(1); } 
                 finally { setIsAnalyzing(false); }
             };
 
             const handleGenerateRhythm = async () => {
+                if (isAnalyzing) return;
                 if (!youtubeLink) return alert("유튜브 링크를 넣어주세요!");
                 const extractedId = getYouTubeId(youtubeLink);
                 if (!extractedId) return alert("올바른 링크가 아닙니다.");
@@ -92,30 +107,26 @@
                 setVideoId(extractedId);
                 setIsAnalyzing(true);
 
-                const prompt = `농구 리듬 트레이닝 전문가로서 다음 세 팀의 4박자 구음 리듬(예: 탁(1) 쿵(2))을 생성하세요.
-                1. Team A (드리블): 바닥을 치는 기본 리듬
-                2. Team B (드리블 & 패스): 드리블 후 패스 연결 리듬
-                3. Team C (드리블 & 패스 & 슛): 슛으로 마무리하는 고급 리듬
-                
-                반드시 JSON 형식으로만 답하세요:
-                {
-                    "intro": "오늘의 훈련 목표 1문장",
-                    "teamA": "구음(박자) 조합",
-                    "teamB": "구음(박자) 조합",
-                    "teamC": "구음(박자) 조합"
-                }`;
+                const prompt = `농구 리듬 트레이닝 전문가로서 다음 세 팀의 4박자 구음 리듬을 생성하세요. 
+                Team A: 드리블, Team B: 드리블&패스, Team C: 드리블&패스&슛.
+                JSON 형식: {"intro": "목표", "teamA": "리듬", "teamB": "리듬", "teamC": "리듬"}`;
 
                 try {
                     const res = await callGemini(prompt, true);
-                    setRhythmData(res);
-                    setStep(3);
-                } catch (e) { alert('리듬 생성 오류'); } finally { setIsAnalyzing(false); }
+                    if (res) {
+                        setRhythmData(res);
+                        setStep(3);
+                    } else {
+                        throw new Error("데이터 파싱 실패");
+                    }
+                } catch (e) { alert('리듬 생성 중 오류가 발생했습니다. 다시 눌러주세요.'); } 
+                finally { setIsAnalyzing(false); }
             };
 
             const handleSubmitJournal = async () => {
-                if (!studentJournal) return alert("소감을 입력하세요!");
+                if (isAnalyzing || !studentJournal) return;
                 setIsAnalyzing(true);
-                const prompt = `농구 리듬 훈련 후 학생 소감: "${studentJournal}". 다정한 코치님의 피드백 3문장.`;
+                const prompt = `농구 훈련 후 소감: "${studentJournal}". 다정한 피드백 3문장.`;
                 try {
                     const res = await callGemini(prompt, false);
                     setTeacherFeedback(res);
@@ -162,7 +173,7 @@
                                 <div className="glass-panel p-7 rounded-[2.5rem] border-t-4 border-orange-500">
                                     <h3 className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-4">리듬 농구과제 분석</h3>
                                     {isAnalyzing ? (
-                                        <div className="py-10 text-center animate-pulse text-sm text-slate-400">음악 분석 중...</div>
+                                        <div className="py-10 text-center animate-pulse text-sm text-slate-400">데이터를 분석하고 있습니다...</div>
                                     ) : (
                                         <div className="space-y-5">
                                             <div className="bg-white/5 p-4 rounded-2xl border border-white/10 text-center">
@@ -213,8 +224,8 @@
                                 
                                 <div className="pt-6 space-y-4">
                                     <h3 className="text-center font-title text-orange-500 text-lg uppercase">훈련 일지</h3>
-                                    <textarea value={studentJournal} onChange={e => setStudentJournal(e.target.value)} placeholder="리듬 농구를 경험한 느낌은?" className="w-full bg-slate-900 border border-slate-700 p-5 rounded-3xl text-sm h-32 outline-none focus:border-orange-500"></textarea>
-                                    <button onClick={handleSubmitJournal} disabled={isAnalyzing} className="w-full bg-orange-600 p-5 rounded-2xl font-bold">기록 제출 📮</button>
+                                    <textarea value={studentJournal} onChange={e => setStudentJournal(e.target.value)} placeholder="훈련 소감을 적어주세요." className="w-full bg-slate-900 border border-slate-700 p-5 rounded-3xl text-sm h-32 outline-none focus:border-orange-500"></textarea>
+                                    <button onClick={handleSubmitJournal} className="w-full bg-orange-600 p-5 rounded-2xl font-bold">기록 제출 📮</button>
                                 </div>
                             </div>
                         )}

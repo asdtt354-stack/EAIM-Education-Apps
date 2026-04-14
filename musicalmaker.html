@@ -2,195 +2,196 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 뮤지컬 메이커 v6.9</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>EAIM 에임우주탐험대 - 3D 입체 관측 v2.7</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #1a0509; color: #FFF; margin: 0; padding: 0; }
-        .font-drama { font-family: 'Gowun Batang', serif; }
-        .font-show { font-family: 'Black Han Sans', sans-serif; }
-        .stage-curtain { background: linear-gradient(to bottom, #9F1239, #881337); border-bottom: 4px solid #FCD34D; position: sticky; top: 0; z-index: 50; }
-        .ticket-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: 0.3s; outline: none; border-radius: 0.5rem; width: 100%; padding: 0.8rem 1rem; font-size: 0.9rem; }
-        .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
-        .plot-box { border-left: 3px solid #FCD34D; padding-left: 1rem; margin-bottom: 1rem; }
-        .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; padding: 1rem; transition: 0.2s; cursor: pointer; border: none; }
-        .tab-btn { padding: 1rem 0.5rem; flex: 1; font-weight: bold; font-size: 0.85rem; transition: 0.3s; border-bottom: 3px solid transparent; color: #94a3b8; cursor: pointer; text-align: center; }
-        .tab-active { color: #FCD34D; border-bottom-color: #FCD34D; background: rgba(252, 211, 77, 0.1); }
-        .edit-area { background: rgba(0,0,0,0.4); color: #FDE68A; font-family: 'Gowun Batang', serif; line-height: 1.8; width: 100%; min-height: 400px; padding: 1.5rem; border: 1px dashed rgba(252, 211, 77, 0.3); border-radius: 0.5rem; outline: none; }
+        :root { --main-color: #00d4ff; --bg-dark: #000; --accent: #2ecc71; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        #side-panel { width: 320px; min-width: 320px; background: rgba(10,10,25,0.95); border-right: 1px solid #333; display: none; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 20; }
+        #main-view { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        #canvas-container { flex-grow: 1; background: #000; cursor: pointer; }
+        #interaction-area { height: 35%; background: #080810; padding: 20px; border-top: 1px solid #222; display: none; z-index: 20; }
+        .btn-home { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); color: white; padding: 10px 20px; border-radius: 20px; border: 1px solid #555; z-index: 100; cursor: pointer; }
+        
+        /* 행성 이름 라벨 스타일 */
+        .planet-label { position: absolute; color: white; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 4px; font-size: 12px; pointer-events: none; border: 1px solid var(--main-color); }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState } = React;
+<div id="intro-ui" style="position:absolute; top:30px; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; z-index:10;">
+    <h1 style="color:var(--main-color); text-shadow: 0 0 15px #00d4ff; margin:0;">에임 우주 탐험대</h1>
+    <p style="color:#aaa;">탐사할 행성을 클릭하여 3D 정밀 관측을 시작하세요!</p>
+</div>
 
-        const App = () => {
-            const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_musical') || '');
-            const [loading, setLoading] = useState(false);
-            
-            // 입력 데이터
-            const [title, setTitle] = useState('');
-            const [place, setPlace] = useState('');
-            const [cast, setCast] = useState('');
-            const [plots, setPlots] = useState({
-                ki: '', // 기: 시작
-                seung: '', // 승: 전개
-                jeon: '', // 전: 위기/절정
-                gyeol: '' // 결: 결말
-            });
+<button class="btn-home" onclick="location.reload()">☀️ 전체 태양계</button>
 
-            // 생성 결과 데이터 (수정 가능하도록 상태 관리)
-            const [activeTab, setActiveTab] = useState('script');
-            const [results, setResults] = useState({ script: '', images: '', music: '' });
+<div id="label-container" style="position:absolute; top:0; left:0; pointer-events:none; width:100%; height:100%;"></div>
 
-            const handlePlotChange = (e, key) => {
-                setPlots({...plots, [key]: e.target.value});
-            };
+<div id="side-panel">
+    <h2>🔭 탐사 설정</h2>
+    <div id="obs-location" style="color:var(--accent); font-size:0.9em; margin: 15px 0;">📍 관측소 수신 중</div>
+    <div id="log-list" style="flex-grow:1; border-top:1px solid #333; padding-top:15px; overflow-y:auto;">
+        <h3>📖 탐사 일지</h3>
+        <div id="log-container"></div>
+    </div>
+</div>
 
-            const callGemini = async (prompt) => {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await response.json();
-                    return data.candidates[0].content.parts[0].text;
-                } catch (error) {
-                    alert('API 호출 중 오류가 발생했습니다. 키를 확인해주세요.');
-                    return '';
+<div id="main-view">
+    <div id="canvas-container"></div>
+    <div id="interaction-area">
+        <h3 id="target-title">관측 기록실</h3>
+        <p id="question" style="font-size:0.9em; color:#aaa; margin-bottom:10px;"></p>
+        <textarea id="student-answer" style="width:100%; height:60px; background:#161625; color:white; border:1px solid #333; padding:10px; border-radius:6px;"></textarea>
+        <button onclick="runGemini25()" style="width:100%; padding:12px; background:var(--main-color); border:none; border-radius:6px; font-weight:bold; margin-top:10px; cursor:pointer;">AI 분석 및 저장</button>
+        <div id="ai-response" style="margin-top:10px; font-size:0.9em; line-height:1.6;"></div>
+    </div>
+</div>
+
+<script>
+    const planetsData = {
+        mercury: { name: "수성", dist: 25, size: 1.2, speed: 0.04, color: 0xaaaaaa, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mercury.jpg", obs: "라 실라 천문대" },
+        venus: { name: "금성", dist: 40, size: 1.8, speed: 0.015, color: 0xffdd88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/venus_atmosphere.jpg", obs: "마우나케아 천문대" },
+        earth: { name: "지구", dist: 55, size: 2.0, speed: 0.01, color: 0x2233ff, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg", obs: "보현산 천문대" },
+        mars: { name: "화성", dist: 70, size: 1.5, speed: 0.008, color: 0xff4422, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mars.jpg", obs: "우티 전파 천문대" },
+        jupiter: { name: "목성", dist: 95, size: 5.0, speed: 0.004, color: 0xffaa88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg", obs: "팔로마 천문대" },
+        saturn: { name: "토성", dist: 125, size: 4.2, speed: 0.002, color: 0xffdd88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturn.png", obs: "사이딩 스프링 천문대" },
+        uranus: { name: "천왕성", dist: 150, size: 2.5, speed: 0.0015, color: 0x88ddff, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/uranus.jpg", obs: "유럽 남방 천문대" },
+        neptune: { name: "해왕성", dist: 175, size: 2.4, speed: 0.001, color: 0x3355ff, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/neptune.jpg", obs: "파라날 천문대" }
+    };
+
+    let isObserving = false;
+    let currentTarget = null;
+    const scene = new THREE.Scene();
+    const container = document.getElementById('canvas-container');
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 3000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(8, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+    scene.add(sun);
+
+    const planetMeshes = {};
+    const labels = {};
+    const loader = new THREE.TextureLoader();
+
+    Object.keys(planetsData).forEach(key => {
+        const p = planetsData[key];
+        const mat = new THREE.MeshStandardMaterial({ 
+            map: loader.load(p.texture),
+            emissive: new THREE.Color(p.color),
+            emissiveIntensity: 0.4 
+        });
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.size, 64, 64), mat);
+        mesh.userData = { id: key, name: p.name };
+        planetMeshes[key] = mesh;
+        scene.add(mesh);
+
+        // 이름 라벨 생성
+        const el = document.createElement('div');
+        el.className = 'planet-label';
+        el.innerText = p.name;
+        document.getElementById('label-container').appendChild(el);
+        labels[key] = el;
+    });
+
+    camera.position.set(0, 180, 250);
+    camera.lookAt(0, 0, 0);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now() * 0.0005;
+
+        Object.keys(planetMeshes).forEach(key => {
+            const p = planetsData[key];
+            const m = planetMeshes[key];
+            const el = labels[key];
+
+            if (!isObserving) {
+                m.position.x = Math.cos(time * p.speed * 10) * p.dist;
+                m.position.z = Math.sin(time * p.speed * 10) * p.dist;
+                m.rotation.y += 0.01;
+                el.style.display = 'block';
+
+                // 3D 좌표를 2D 화면 좌표로 변환하여 라벨 위치 조정
+                const vector = m.position.clone().project(camera);
+                const x = (vector.x * 0.5 + 0.5) * container.clientWidth;
+                const y = (vector.y * -0.5 + 0.5) * container.clientHeight;
+                el.style.left = `${x}px`;
+                el.style.top = `${y - 20}px`;
+            } else {
+                if (key === currentTarget) {
+                    m.rotation.y += 0.005;
+                    el.style.display = 'none';
+                } else {
+                    m.visible = false;
+                    el.style.display = 'none';
                 }
-            };
+            }
+        });
+        renderer.render(scene, camera);
+    }
+    animate();
 
-            const generateMusical = async () => {
-                if (!apiKey) return alert('API 키를 먼저 입력해주세요.');
-                setLoading(true);
-                
-                const baseContext = `
-                    제목: ${title}
-                    장소: ${place}
-                    등장인물: ${cast}
-                    줄거리 요약:
-                    - 기: ${plots.ki}
-                    - 승: ${plots.seung}
-                    - 전: ${plots.jeon}
-                    - 결: ${plots.gyeol}
-                `;
+    container.onclick = (e) => {
+        if(isObserving) return;
+        const rect = container.getBoundingClientRect();
+        const mouse = new THREE.Vector2(((e.clientX - rect.left) / container.clientWidth) * 2 - 1, -((e.clientY - rect.top) / container.clientHeight) * 2 + 1);
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(Object.values(planetMeshes));
+        if(intersects.length > 0) startObservation(intersects[0].object.userData.id);
+    };
 
-                const scriptPrompt = `${baseContext}\n\n위 내용을 바탕으로 초등/중등 학생이 공연하기 좋은 뮤지컬 대본을 써줘. 대사와 지문(행동, 감정)을 명확히 구분해서 작성해줘.`;
-                const imagePromptReq = "위 대본의 주요 장면을 위한 이미지 생성 프롬프트 3개를 영어로 작성해줘.";
-                const musicPromptReq = "위 뮤지컬에 들어갈 넘버(노래) 3곡의 스타일과 분위기를 Suno AI 프롬프트 형식으로 추천해줘.";
+    function startObservation(id) {
+        isObserving = true; currentTarget = id;
+        const p = planetsData[id];
+        document.getElementById('intro-ui').style.display = 'none';
+        document.getElementById('side-panel').style.display = 'flex';
+        document.getElementById('interaction-area').style.display = 'block';
+        
+        // 클릭한 행성을 중앙으로 가져오고 입체적으로 확대
+        planetMeshes[id].position.set(0, 0, 0);
+        camera.position.set(0, 0, p.size * 3.5);
+        camera.lookAt(0, 0, 0);
+        
+        document.getElementById('obs-location').innerText = `📍 실시간 관측지: ${p.obs}`;
+        document.getElementById('target-title').innerText = `${p.name} 3D 정밀 탐사`;
+        document.getElementById('question').innerText = `${p.name}의 표면 질감과 색상을 관찰해 보세요. 어떤 특징이 보이나요?`;
+    }
 
-                const scriptRes = await callGemini(scriptPrompt);
-                const imageRes = await callGemini(scriptRes + "\n\n" + imagePromptReq);
-                const musicRes = await callGemini(scriptRes + "\n\n" + musicPromptReq);
+    const API_KEY = "여기에_성공하셨던_API키";
+    async function runGemini25() {
+        const ans = document.getElementById('student-answer').value;
+        const resp = document.getElementById('ai-response');
+        if(!ans) return alert("내용을 입력해주세요.");
+        resp.innerHTML = "📡 AI 가이드 분석 중...";
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: `과학 선생님으로서 학생의 3D 관측 답변에 피드백해줘: ${ans}` }] }] })
+            });
+            const data = await res.json();
+            resp.innerHTML = `<b>AI 피드백:</b><br>${data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>')}`;
+            saveToLocal();
+        } catch(e) { resp.innerHTML = "연결 오류"; }
+    }
 
-                setResults({ script: scriptRes, images: imageRes, music: musicRes });
-                setLoading(false);
-                setStep(1);
-            };
+    function saveToLocal() {
+        const log = { target: planetsData[currentTarget].name, ans: document.getElementById('student-answer').value, time: new Date().toLocaleString() };
+        let logs = JSON.parse(localStorage.getItem('eaim_v2.7_logs') || "[]");
+        logs.unshift(log);
+        localStorage.setItem('eaim_v2.7_logs', JSON.stringify(logs));
+        displayLogs();
+    }
 
-            return (
-                <div className="min-h-screen pb-10">
-                    <div className="stage-curtain p-4 text-center shadow-xl">
-                        <h1 className="font-show text-2xl text-yellow-300">EAIM MUSICAL MAKER</h1>
-                        <p className="text-[10px] opacity-70 tracking-widest">EMOTION ART INTERACTIVE MUSICALIZATION</p>
-                    </div>
-
-                    <div className="max-w-2xl mx-auto p-4">
-                        {step === 0 ? (
-                            <div className="space-y-6">
-                                <input type="password" value={apiKey} onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_musical', e.target.value);}} className="ticket-input text-center" placeholder="🔑 API KEY를 입력하세요" />
-
-                                <div className="space-y-4 bg-white/5 p-4 rounded-2xl border border-white/10">
-                                    <h2 className="font-bold text-yellow-400 border-b border-yellow-400/30 pb-2 mb-4"><i className="fas fa-edit mr-2"></i>기본 설정</h2>
-                                    <input value={title} onChange={e => setTitle(e.target.value)} className="ticket-input" placeholder="뮤지컬 제목" />
-                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input" placeholder="배경 장소 (예: 2050년 우주 정거장)" />
-                                    <input value={cast} onChange={e => setCast(e.target.value)} className="ticket-input" placeholder="등장인물 (예: 영희(용감함), 철수(겁쟁이))" />
-                                </div>
-
-                                <div className="space-y-3 bg-white/5 p-4 rounded-2xl border border-white/10">
-                                    <h2 className="font-bold text-yellow-400 border-b border-yellow-400/30 pb-2 mb-4"><i className="fas fa-layer-group mr-2"></i>기승전결 스토리 라인</h2>
-                                    <div className="plot-box">
-                                        <label className="text-xs text-yellow-200 opacity-70">기 (시작: 평화로운 일상과 사건의 계기)</label>
-                                        <textarea value={plots.ki} onChange={e => handlePlotChange(e, 'ki')} className="ticket-input mt-1 h-16" placeholder="이야기가 어떻게 시작되나요?" />
-                                    </div>
-                                    <div className="plot-box">
-                                        <label className="text-xs text-yellow-200 opacity-70">승 (전개: 갈등의 시작과 모험)</label>
-                                        <textarea value={plots.seung} onChange={e => handlePlotChange(e, 'seung')} className="ticket-input mt-1 h-16" placeholder="어떤 일들이 벌어지나요?" />
-                                    </div>
-                                    <div className="plot-box">
-                                        <label className="text-xs text-yellow-200 opacity-70">전 (위기/절정: 가장 긴박한 순간)</label>
-                                        <textarea value={plots.jeon} onChange={e => handlePlotChange(e, 'jeon')} className="ticket-input mt-1 h-16" placeholder="가장 큰 위기는 무엇인가요?" />
-                                    </div>
-                                    <div className="plot-box">
-                                        <label className="text-xs text-yellow-200 opacity-70">결 (결말: 문제 해결과 교훈)</label>
-                                        <textarea value={plots.gyeol} onChange={e => handlePlotChange(e, 'gyeol')} className="ticket-input mt-1 h-16" placeholder="어떻게 마무리되나요?" />
-                                    </div>
-                                </div>
-
-                                <button onClick={generateMusical} disabled={loading} className="magic-btn w-full text-lg shadow-lg">
-                                    {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-wand-magic-sparkles mr-2"></i>}
-                                    {loading ? "AI가 대본을 집필 중입니다..." : "창작 뮤지컬 완성하기"}
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="animate-fadeIn">
-                                <div className="flex mb-4 bg-white/5 rounded-t-lg border-b border-yellow-500/30">
-                                    <div onClick={() => setActiveTab('script')} className={`tab-btn ${activeTab === 'script' ? 'tab-active' : ''}`}><i className="fas fa-scroll mr-1"></i>대본 편집</div>
-                                    <div onClick={() => setActiveTab('images')} className={`tab-btn ${activeTab === 'images' ? 'tab-active' : ''}`}><i className="fas fa-image mr-1"></i>이미지</div>
-                                    <div onClick={() => setActiveTab('music')} className={`tab-btn ${activeTab === 'music' ? 'tab-active' : ''}`}><i className="fas fa-music mr-1"></i>음악</div>
-                                </div>
-
-                                <div className="relative">
-                                    <p className="text-[10px] text-yellow-500 mb-2 italic">* 대본 내용을 직접 클릭해서 수정할 수 있습니다.</p>
-                                    {activeTab === 'script' && (
-                                        <textarea 
-                                            className="edit-area" 
-                                            value={results.script} 
-                                            onChange={(e) => setResults({...results, script: e.target.value})}
-                                        />
-                                    )}
-                                    {activeTab === 'images' && (
-                                        <textarea 
-                                            className="edit-area" 
-                                            value={results.images} 
-                                            onChange={(e) => setResults({...results, images: e.target.value})}
-                                        />
-                                    )}
-                                    {activeTab === 'music' && (
-                                        <textarea 
-                                            className="edit-area" 
-                                            value={results.music} 
-                                            onChange={(e) => setResults({...results, music: e.target.value})}
-                                        />
-                                    )}
-                                </div>
-
-                                <div className="flex gap-2 mt-6">
-                                    <button onClick={() => setStep(0)} className="flex-1 border border-white/30 py-3 rounded-xl opacity-60 hover:opacity-100 transition">
-                                        <i className="fas fa-arrow-left mr-2"></i>처음으로
-                                    </button>
-                                    <button onClick={() => alert('대본이 저장되었습니다! (브라우저 임시저장)')} className="flex-1 bg-yellow-600 text-white py-3 rounded-xl font-bold">
-                                        <i className="fas fa-save mr-2"></i>저장하기
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+    function displayLogs() {
+        const logs = JSON.parse(localStorage.getItem('eaim_v2.7_logs') || "[]");
+        document.getElementById('log-container').innerHTML = logs.map(l => `<div style="background:#1a1a2e; padding:8px; border-radius:5px; margin-bottom:8px; border-left:3px solid #00d4ff;"><small>${l.time}</small><br><b>${l.target}</b>: ${l.ans.substring(0,25)}...</div>`).join('');
+    }
+    window.onload = displayLogs;
+</script>
 </body>
 </html>

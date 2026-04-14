@@ -1,81 +1,136 @@
-<script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>EAIM 에임앙상블 v3.0 - Engine 2.5 Flash</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #050505; color: white; }
+        .diet-chord-card { background: linear-gradient(145deg, #1a1a2e, #0a0a15); border: 1px solid #333; }
+        .gradient-text { background: linear-gradient(90deg, #00d4ff, #2ecc71); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-    const EnsembleApp = () => {
-        const [step, setStep] = useState(0);
-        const [apiKey, setApiKey] = useState('');
-        const [emotion, setEmotion] = useState('');
-        const [recommendations, setRecommendations] = useState([]);
-        const [selectedSong, setSelectedSong] = useState(null);
-        const [isAnalyzing, setIsAnalyzing] = useState(false);
-        const [chords, setChords] = useState([]);
-        const [currentTime, setCurrentTime] = useState(0);
-        const playerRef = useRef(null);
-        const timerRef = useRef(null);
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-        useEffect(() => {
-            const savedKey = localStorage.getItem('gemini_api_key_v25');
-            if (savedKey) { setApiKey(savedKey); setStep(1); }
-        }, []);
+        const EnsembleApp = () => {
+            const [step, setStep] = useState(0);
+            const [apiKey, setApiKey] = useState('');
+            const [emotion, setEmotion] = useState('');
+            const [recommendations, setRecommendations] = useState([]);
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-        // ★ 박성애 대표님의 공식: 제미나이 2.5 플래시 엔진 고정 ★
-        const callGeminiV25 = async (prompt) => {
-            if (!apiKey) { alert("인증 키를 확인해주세요."); return null; }
-            
-            // 엔진 명칭을 gemini-2.5-flash로 강제 고정
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-            
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
-                return data.candidates[0].content.parts[0].text;
-            } catch (e) {
-                console.error("2.5 Flash 연동 오류:", e);
-                return null;
-            }
-        };
+            useEffect(() => {
+                const savedKey = localStorage.getItem('gemini_api_key_v25');
+                if (savedKey) { setApiKey(savedKey); setStep(1); }
+            }, []);
 
-        const getRecommendations = async () => {
-            if (!emotion) return alert("현재 기분을 입력해주세요!");
-            setIsAnalyzing(true);
-            const prompt = `[2.5 Flash 감정 분석] 사용자의 기분: "${emotion}"
-            이 감정에 어울리는 합주하기 좋은 K-POP 또는 팝송 3곡을 추천하세요.
-            반드시 다음 JSON 형식으로만 답하세요: [{"title": "곡제목 - 아티스트", "reason": "추천이유", "url": "유튜브검색키워드"}]`;
+            const saveApiKey = () => {
+                if (!apiKey) return alert("키를 입력하세요!");
+                localStorage.setItem('gemini_api_key_v25', apiKey);
+                setStep(1);
+            };
 
-            const result = await callGeminiV25(prompt);
-            if (result) {
+            // ★★★ 핵심: 제미나이 2.5 플래시 엔진 강제 고정 함수 ★★★
+            const callGemini25 = async (prompt) => {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 try {
-                    const jsonMatch = result.match(/\[[\s\S]*\]/);
-                    setRecommendations(JSON.parse(jsonMatch[0]));
-                    setStep(1.5);
-                } catch (e) { alert("결과 분석 실패"); }
-            } else { alert("추천 실패. 제미나이 2.5 플래시 엔진을 확인해주세요."); }
-            setIsAnalyzing(false);
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt + "\n반드시 다른 설명 없이 순수한 JSON 배열 형식으로만 답하세요." }] }]
+                        })
+                    });
+                    const data = await response.json();
+                    return data.candidates[0].content.parts[0].text;
+                } catch (e) {
+                    alert("2.5 Flash 엔진 연결 실패!");
+                    return null;
+                }
+            };
+
+            const getSongs = async () => {
+                setIsAnalyzing(true);
+                const prompt = `[EAIM 감정 분석] 현재 기분: "${emotion}". 이 기분에 어울리는 K-POP 3곡 추천. JSON: [{"title": "곡명-가수", "reason": "이유"}]`;
+                const result = await callGemini25(prompt);
+                if (result) {
+                    try {
+                        const json = JSON.parse(result.match(/\[.*\]/s)[0]);
+                        setRecommendations(json);
+                        setStep(2);
+                    } catch (e) { alert("데이터 해석 오류"); }
+                }
+                setIsAnalyzing(false);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+                    {/* 단계별 화면 렌더링 */}
+                    {step === 0 && (
+                        <div className="max-w-md w-full bg-zinc-900 p-8 rounded-2xl border border-zinc-800">
+                            <h1 className="text-2xl font-bold mb-6 gradient-text">에임앙상블 v3.0</h1>
+                            <p className="text-zinc-400 mb-6 text-sm">Gemini 2.5 Flash 엔진 인증이 필요합니다.</p>
+                            <input 
+                                type="password" 
+                                className="w-full p-3 bg-black border border-zinc-700 rounded-lg mb-4 text-white"
+                                placeholder="API 키를 입력하세요"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                            />
+                            <button onClick={saveApiKey} className="w-full py-3 bg-sky-500 rounded-lg font-bold hover:bg-sky-400">인증 및 시작</button>
+                        </div>
+                    )}
+
+                    {step === 1 && (
+                        <div className="max-w-lg w-full">
+                            <h2 className="text-3xl font-bold mb-2">오늘 어떤 <span className="gradient-text">기분</span>이신가요?</h2>
+                            <p className="text-zinc-500 mb-8 font-light">에임 가이드가 당신을 위한 합주곡을 찾아드립니다.</p>
+                            <input 
+                                className="w-full p-4 bg-zinc-900 border border-zinc-800 rounded-xl mb-4 text-xl"
+                                placeholder="예) 비 오는 날 창가에서 치기 좋은 차분한 기분"
+                                value={emotion}
+                                onChange={(e) => setEmotion(e.target.value)}
+                            />
+                            <button 
+                                onClick={getSongs}
+                                disabled={isAnalyzing}
+                                className={`w-full py-4 rounded-xl font-bold text-lg transition ${isAnalyzing ? 'bg-zinc-700' : 'bg-sky-500 hover:scale-105'}`}
+                            >
+                                {isAnalyzing ? '📡 제미나이 2.5 플래시가 분석 중...' : '합주곡 추천받기'}
+                            </button>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="w-full max-w-4xl animate-fade-in">
+                            <h2 className="text-2xl font-bold mb-8">당신을 위한 <span className="gradient-text">에임 추천 리스트</span></h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {recommendations.map((song, i) => (
+                                    <div key={i} className="diet-chord-card p-6 rounded-2xl text-left hover:border-sky-500 transition cursor-pointer">
+                                        <div className="text-sky-400 font-bold mb-2">Step 0{i+1}</div>
+                                        <div className="text-xl font-bold mb-3">{song.title}</div>
+                                        <p className="text-zinc-400 text-sm leading-relaxed mb-6">{song.reason}</p>
+                                        <button className="w-full py-2 bg-white text-black rounded-lg font-bold text-sm">다이어트 코드 분석</button>
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={() => setStep(1)} className="mt-12 text-zinc-500 hover:text-white transition">← 다시 추천받기</button>
+                        </div>
+                    )}
+                </div>
+            );
         };
 
-        const analyzeSelectedSong = async (song) => {
-            setSelectedSong(song);
-            setIsAnalyzing(true);
-            const prompt = `[2.5 Flash 코드 분석] 곡명: ${song.title}
-            이 곡을 4마디 단위로 분석하여 초보자용 '다이어트 코드' 리스트를 만드세요.
-            반드시 JSON 배열 형식으로만 답하세요: [{"time": 초, "chord": "코드", "scale": "계이름", "tip": "운지법"}]`;
-
-            const result = await callGeminiV25(prompt);
-            if (result) {
-                try {
-                    const jsonMatch = result.match(/\[[\s\S]*\]/);
-                    setChords(JSON.parse(jsonMatch[0]));
-                    setStep(2);
-                    setTimeout(() => initYouTube("kY3Lp-D_oas"), 100); 
-                } catch (e) { alert("코드 분석 실패"); }
-            } else { alert("분석 실패. 제미나이 2.5 플래시 엔진을 확인해주세요."); }
-            setIsAnalyzing(false);
-        };
-
-        // ... 이하 유튜브 및 UI 로직 ...
-</script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<EnsembleApp />);
+    </script>
+</body>
+</html>

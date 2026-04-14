@@ -6,36 +6,179 @@
     <title>EAIM 우주탐험대 - Ver 2.5 지능형 관측 시스템</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
-        :root { --main-color: #00d4ff; --bg-dark: #020205; }
-        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; display: flex; }
+        :root { --main-color: #00d4ff; --bg-dark: #020205; --accent: #2ecc71; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
         
-        /* 왼쪽 제어판 */
-        #control-panel { width: 320px; height: 100vh; background: rgba(15, 15, 25, 0.95); border-right: 1px solid #333; padding: 25px; box-sizing: border-box; overflow-y: auto; }
+        /* 사이드바 */
+        #side-panel { width: 350px; background: rgba(15, 15, 25, 0.98); border-right: 1px solid #333; padding: 20px; box-sizing: border-box; overflow-y: auto; display: flex; flex-direction: column; }
         
-        /* 오른쪽 뷰포트 */
-        #main-view { flex: 1; height: 100vh; display: flex; flex-direction: column; }
-        #canvas-container { flex: 1.5; background: radial-gradient(circle, #0a0a1a 0%, #000 100%); position: relative; }
-        #interaction-area { flex: 1; background: #080810; padding: 30px; border-top: 2px solid #1a1a2e; overflow-y: auto; }
+        /* 메인 영역 */
+        #main-view { flex: 1; display: flex; flex-direction: column; position: relative; }
+        #canvas-container { flex: 1.2; background: radial-gradient(circle, #0a0a1a 0%, #000 100%); }
+        #interaction-area { flex: 1; background: #080810; padding: 20px; border-top: 1px solid #222; overflow-y: auto; }
 
-        h2, h3 { color: var(--main-color); margin-top: 0; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9em; color: #aaa; }
-        select, input, button { width: 100%; padding: 12px; margin-bottom: 20px; background: #1a1a2e; border: 1px solid #444; color: white; border-radius: 6px; font-size: 1em; }
-        button { background: var(--main-color); color: #000; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
-        button:hover { background: #00b8e6; transform: translateY(-2px); }
-
-        #obs-details { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-size: 0.85em; line-height: 1.6; border: 1px solid #222; }
-        #ai-response { margin-top: 20px; padding: 20px; border-radius: 10px; background: #111120; border: 1px dashed #444; min-height: 80px; }
-        .loading { color: var(--main-color); animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        h2, h3 { color: var(--main-color); margin-top: 0; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.85em; color: #888; }
+        select, input, button, textarea { width: 100%; padding: 10px; margin-bottom: 15px; background: #1a1a2e; border: 1px solid #444; color: white; border-radius: 6px; box-sizing: border-box; }
+        
+        button { background: var(--main-color); color: #000; font-weight: bold; cursor: pointer; border: none; }
+        .btn-save { background: var(--accent); color: white; margin-bottom: 5px; }
+        
+        /* 관측 일지 리스트 스타일 */
+        #log-list { margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; flex: 1; }
+        .log-card { background: #111120; border: 1px solid #222; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85em; }
+        .log-card strong { color: var(--main-color); }
+        .log-card .date { color: #666; font-size: 0.8em; float: right; }
+        
+        #ai-response { background: #111120; padding: 15px; border-radius: 8px; border: 1px dashed #444; min-height: 50px; font-size: 0.95em; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-<div id="control-panel">
+<div id="side-panel">
     <h2>🔭 탐사 설정</h2>
-    <p style="font-size:0.8em; color:#666; margin-bottom:25px;">EAIM Intelligent System v2.5</p>
-    
     <label>📅 관측 날짜</label>
     <select id="date-select" onchange="updateObservation()">
         <option value="2026-04-14">2026-04-14 (음력 27일)</option>
-        <option
+        <option value="2026-04-25">2026-04-25 (음력 9일)</option>
+        <option value="2026-05-01">2026-05-01 (보름달)</option>
+    </select>
+
+    <label>🌍 천문대</label>
+    <select id="obs-select" onchange="updateObservation()">
+        <option value="KOR_BOAO">대한민국 - 보현산 천문대</option>
+        <option value="USA_MAUNA">미국 - 마우나케아</option>
+    </select>
+
+    <label>☄️ 대상</label>
+    <select id="target-select" onchange="updateObservation()">
+        <option value="moon">달 (Moon)</option>
+        <option value="jupiter">목성 (Jupiter)</option>
+    </select>
+
+    <div id="log-list">
+        <h3>📖 나의 관측 일지</h3>
+        <div id="log-container">
+            </div>
+        <button onclick="clearLogs()" style="background:#cc3333; color:white; font-size:0.7em; padding:5px; margin-top:10px;">일지 전체 초기화</button>
+    </div>
+</div>
+
+<div id="main-view">
+    <div id="canvas-container"></div>
+    <div id="interaction-area">
+        <h3>🚀 탐사 미션 및 기록</h3>
+        <p id="question" style="font-weight:bold; color:#ddd;"></p>
+        
+        <textarea id="student-answer" rows="3" placeholder="관측한 특징과 교과서 내용을 적어주세요..."></textarea>
+        
+        <div style="display:flex; gap:10px;">
+            <button onclick="runGemini25()">AI 분석</button>
+            <button class="btn-save" onclick="saveToLocal()">일지 저장하기</button>
+        </div>
+
+        <div id="ai-response">관측 데이터를 입력하고 분석을 눌러보세요.</div>
+    </div>
+</div>
+
+<script>
+    // --- [1] 데이터 및 초기화 ---
+    const obsConfig = {
+        "moon": { name: "달", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg", q: "오늘의 달 모양을 보고, 태양의 위치가 어디일지 추측해 보세요." },
+        "jupiter": { name: "목성", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg", q: "목성의 가로 줄무늬는 왜 생길까요? 자전 속도와 관련지어 적어보세요." }
+    };
+
+    // --- [2] Three.js 엔진 ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, (window.innerWidth-350) / (window.innerHeight*0.5), 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth - 350, window.innerHeight * 0.5);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    const planet = new THREE.Mesh(new THREE.SphereGeometry(3.2, 64, 64), new THREE.MeshPhongMaterial());
+    scene.add(planet);
+    const light = new THREE.DirectionalLight(0xffffff, 1.5);
+    light.position.set(10, 5, 10);
+    scene.add(light);
+    camera.position.z = 8;
+
+    function animate() { requestAnimationFrame(animate); planet.rotation.y += 0.002; renderer.render(scene, camera); }
+    animate();
+
+    function updateObservation() {
+        const target = document.getElementById('target-select').value;
+        planet.material.map = new THREE.TextureLoader().load(obsConfig[target].texture);
+        planet.material.needsUpdate = true;
+        document.getElementById('question').innerText = `Q: ${obsConfig[target].q}`;
+    }
+
+    // --- [3] 로컬 저장 로직 (핵심) ---
+    function saveToLocal() {
+        const date = document.getElementById('date-select').value;
+        const target = obsConfig[document.getElementById('target-select').value].name;
+        const answer = document.getElementById('student-answer').value;
+        const aiFeedback = document.getElementById('ai-response').innerText;
+
+        if(!answer) return alert("기록할 내용이 없습니다!");
+
+        const logEntry = { date, target, answer, aiFeedback, id: Date.now() };
+        
+        // 기존 데이터 가져오기
+        let logs = JSON.parse(localStorage.getItem('eaim_logs') || "[]");
+        logs.unshift(logEntry); // 최신글이 위로
+        
+        // 저장
+        localStorage.setItem('eaim_logs', JSON.stringify(logs));
+        displayLogs();
+        alert("성공적으로 일지에 기록되었습니다!");
+    }
+
+    function displayLogs() {
+        const container = document.getElementById('log-container');
+        const logs = JSON.parse(localStorage.getItem('eaim_logs') || "[]");
+        
+        container.innerHTML = logs.map(log => `
+            <div class="log-card">
+                <span class="date">${log.date}</span>
+                <strong>[${log.target} 관측]</strong><br>
+                <div style="margin-top:5px; color:#ccc;">내용: ${log.answer.substring(0, 30)}...</div>
+            </div>
+        `).join('');
+    }
+
+    function clearLogs() {
+        if(confirm("모든 관측 일지를 삭제할까요?")) {
+            localStorage.removeItem('eaim_logs');
+            displayLogs();
+        }
+    }
+
+    // --- [4] Gemini 2.5 API 로직 ---
+    const API_KEY = "여기에_성공하셨던_API_키를_넣으세요"; 
+
+    async function runGemini25() {
+        const answer = document.getElementById('student-answer').value;
+        const responseDiv = document.getElementById('ai-response');
+        if(!answer) return alert("답변을 입력하세요!");
+
+        responseDiv.innerHTML = "🛰️ 에임 AI 분석 중...";
+
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: `과학 선생님으로서 피드백해줘: ${answer}` }] }] })
+            });
+            const data = await response.json();
+            responseDiv.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+        } catch (e) {
+            responseDiv.innerHTML = "API 키를 확인해주세요.";
+        }
+    }
+
+    window.onload = () => { updateObservation(); displayLogs(); };
+</script>
+
+</body>
+</html>

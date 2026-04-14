@@ -26,11 +26,11 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
         const App = () => {
             const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v25') || '');
+            const [apiKey, setApiKey] = useState('');
             const [loading, setLoading] = useState(false);
             
             const [place, setPlace] = useState('');
@@ -39,9 +39,22 @@
             const [cast, setCast] = useState('');
             const [results, setResults] = useState('');
 
+            // 페이지 로드 시 대문(API KEY) 연동 확인
+            useEffect(() => {
+                const savedKey = localStorage.getItem('gemini_api_key_v25');
+                if (savedKey) {
+                    setApiKey(savedKey);
+                    setStep(0); // 0이면 로그인창, 이미 있으면 바로 입력창으로 넘기려면 아래 로직 수정
+                }
+            }, []);
+
+            // ★ 박성애 대표님의 절대 공식: 제미나이 2.5 플래시 엔진 연동 ★
             const callGeminiV25 = async (prompt) => {
-                if (!apiKey) { alert("API 키를 입력해주세요."); return null; }
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+                const currentKey = apiKey || localStorage.getItem('gemini_api_key_v25');
+                if (!currentKey) { alert("대문에서 API 키를 먼저 입력해주세요."); return null; }
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentKey.trim()}`;
+                
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
@@ -49,10 +62,14 @@
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
                     const data = await response.json();
-                    if (data.error) { alert("2.5 플래시 엔진 오류: " + data.error.message); return null; }
+                    if (data.error) {
+                        alert("엔진 오류: " + data.error.message);
+                        return null;
+                    }
                     return data.candidates[0].content.parts[0].text;
                 } catch (e) {
-                    alert("네트워크 연동 실패."); return null;
+                    alert("연동 실패. 인터넷 연결을 확인해주세요.");
+                    return null;
                 }
             };
 
@@ -60,30 +77,26 @@
                 if (!plots.ki) return alert("줄거리 '기' 부분을 먼저 적어주세요.");
                 setLoading(true);
                 
-                // AI에게 줄을 나누어 출력하라고 명확히 지시
                 const prompt = `배경:${place}, 기:${plots.ki}, 승:${plots.seung}, 전:${plots.jeon}, 결:${plots.gyeol}. 
                 이 내용을 바탕으로 뮤지컬 제목과 등장인물을 추천해줘.
-                형식 중요: 
-                첫 번째 줄에는 '뮤지컬 제목'만 써줘.
-                두 번째 줄부터는 '등장인물 이름과 성격'을 자세히 써줘.`;
+                형식:
+                첫 번째 줄: [제목]
+                두 번째 줄부터: [등장인물 성격]`;
                 
                 const res = await callGeminiV25(prompt);
                 if (res) {
-                    const lines = res.split('\n').filter(line => line.trim() !== "");
-                    const aiTitle = lines[0].replace(/제목:|제목 :|#/g, "").trim(); // 제목 정제
-                    const aiCast = lines.slice(1).join('\n').trim(); // 나머지 인물
-                    
-                    setTitle(aiTitle);
-                    setCast(aiCast);
-                    alert("제미나이 2.5 플래시가 제목과 캐릭터를 분류하여 추천했습니다.");
+                    const lines = res.split('\n').filter(l => l.trim() !== "");
+                    setTitle(lines[0].replace(/[\[\]#]/g, "").replace("제목:", "").trim());
+                    setCast(lines.slice(1).join('\n').trim());
+                    alert("제목과 캐릭터를 분류하여 불러왔습니다.");
                 }
                 setLoading(false);
             };
 
             const generateFinal = async () => {
-                if (!title || !cast) return alert("제목과 등장인물을 입력해주세요.");
+                if (!title) return alert("제목을 입력하거나 AI 추천을 받아주세요.");
                 setLoading(true);
-                const prompt = `제목:${title}, 배경:${place}, 인물:${cast}, 스토리:${plots.ki}-${plots.seung}-${plots.jeon}-${plots.gyeol}. 초중등 학생용 전문 창작 뮤지컬 대본과 영어 이미지 프롬프트 3개, Suno AI용 음악 추천 3개를 정성껏 써줘.`;
+                const prompt = `제목:${title}, 배경:${place}, 인물:${cast}, 스토리:${plots.ki}-${plots.seung}-${plots.jeon}-${plots.gyeol}. 전문 뮤지컬 대본과 Suno AI용 음악 추천을 정성껏 써줘.`;
                 const res = await callGeminiV25(prompt);
                 if (res) {
                     setResults(res);
@@ -94,16 +107,17 @@
 
             return (
                 <div className="min-h-screen pb-10">
-                    <div className="stage-curtain p-4 text-center shadow-xl">
+                    <div className="stage-curtain p-4 text-center">
                         <h1 className="text-2xl text-yellow-300 font-bold tracking-widest">EAIM MUSICAL MAKER v2.5</h1>
-                        <p className="text-[10px] opacity-60 uppercase mt-1">Gemini 2.5 Flash Engine Active</p>
+                        <p className="text-[10px] opacity-60 uppercase mt-1">Gemini 2.5 Flash Stable</p>
                     </div>
 
                     <div className="max-w-2xl mx-auto p-4">
                         {step === 0 ? (
                             <div className="space-y-6 animate-fadeIn">
+                                {/* 대문(API 연동) 섹션 */}
                                 <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
-                                    <label className="text-xs text-yellow-500 block mb-2 font-bold uppercase">v2.5 API Authentication</label>
+                                    <label className="text-xs text-yellow-500 block mb-2 font-bold uppercase">v2.5 API Key Lock</label>
                                     <input 
                                         type="password" 
                                         value={apiKey} 
@@ -114,54 +128,32 @@
                                 </div>
 
                                 <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <h2 className="text-yellow-400 font-bold"><i className="fas fa-map-marked-alt mr-2"></i>1. 장소 및 스토리 요약</h2>
-                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-1" placeholder="공연 배경 장소" />
-                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 이야기의 시작" />
-                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 사건의 전개" />
-                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 위기와 절정" />
-                                    <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 마무리와 교훈" />
+                                    <h2 className="text-yellow-400 font-bold">1. 장소 및 스토리 요약</h2>
+                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-1" placeholder="배경 장소" />
+                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 발단" />
+                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 전개" />
+                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 위기" />
+                                    <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 결말" />
                                 </div>
 
-                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-yellow-500/20 shadow-inner">
+                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-yellow-500/20">
                                     <div className="flex justify-between items-center">
-                                        <h2 className="text-yellow-400 font-bold">2. 제목 및 캐릭터 설정</h2>
-                                        <button onClick={getAIHelp} disabled={loading} className="ai-help-btn">AI v2.5 추천받기</button>
+                                        <h2 className="text-yellow-400 font-bold">2. 제목 및 캐릭터</h2>
+                                        <button onClick={getAIHelp} disabled={loading} className="ai-help-btn">AI v2.5 추천</button>
                                     </div>
-                                    <input 
-                                        value={title} 
-                                        onChange={e => setTitle(e.target.value)} 
-                                        className="ticket-input font-bold text-yellow-200" 
-                                        placeholder="뮤지컬 제목 (추천 클릭 시 자동 입력)" 
-                                    />
-                                    <textarea 
-                                        value={cast} 
-                                        onChange={e => setCast(e.target.value)} 
-                                        className="ticket-input h-24" 
-                                        placeholder="등장인물 성격 (추천 클릭 시 자동 입력)" 
-                                    />
+                                    <input value={title} onChange={e => setTitle(e.target.value)} className="ticket-input font-bold text-yellow-200" placeholder="제목" />
+                                    <textarea value={cast} onChange={e => setCast(e.target.value)} className="ticket-input h-24" placeholder="등장인물 성격" />
                                 </div>
 
                                 <button onClick={generateFinal} disabled={loading} className="magic-btn text-lg">
-                                    {loading ? <i className="fas fa-theater-masks fa-spin mr-2"></i> : <i className="fas fa-wand-sparkles mr-2"></i>}
-                                    {loading ? "v2.5 대본 집필 중..." : "v2.5 엔진으로 대본 완성"}
+                                    {loading ? "대본 집필 중..." : "v2.5 대본 완성"}
                                 </button>
                             </div>
                         ) : (
-                            <div className="animate-fadeIn">
-                                <h2 className="text-yellow-400 font-bold mb-4 flex justify-between items-center px-1">
-                                    <span>완성된 v2.5 창작 대본</span>
-                                    <button onClick={() => setStep(0)} className="text-xs text-gray-400 underline italic">다시 만들기</button>
-                                </h2>
-                                <textarea 
-                                    className="edit-area shadow-2xl" 
-                                    value={results} 
-                                    onChange={e => setResults(e.target.value)} 
-                                />
-                                <div className="flex gap-2 mt-6">
-                                    <button onClick={() => alert('대본이 임시 저장되었습니다.')} className="flex-1 py-4 bg-yellow-600 text-white rounded-lg font-bold shadow-lg">
-                                        <i className="fas fa-save mr-2"></i>대본 저장하기
-                                    </button>
-                                </div>
+                            <div className="animate-fadeIn space-y-4">
+                                <h2 className="text-yellow-400 font-bold px-1">완성된 v2.5 창작 대본</h2>
+                                <textarea className="edit-area shadow-2xl" value={results} onChange={e => setResults(e.target.value)} />
+                                <button onClick={() => setStep(0)} className="w-full py-3 border border-white/20 text-white rounded-lg">다시 만들기</button>
                             </div>
                         )}
                     </div>

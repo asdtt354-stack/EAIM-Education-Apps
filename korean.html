@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 감정 시인 v12.1 (Flash 2.5)</title>
+    <title>EAIM 감정 시인 v12.2 (Flash 2.5)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -15,9 +15,10 @@
         .font-hand { font-family: 'Gaegu', cursive; }
         .font-serif { font-family: 'Gowun Batang', serif; }
         .eaim-card { background: rgba(255, 255, 255, 0.95); border-radius: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.05); width: 100%; max-width: 500px; padding: 2rem; margin: 1rem auto; border-top: 8px solid #be185d; }
-        .eaim-input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.8rem; padding: 0.7rem; outline: none; transition: 0.3s; font-size: 0.85rem; }
+        .eaim-input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.8rem; padding: 0.8rem; outline: none; transition: 0.3s; font-size: 0.9rem; line-height: 1.5; }
         .eaim-input:focus { border-color: #be185d; box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.1); }
-        .eaim-btn { background: #be185d; color: white; border-radius: 1rem; padding: 1rem; font-weight: bold; width: 100%; border: none; cursor: pointer; }
+        .eaim-btn { background: #be185d; color: white; border-radius: 1rem; padding: 1.1rem; font-weight: bold; width: 100%; border: none; cursor: pointer; transition: 0.3s; }
+        .eaim-btn:active { transform: scale(0.98); }
         .prompt-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 1rem; border-radius: 1rem; font-size: 0.7rem; color: #334155; white-space: pre-wrap; }
     </style>
 </head>
@@ -29,7 +30,7 @@
 
         const App = () => {
             const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v12_1') || '');
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v12_2') || '');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             
             const [userName, setUserName] = useState('');
@@ -62,7 +63,6 @@
             ];
 
             const callGemini = async (prompt) => {
-                // 선생님의 요청에 따라 모델명을 gemini-2.5-flash로 고정합니다.
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 const response = await fetch(url, {
                     method: 'POST',
@@ -90,7 +90,7 @@
                         나와의 관계: ${details.relationship}
                         감정의 새 이름: ${details.newName}
 
-                        위 데이터를 바탕으로 시를 창작해줘.
+                        위 데이터를 바탕으로 시를 창작해줘. 
                         1. 반드시 행과 연을 구분할 것.
                         2. 사용자가 입력한 구체적인 감각과 비유 표현을 시의 핵심 소재로 사용할 것.
                         3. 리듬감이 느껴지는 운율을 가미할 것.
@@ -101,7 +101,7 @@
 
                     const feedback = await callGemini(`감정을 '${details.newName}'이라 부른 '${userName}' 학생에게 보내는 격려 메시지 3문장. 이름의 창의성을 칭찬할 것.`);
                     setTeacherFeedback(feedback);
-                } catch (e) { alert("연결 오류가 발생했습니다. API 키와 모델명을 확인해주세요."); setStep(5); } finally { setIsAnalyzing(false); }
+                } catch (e) { alert("연결 오류가 발생했습니다."); setStep(5); } finally { setIsAnalyzing(false); }
             };
 
             const generateMedia = async (type) => {
@@ -114,7 +114,7 @@
 
             return (
                 <div className="p-4 max-w-lg mx-auto pb-10">
-                    <header className="flex justify-between items-center mb-6">
+                    <header className="flex justify-between items-center mb-6 px-2">
                         <h1 className="font-hand text-2xl text-pink-800 font-bold italic">EAIM 감정 시인 (Flash 2.5)</h1>
                         {step > 0 && <button onClick={() => window.location.reload()} className="text-[10px] text-gray-400">초기화</button>}
                     </header>
@@ -125,17 +125,17 @@
                                 <h2 className="text-lg font-bold text-gray-700 font-serif">작가실 입장</h2>
                                 <input type="text" value={userName} onChange={e => setUserName(e.target.value)} placeholder="작가님의 이름을 알려주세요" className="eaim-input text-center" />
                                 <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="eaim-input text-center" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_v12_1', apiKey.trim()); setStep(1); }} className="eaim-btn" disabled={!userName || !apiKey}>입장하기</button>
+                                <button onClick={() => { localStorage.setItem('gemini_api_key_v12_2', apiKey.trim()); setStep(1); }} className="eaim-btn" disabled={!userName || !apiKey}>입장하기</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="space-y-6">
                                 <div className="text-center">
-                                    <h3 className="font-bold text-pink-800 font-serif">1. 마음의 씨앗</h3>
-                                    <p className="text-[11px] text-gray-500 mt-1">오늘 당신의 마음속에 떠오른 주제를 입력하세요.</p>
+                                    <h3 className="font-bold text-pink-800 font-serif text-xl">1. 마음의 씨앗</h3>
+                                    <p className="text-[12px] text-gray-500 mt-2">오늘 당신의 마음속에 떠오른 주제를 입력하세요.</p>
                                 </div>
-                                <input type="text" value={seedTopic} onChange={e => setSeedTopic(e.target.value)} className="eaim-input border-pink-300 font-bold text-center" placeholder="예: 우정, 바다, 떨림" />
+                                <input type="text" value={seedTopic} onChange={e => setSeedTopic(e.target.value)} className="eaim-input border-pink-300 font-bold text-center text-lg" placeholder="예: 우정, 바다, 떨림" />
                                 <button onClick={() => setStep(2)} className="eaim-btn" disabled={!seedTopic}>마음 불러오기 ✨</button>
                             </div>
                         )}
@@ -145,13 +145,13 @@
                                 <p className="text-sm font-bold text-center text-gray-700 leading-relaxed">
                                     '<b>{seedTopic}</b>' 하면 떠오르는 것들을 10개 적어보세요.
                                 </p>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-2 gap-3">
                                     {relatedWords.map((w, i) => (
                                         <input key={i} type="text" value={w} onChange={e => {
                                             const newWords = [...relatedWords];
                                             newWords[i] = e.target.value;
                                             setRelatedWords(newWords);
-                                        }} className="eaim-input text-center" placeholder={`${i+1}번째 단어`} />
+                                        }} className="eaim-input text-center py-2" placeholder={`${i+1}번째 단어`} />
                                     ))}
                                 </div>
                                 <button onClick={() => setStep(3)} className="eaim-btn">감정 기록하기 👉</button>
@@ -161,16 +161,16 @@
                         {step === 3 && (
                             <div className="space-y-6">
                                 <p className="text-sm font-bold text-center">지금 내 마음의 감정과 색깔은?</p>
-                                <div className="flex flex-wrap gap-1.5 justify-center max-h-40 overflow-y-auto p-2 border rounded-xl">
+                                <div className="flex flex-wrap gap-2 justify-center max-h-48 overflow-y-auto p-3 border rounded-2xl bg-white">
                                     {emotionList.map(e => (
                                         <button key={e} onClick={() => {
                                             setSelectedEmotions(prev => prev.includes(e) ? prev.filter(x => x !== e) : [...prev, e].slice(-5));
-                                        }} className={`px-3 py-1.5 rounded-full text-[11px] font-bold border ${selectedEmotions.includes(e) ? 'bg-pink-600 text-white border-pink-600' : 'bg-white text-gray-500 border-gray-200'}`}>{e}</button>
+                                        }} className={`px-4 py-2 rounded-full text-[12px] font-bold border transition-all ${selectedEmotions.includes(e) ? 'bg-pink-600 text-white border-pink-600 shadow-md' : 'bg-white text-gray-500 border-gray-200 hover:border-pink-300'}`}>{e}</button>
                                     ))}
                                 </div>
-                                <div className="flex flex-wrap gap-2 justify-center pt-2">
+                                <div className="flex flex-wrap gap-3 justify-center pt-2">
                                     {colors.map(c => (
-                                        <button key={c.n} onClick={() => setSelectedColor(c.n)} style={{backgroundColor: c.c}} className={`w-8 h-8 rounded-full border-2 ${selectedColor === c.n ? 'ring-2 ring-pink-400 border-white' : 'border-white shadow-sm'}`} />
+                                        <button key={c.n} onClick={() => setSelectedColor(c.n)} style={{backgroundColor: c.c}} className={`w-9 h-9 rounded-full border-2 transition-all ${selectedColor === c.n ? 'ring-4 ring-pink-200 border-white scale-110' : 'border-white shadow-sm'}`} title={c.n} />
                                     ))}
                                 </div>
                                 <button onClick={() => setStep(4)} className="eaim-btn" disabled={selectedEmotions.length === 0 || !selectedColor}>다음 단계 👉</button>
@@ -178,67 +178,69 @@
                         )}
 
                         {step === 4 && (
-                            <div className="space-y-4">
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-pink-700">언제 이런 감정이 드나요? (상황)</label>
-                                    <textarea className="eaim-input h-16" placeholder="구체적인 상황을 적어보세요" onChange={e => setDetails({...details, situation: e.target.value})} />
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="space-y-2">
+                                    <label className="text-[13px] font-bold text-pink-700 ml-1 flex items-center gap-1"><i className="fa-solid fa-comment-dots"></i> 언제 이런 감정이 드나요? (상황)</label>
+                                    <textarea className="eaim-input h-32" placeholder="어떤 상황에서 이 마음이 시작되었는지 구체적으로 적어보세요..." onChange={e => setDetails({...details, situation: e.target.value})} />
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-pink-700">내 몸과 마음은 어떤 상태인가요?</label>
-                                    <input type="text" className="eaim-input" placeholder="몸의 느낌이나 마음의 상태" onChange={e => setDetails({...details, bodyMind: e.target.value})} />
+                                <div className="space-y-2">
+                                    <label className="text-[13px] font-bold text-pink-700 ml-1 flex items-center gap-1"><i className="fa-solid fa-heart-pulse"></i> 내 몸과 마음은 어떤 상태인가요?</label>
+                                    <textarea className="eaim-input h-24" placeholder="몸의 느낌이나 마음의 상태를 솔직하게 적어보세요..." onChange={e => setDetails({...details, bodyMind: e.target.value})} />
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-pink-700">감정의 모습은? (형태, 냄새, 소리, 촉감)</label>
-                                    <input type="text" className="eaim-input" placeholder="나만이 느낄 수 있는 감각" onChange={e => setDetails({...details, sensory: e.target.value})} />
+                                <div className="space-y-2">
+                                    <label className="text-[13px] font-bold text-pink-700 ml-1 flex items-center gap-1"><i className="fa-solid fa-wand-magic-sparkles"></i> 감정의 모습은? (형태, 냄새, 소리, 촉감)</label>
+                                    <textarea className="eaim-input h-24" placeholder="나만이 느낄 수 있는 감각(예: 솜사탕처럼 달콤한 소리가 나요)을 상상해 보세요..." onChange={e => setDetails({...details, sensory: e.target.value})} />
                                 </div>
-                                <button onClick={() => setStep(5)} className="eaim-btn">감정 비유하기 👉</button>
+                                <button onClick={() => setStep(5)} className="eaim-btn mt-2">감정 비유하기 👉</button>
                             </div>
                         )}
 
                         {step === 5 && (
-                            <div className="space-y-4">
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-pink-700">이 감정을 다른 사물에 빗댄다면?</label>
-                                    <input type="text" className="eaim-input" placeholder="비유할 대상" onChange={e => setDetails({...details, metaphor: e.target.value})} />
+                            <div className="space-y-5">
+                                <div className="space-y-2">
+                                    <label className="text-[13px] font-bold text-pink-700 ml-1">이 감정을 다른 사물에 빗댄다면?</label>
+                                    <textarea className="eaim-input h-20" placeholder="예: 햇살 가득한 창가, 구멍 난 양말 등..." onChange={e => setDetails({...details, metaphor: e.target.value})} />
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-pink-700">감정과 나의 관계는?</label>
-                                    <input type="text" className="eaim-input" placeholder="우리는 어떤 모습으로 함께 하나요?" onChange={e => setDetails({...details, relationship: e.target.value})} />
+                                <div className="space-y-2">
+                                    <label className="text-[13px] font-bold text-pink-700 ml-1">감정과 나의 관계는?</label>
+                                    <textarea className="eaim-input h-20" placeholder="우리는 어떤 모습으로 함께 하나요?" onChange={e => setDetails({...details, relationship: e.target.value})} />
                                 </div>
-                                <div className="bg-pink-50 p-4 rounded-2xl border border-pink-100">
-                                    <label className="text-[10px] font-bold text-pink-700 block mb-2">✨ 감정에 이름을 붙여주세요</label>
-                                    <input type="text" className="eaim-input font-bold text-pink-600" placeholder="예: 무지개 웃음" onChange={e => setDetails({...details, newName: e.target.value})} />
+                                <div className="bg-pink-50 p-5 rounded-2xl border-2 border-pink-100 mt-4">
+                                    <label className="text-[11px] font-bold text-pink-700 block mb-2 uppercase tracking-wide">✨ 감정에게 지어줄 특별한 이름</label>
+                                    <input type="text" className="eaim-input font-bold text-pink-600 text-center text-lg" placeholder="예: 무지개 웃음" onChange={e => setDetails({...details, newName: e.target.value})} />
                                 </div>
-                                <button onClick={handleCreatePoem} disabled={isAnalyzing} className="eaim-btn bg-pink-800">시와 예술 가이드 완성 🪄</button>
+                                <button onClick={handleCreatePoem} disabled={isAnalyzing} className="eaim-btn bg-pink-800 shadow-xl mt-4">시와 예술 가이드 완성 🪄</button>
                             </div>
                         )}
 
                         {step === 6 && (
                             <div className="space-y-6">
                                 {isAnalyzing ? (
-                                    <div className="py-20 text-center animate-pulse">
-                                        <div className="text-4xl mb-4">✍️</div>
-                                        <div className="text-pink-700 font-bold font-serif">2.5 Flash 엔진이 시를 짓고 있습니다...</div>
+                                    <div className="py-24 text-center animate-pulse">
+                                        <div className="text-5xl mb-6">✍️</div>
+                                        <div className="text-pink-700 font-bold font-serif text-xl">2.5 Flash 엔진이<br/>마음을 시로 빚고 있습니다...</div>
                                     </div>
                                 ) : (
                                     <div className="animate-fadeIn space-y-6">
-                                        <div className="bg-white p-6 rounded-[2rem] border-2 border-pink-100 text-center shadow-inner">
-                                            <h4 className="font-hand text-2xl text-pink-800 mb-4">{userName} 시인</h4>
-                                            <div className="font-serif text-sm leading-loose whitespace-pre-wrap text-gray-800">{finalPoem}</div>
+                                        <div className="bg-white p-8 rounded-[2.5rem] border-2 border-pink-100 text-center shadow-inner relative">
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-pink-600 text-white text-[10px] px-4 py-1 rounded-full font-bold">FINAL PIECE</div>
+                                            <h4 className="font-hand text-3xl text-pink-800 mb-6">{userName} 시인</h4>
+                                            <div className="font-serif text-lg leading-loose whitespace-pre-wrap text-gray-800 font-medium">{finalPoem}</div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => generateMedia('music')} className="flex-1 bg-blue-500 text-white p-3 rounded-xl text-[11px] font-bold">음악 스타일 🎵</button>
-                                            <button onClick={() => generateMedia('image')} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl text-[11px] font-bold">이미지 가이드 🎨</button>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => generateMedia('music')} className="bg-blue-600 text-white p-4 rounded-2xl text-[12px] font-bold shadow-md active:scale-95">음악 스타일 🎵</button>
+                                            <button onClick={() => generateMedia('image')} className="bg-emerald-600 text-white p-4 rounded-2xl text-[12px] font-bold shadow-md active:scale-95">이미지 가이드 🎨</button>
                                         </div>
-                                        {sunoPrompt && <div className="prompt-box bg-blue-50">{sunoPrompt}</div>}
-                                        {imagePrompt && <div className="prompt-box bg-emerald-50">{imagePrompt}</div>}
-                                        <div className="bg-rose-50 p-5 rounded-2xl border-l-4 border-pink-500">
-                                            <p className="font-hand text-lg text-gray-700 italic">"{teacherFeedback}"</p>
+                                        {sunoPrompt && <div className="prompt-box bg-blue-50 border-blue-100">{sunoPrompt}</div>}
+                                        {imagePrompt && <div className="prompt-box bg-emerald-50 border-emerald-100">{imagePrompt}</div>}
+                                        <div className="bg-rose-50 p-6 rounded-[2rem] border-l-8 border-pink-500 shadow-sm">
+                                            <div className="text-[10px] font-black text-pink-600 mb-2 uppercase tracking-widest flex items-center gap-1"><i className="fa-solid fa-heart"></i> Teacher's Note</div>
+                                            <p className="font-hand text-2xl text-gray-700 italic leading-relaxed">"{teacherFeedback}"</p>
                                         </div>
-                                        <div className="pt-4 border-t">
-                                            <p className="text-xs font-bold text-gray-600 mb-2">내 감정이 시로 표현된 걸 보니 어떤 마음이 드나요?</p>
-                                            <textarea className="eaim-input h-16 mb-4" placeholder="작가의 감상을 적어주세요" onChange={e => setDetails({...details, userImpression: e.target.value})} />
-                                            <button onClick={() => alert("당신의 모든 감정은 소중해요. 당신의 시선은 독특하고 강력합니다!")} className="eaim-btn">기록 완료 🚀</button>
+                                        <div className="pt-6 border-t border-pink-100">
+                                            <p className="text-sm font-bold text-gray-600 mb-3">내 감정이 시로 표현된 걸 보니 어떤 마음이 드나요?</p>
+                                            <textarea className="eaim-input h-28 mb-4 shadow-sm" placeholder="오늘의 창작 경험을 남겨주세요..." onChange={e => setDetails({...details, userImpression: e.target.value})} />
+                                            <button onClick={() => alert("당신의 모든 감정은 소중해요. 당신의 시선은 독특하고 강력합니다! ✨")} className="eaim-btn bg-pink-900 shadow-lg">기록 완료 🚀</button>
                                         </div>
                                     </div>
                                 )}

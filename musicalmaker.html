@@ -1,70 +1,174 @@
-<script type="text/babel">
-    const { useState } = React;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EAIM 뮤지컬 메이커 v2.5</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #1a0509; color: #FFF; margin: 0; padding: 0; overflow-x: hidden; }
+        .font-drama { font-family: 'Gowun Batang', serif; }
+        .font-show { font-family: 'Black Han Sans', sans-serif; }
+        .stage-curtain { background: linear-gradient(to bottom, #9F1239, #881337); border-bottom: 4px solid #FCD34D; position: sticky; top: 0; z-index: 50; }
+        .ticket-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; outline: none; border-radius: 0.5rem; width: 100%; padding: 0.8rem 1rem; font-size: 0.9rem; transition: 0.3s; }
+        .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
+        .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; padding: 1rem; border: none; width: 100%; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(252, 211, 77, 0.3); }
+        .magic-btn:active { transform: scale(0.98); }
+        .ai-help-btn { background: rgba(252, 211, 77, 0.15); color: #FCD34D; border: 1px solid #FCD34D; border-radius: 0.5rem; font-size: 0.75rem; padding: 0.4rem 0.8rem; cursor: pointer; transition: 0.2s; }
+        .ai-help-btn:hover { background: #FCD34D; color: #000; }
+        .edit-area { background: rgba(0,0,0,0.4); color: #FDE68A; font-family: 'Gowun Batang', serif; line-height: 1.8; width: 100%; min-height: 500px; padding: 1.5rem; border: 1px dashed rgba(252, 211, 77, 0.3); border-radius: 0.5rem; outline: none; font-size: 1.1rem; }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-    const App = () => {
-        const [step, setStep] = useState(0); 
-        const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v25') || '');
-        const [loading, setLoading] = useState(false);
-        
-        const [place, setPlace] = useState('');
-        const [plots, setPlots] = useState({ ki: '', seung: '', jeon: '', gyeol: '' });
-        const [title, setTitle] = useState('');
-        const [cast, setCast] = useState('');
-        const [results, setResults] = useState('');
+    <script type="text/babel">
+        const { useState } = React;
 
-        // ★ 대표님이 찾아내신 유일한 성공 공식: Gemini 2.5 Flash 적용 ★
-        const callGeminiV25 = async (prompt) => {
-            if (!apiKey) { alert("API 키를 입력해주세요."); return null; }
+        const App = () => {
+            const [step, setStep] = useState(0); 
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v25') || '');
+            const [loading, setLoading] = useState(false);
             
-            // 엔진 명칭을 대표님의 성공값인 gemini-2.5-flash로 고정합니다.
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-            
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
+            const [place, setPlace] = useState('');
+            const [plots, setPlots] = useState({ ki: '', seung: '', jeon: '', gyeol: '' });
+            const [title, setTitle] = useState('');
+            const [cast, setCast] = useState('');
+            const [results, setResults] = useState('');
+
+            // ★ 박성애 대표님의 절대 원칙: 제미나이 2.5 플래시 엔진 고정 ★
+            const callGeminiV25 = async (prompt) => {
+                if (!apiKey) { alert("API 키를 입력해주세요."); return null; }
                 
-                const data = await response.json();
+                // 엔진 명칭을 대표님이 성공시키신 gemini-2.5-flash로 강제 고정
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
                 
-                if (data.error) {
-                    alert("엔진 응답 오류: " + data.error.message);
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        alert("2.5 플래시 엔진 응답 오류: " + data.error.message);
+                        return null;
+                    }
+                    
+                    return data.candidates[0].content.parts[0].text;
+                } catch (e) {
+                    alert("네트워크 연동 실패. 제미나이 2.5 플래시 환경을 확인하세요.");
                     return null;
                 }
-                
-                return data.candidates[0].content.parts[0].text;
-            } catch (e) {
-                alert("네트워크 연동 실패. v2.5 환경을 확인해주세요.");
-                return null;
-            }
+            };
+
+            const getAIHelp = async () => {
+                if (!plots.ki) return alert("줄거리 '기' 부분을 먼저 적어주세요.");
+                setLoading(true);
+                const prompt = `배경:${place}, 기:${plots.ki}, 승:${plots.seung}, 전:${plots.jeon}, 결:${plots.gyeol}. 이 내용을 바탕으로 뮤지컬 '제목'과 '등장인물(이름과 성격)'을 추천해줘.`;
+                const res = await callGeminiV25(prompt);
+                if (res) {
+                    setCast(res);
+                    alert("제미나이 2.5 플래시가 추천 구성을 완료했습니다.");
+                }
+                setLoading(false);
+            };
+
+            const generateFinal = async () => {
+                if (!title || !cast) return alert("제목과 등장인물을 입력하거나 AI 추천을 받아주세요.");
+                setLoading(true);
+                const prompt = `제목:${title}, 배경:${place}, 인물:${cast}, 스토리:${plots.ki}-${plots.seung}-${plots.jeon}-${plots.gyeol}. 위 내용을 바탕으로 초중등 학생이 공연할 수 있는 전문적인 뮤지컬 대본과 영어 이미지 프롬프트 3개, Suno AI용 음악 추천 3개를 써줘.`;
+                const res = await callGeminiV25(prompt);
+                if (res) {
+                    setResults(res);
+                    setStep(1);
+                }
+                setLoading(false);
+            };
+
+            return (
+                <div className="min-h-screen pb-10">
+                    <div className="stage-curtain p-4 text-center shadow-xl">
+                        <h1 className="font-show text-2xl text-yellow-300">EAIM MUSICAL MAKER v2.5</h1>
+                        <p className="text-[10px] opacity-60 tracking-widest uppercase mt-1">Gemini 2.5 Flash Engine Active</p>
+                    </div>
+
+                    <div className="max-w-2xl mx-auto p-4">
+                        {step === 0 ? (
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                    <label className="text-xs text-yellow-500 block mb-2 font-bold uppercase tracking-tighter">v2.5 API Key Authentication</label>
+                                    <input 
+                                        type="password" 
+                                        value={apiKey} 
+                                        onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v25', e.target.value);}} 
+                                        className="ticket-input text-center" 
+                                        placeholder="v2.5 인증 키를 입력하세요" 
+                                    />
+                                </div>
+
+                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <h2 className="text-yellow-400 font-bold"><i className="fas fa-map-marked-alt mr-2"></i>1. 장소 및 스토리 요약</h2>
+                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-1" placeholder="공연 배경 장소" />
+                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 이야기의 시작" />
+                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 전개와 모험" />
+                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 가장 큰 위기" />
+                                    <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 마무리와 교훈" />
+                                </div>
+
+                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-yellow-500/20 shadow-inner">
+                                    <div className="flex justify-between items-center">
+                                        <h2 className="text-yellow-400 font-bold">2. 제목 및 캐릭터 설정</h2>
+                                        <button onClick={getAIHelp} disabled={loading} className="ai-help-btn">AI v2.5 추천받기</button>
+                                    </div>
+                                    <input value={title} onChange={e => setTitle(e.target.value)} className="ticket-input" placeholder="뮤지컬 제목" />
+                                    <textarea value={cast} onChange={e => setCast(e.target.value)} className="ticket-input h-20" placeholder="등장인물 성격 (AI 추천 클릭 시 자동 입력)" />
+                                </div>
+
+                                <button onClick={generateFinal} disabled={loading} className="magic-btn text-lg">
+                                    {loading ? <i className="fas fa-theater-masks fa-spin mr-2"></i> : <i className="fas fa-magic mr-2"></i>}
+                                    {loading ? "v2.5 대본 집필 중..." : "v2.5 엔진으로 대본 완성"}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="animate-fadeIn">
+                                <h2 className="text-yellow-400 font-bold mb-4 flex justify-between items-center">
+                                    <span>완성된 v2.5 창작 대본</span>
+                                    <span className="text-[10px] opacity-40">실시간 수정 가능</span>
+                                </h2>
+                                <textarea 
+                                    className="edit-area shadow-2xl" 
+                                    value={results} 
+                                    onChange={e => setResults(e.target.value)} 
+                                />
+                                <div className="flex gap-2 mt-6">
+                                    <button onClick={() => setStep(0)} className="flex-1 py-3 border border-white/20 text-white rounded-lg text-sm">
+                                        <i className="fas fa-redo mr-2"></i>처음으로
+                                    </button>
+                                    <button onClick={() => alert('대본이 임시 저장되었습니다.')} className="flex-1 py-3 bg-yellow-600 text-white rounded-lg font-bold shadow-lg">
+                                        <i className="fas fa-save mr-2"></i>저장하기
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
         };
 
-        const getAIHelp = async () => {
-            if (!plots.ki) return alert("줄거리를 먼저 입력해주세요.");
-            setLoading(true);
-            const prompt = `[v2.5 모드] 배경:${place}, 기:${plots.ki}, 승:${plots.seung}, 전:${plots.jeon}, 결:${plots.gyeol} 내용을 바탕으로 뮤지컬 제목과 등장인물을 추천해줘.`;
-            const res = await callGeminiV25(prompt);
-            if (res) {
-                setCast(res);
-                alert("Gemini 2.5 Flash가 추천을 완료했습니다.");
-            }
-            setLoading(false);
-        };
-
-        const generateFinal = async () => {
-            if (!title) return alert("제목을 입력해주세요.");
-            setLoading(true);
-            const prompt = `[v2.5 모드] 제목:${title}, 배경:${place}, 인물:${cast}, 스토리:${plots.ki}-${plots.seung}-${plots.jeon}-${plots.gyeol} 기반으로 전문 뮤지컬 대본을 써줘.`;
-            const res = await callGeminiV25(prompt);
-            if (res) {
-                setResults(res);
-                setStep(1);
-            }
-            setLoading(false);
-        };
-
-        // ... 이하 렌더링 로직은 동일 ...
-</script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

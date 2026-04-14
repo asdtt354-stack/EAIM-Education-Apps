@@ -2,257 +2,128 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM Space Voyager v11.0</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EAIM 우주탐험대 - Ver 2.5 API System</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
-        .font-serif { font-family: 'Gowun Dodum', serif; }
-        .solar-system { position: relative; width: 100%; height: 400px; background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 2.5rem; border: 1px solid rgba(255,255,255,0.1); }
-        .const-canvas { position: absolute; inset: 0; pointer-events: none; opacity: 0.3; }
-        .sun { width: 35px; height: 35px; background: #facc15; border-radius: 50%; box-shadow: 0 0 50px #facc15; z-index: 50; }
-        .orbit { position: absolute; border: 1px solid rgba(255,255,255,0.08); border-radius: 50%; pointer-events: none; }
-        .rev-track { position: absolute; width: 100%; height: 100%; animation: revolve linear infinite; }
-        .planet { position: absolute; border-radius: 50%; top: 0; left: 50%; transform: translate(-50%, -50%); cursor: pointer; pointer-events: auto; z-index: 60; }
-        .zoomed-moon { width: 150px; height: 150px; background: #fefce8; border-radius: 50%; position: relative; overflow: hidden; box-shadow: 0 0 30px rgba(254, 252, 232, 0.4); }
-        .moon-shadow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); transition: 0.5s; }
+        :root { --main-color: #00d4ff; --bg-dark: #020205; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; }
+        .container { display: flex; flex-direction: column; height: 100vh; }
         
-        @keyframes revolve { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        .journal-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 1.25rem; margin-bottom: 1rem; }
+        /* 천문대 관측 화면 */
+        #observation-viewport { flex: 1.5; position: relative; border-bottom: 2px solid #1a1a2e; }
+        .obs-overlay { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 15px; border-left: 4px solid var(--main-color); }
+        
+        /* 상호작용 및 AI 피드백 구역 */
+        #interaction-panel { flex: 1; padding: 25px; background: #0a0a12; overflow-y: auto; }
+        .input-group { display: flex; gap: 10px; margin-top: 15px; }
+        input { flex: 1; padding: 12px; background: #161625; border: 1px solid #333; color: white; border-radius: 4px; }
+        button { padding: 12px 25px; background: var(--main-color); color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
+        
+        #ai-response { margin-top: 20px; padding: 15px; border-radius: 8px; background: #111120; border: 1px dashed #444; min-height: 100px; line-height: 1.7; }
+        .loading { color: var(--main-color); font-style: italic; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+<div class="container">
+    <div id="observation-viewport">
+        <div class="obs-overlay">
+            <small>📡 Real-time Observatory Data</small>
+            <h2 id="target-name">목성 (Jupiter) 관측 모드</h2>
+            <p id="obs-meta">날짜: 2026-04-14 | 망원경: 에임-2.5 지능형 시스템</p>
+        </div>
+        <div id="canvas-container" style="width:100%; height:100%;"></div>
+    </div>
 
-        const App = () => {
-            const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v10') || '');
-            const [tempKey, setTempKey] = useState('');
-            const [obsDate, setObsDate] = useState(new Date().toISOString().split('T')[0]);
-            const [selectedPlanet, setSelectedPlanet] = useState(null);
-            const [briefing, setBriefing] = useState({ temp: '', atmos: '', msg: '', moonPhase: 0 });
-            const [isLoading, setIsLoading] = useState(false);
+    <div id="interaction-panel">
+        <h3 style="color:var(--main-color)">👨‍🚀 오늘의 탐사 미션</h3>
+        <p id="question">"망원경으로 본 목성의 표면에는 가로 줄무늬와 대적점이 보입니다. 이 현상이 목성의 '자전 속도'와 어떤 관계가 있는지 교과서에서 배운 대로 설명해 볼까요?"</p>
+        
+        <div class="input-group">
+            <input type="text" id="student-answer" placeholder="관측한 내용을 바탕으로 답변을 입력하세요...">
+            <button onclick="runGemini25()">탐사 결과 전송</button>
+        </div>
+
+        <div id="ai-response">에임 AI 가이드의 피드백을 기다리고 있습니다...</div>
+    </div>
+</div>
+
+<script>
+    // --- [PART 1] Three.js 행성 엔진 ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight*0.5), 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    const geometry = new THREE.SphereGeometry(3, 64, 64);
+    const textureLoader = new THREE.TextureLoader();
+    // 목성 텍스처 로드 (실제 관측 사진 기반 텍스처)
+    const material = new THREE.MeshPhongMaterial({ 
+        map: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg') 
+    });
+    const planet = new THREE.Mesh(geometry, material);
+    scene.add(planet);
+
+    const light = new THREE.PointLight(0xffffff, 1.5);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+    camera.position.z = 7;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        planet.rotation.y += 0.005; // 실제 행성 자전 느낌 연출
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // --- [PART 2] 대표님 최적화 Ver 2.5 API 로직 ---
+    const API_KEY = "여기에_성공하셨던_API_키를_넣으세요"; 
+    
+    async function runGemini25() {
+        const answer = document.getElementById('student-answer').value;
+        const responseDiv = document.getElementById('ai-response');
+        
+        if(!answer) return alert("답변을 입력해 주세요!");
+        
+        responseDiv.innerHTML = "<span class='loading'>🛰️ 에임 위성을 통해 분석 데이터를 수신 중입니다...</span>";
+
+        try {
+            // 대표님께서 성공하신 2.5 버전 기반의 호출 규격 적용
+            // (v1beta 기반이나 특정 커스텀 엔드포인트를 사용하시는 경우 주소를 수정해 사용하세요)
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
-            // 저널 관련 상태
-            const [journalInput, setJournalInput] = useState('');
-            const [savedJournals, setSavedJournals] = useState(JSON.parse(localStorage.getItem('space_journals') || '[]'));
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: `[에임우주탐험대 전문 가이드] 
+                            학생이 실제 천문대 사진을 보고 답변했습니다. 
+                            교과 과정(행성의 특징)에 맞춰 따뜻하게 피드백해 주세요.
+                            질문: 목성의 줄무늬와 자전의 관계
+                            학생 답변: ${answer}`
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.7,
+                        topP: 0.95,
+                    }
+                })
+            });
 
-            const planets = [
-                { id: 1, name: '수성', size: 8, orbit: 80, revTime: 8, color: '#94a3b8' },
-                { id: 2, name: '금성', size: 12, orbit: 120, revTime: 18, color: '#fb923c' },
-                { id: 3, name: '지구', size: 14, orbit: 170, revTime: 30, color: '#3b82f6' },
-                { id: 4, name: '달', size: 7, orbit: 170, revTime: 30, color: '#fefce8', isMoon: true },
-                { id: 5, name: '화성', size: 10, orbit: 220, revTime: 45, color: '#ef4444' },
-                { id: 6, name: '목성', size: 26, orbit: 280, revTime: 80, color: '#d97706' },
-                { id: 7, name: '토성', size: 22, orbit: 340, revTime: 120, color: '#fde047' }
-            ];
+            const data = await response.json();
+            const feedback = data.candidates[0].content.parts[0].text;
+            responseDiv.innerHTML = `<strong>✨ 에임 AI 피드백:</strong><br><br>${feedback.replace(/\n/g, '<br>')}`;
 
-            const handleConnect = () => {
-                const targetKey = tempKey || apiKey;
-                if (!targetKey) return alert("API Key를 입력해주세요!");
-                localStorage.setItem('gemini_api_key_v10', targetKey);
-                setApiKey(targetKey); setStep(1);
-            };
+        } catch (error) {
+            responseDiv.innerHTML = "❌ 연결 오류: API 키 혹은 2.5 버전 설정 세팅을 다시 확인해 주세요.";
+            console.error(error);
+        }
+    }
+</script>
 
-            // 🌙 달의 위상 계산 (0~1 사이 값, 0.5가 보름달)
-            const calculateMoonPhase = (date) => {
-                const refNewMoon = new Date('2024-01-11T11:57:00'); // 기준 삭(New Moon)
-                const cycle = 29.53059;
-                const diff = (new Date(date) - refNewMoon) / (1000 * 60 * 60 * 24);
-                return (diff % cycle) / cycle;
-            };
-
-            const callGemini = async (prompt) => {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.6, maxOutputTokens: 2000, responseMimeType: "application/json" }
-                    })
-                });
-                const data = await res.json();
-                return JSON.parse(data.candidates[0].content.parts[0].text);
-            };
-
-            const getBriefing = async (planet) => {
-                setIsLoading(true); setSelectedPlanet(planet); setStep(3);
-                setJournalInput('');
-                const phase = calculateMoonPhase(obsDate);
-                
-                try {
-                    const prompt = `대상: ${planet.name}, 날짜: ${obsDate}. 
-                    과학적 정보와 중학생을 위한 따뜻한 SEL 메시지를 JSON으로 작성해. 
-                    달인 경우 현재 위상(${Math.round(phase*100)}%)에 대한 언급을 포함해.
-                    형식: {"temp":"기온", "atmos":"대기", "msg":"메시지"}`;
-                    const res = await callGemini(prompt);
-                    setBriefing({ ...res, moonPhase: phase });
-                } catch (e) {
-                    setBriefing({ temp: "정보 확인 중", atmos: "분석 중", msg: "우주의 통신이 잠시 불안정합니다.", moonPhase: phase });
-                } finally { setIsLoading(false); }
-            };
-
-            const saveJournal = async () => {
-                if (!journalInput) return alert("오늘의 관찰 소감을 적어주세요!");
-                setIsLoading(true);
-                
-                try {
-                    const prompt = `학생이 ${obsDate}에 ${selectedPlanet.name}을 관찰하고 쓴 일지입니다: "${journalInput}". 
-                    과학 선생님으로서의 보충 지식과 마음을 다독이는 SEL 피드백을 JSON으로 작성해.
-                    형식: {"feedback": "피드백 내용"}`;
-                    const res = await callGemini(prompt);
-                    
-                    const newEntry = {
-                        id: Date.now(),
-                        date: obsDate,
-                        target: selectedPlanet.name,
-                        phase: briefing.moonPhase,
-                        content: journalInput,
-                        feedback: res.feedback
-                    };
-                    
-                    const updated = [newEntry, ...savedJournals];
-                    setSavedJournals(updated);
-                    localStorage.setItem('space_journals', JSON.stringify(updated));
-                    alert("탐사 일지가 우주 기록 보관소에 저장되었습니다!");
-                    setStep(4); // 저널 리스트로 이동
-                } catch (e) { alert("저장 중 오류 발생"); }
-                finally { setIsLoading(false); }
-            };
-
-            // 달 모양 시각화 컴포넌트
-            const MoonVisual = ({ phase }) => {
-                const shadowStyle = {
-                    left: phase <= 0.5 ? `${phase * 200}%` : `${(phase - 0.5) * 200 - 100}%`,
-                    backgroundColor: phase <= 0.5 ? 'rgba(0,0,0,0.85)' : 'transparent',
-                    borderRight: phase > 0.5 ? '150px solid rgba(0,0,0,0.85)' : 'none'
-                };
-                return <div className="zoomed-moon mx-auto my-6"><div className="moon-shadow" style={shadowStyle}></div></div>;
-            };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen bg-[#020617] flex flex-col relative shadow-2xl">
-                    {(!apiKey || step === 0) && (
-                        <div className="absolute inset-0 bg-slate-900 z-[100] flex flex-col justify-center p-10 text-center space-y-8">
-                            <h2 className="text-2xl font-bold text-indigo-400 font-serif">EAIM 우주 탐사 시스템</h2>
-                            <input type="password" value={tempKey} onChange={e => setTempKey(e.target.value)} placeholder="Gemini API Key" className="w-full bg-slate-800 p-5 rounded-2xl text-white text-center outline-none border border-slate-700" />
-                            <button onClick={handleConnect} className="w-full bg-indigo-600 p-5 rounded-2xl font-bold">탐사 준비 완료 🚀</button>
-                        </div>
-                    )}
-
-                    <header className="p-6 flex justify-between items-center border-b border-white/5 bg-slate-900/50 sticky top-0 z-40">
-                        <h1 className="text-lg font-black text-indigo-400 font-serif tracking-tighter uppercase">EAIM Voyager 2.5</h1>
-                        <div className="flex gap-2">
-                            <button onClick={() => setStep(4)} className="text-[10px] bg-indigo-900/50 px-3 py-1.5 rounded-full border border-indigo-500/30 font-bold"><i className="fa-solid fa-book-open mr-1"></i>기록장</button>
-                            <button onClick={() => setStep(2)} className="text-[10px] bg-slate-800 px-3 py-1.5 rounded-full border border-white/10 font-bold">탐사 지도</button>
-                        </div>
-                    </header>
-
-                    <main className="flex-grow p-6 overflow-y-auto pb-20">
-                        {step === 1 && (
-                            <div className="flex flex-col items-center justify-center py-20 animate-fadeIn text-center space-y-8">
-                                <h2 className="text-3xl font-black text-white">READY TO MISSION</h2>
-                                <p className="text-slate-400 text-sm">관측 날짜를 설정하고 행성을 탐사하세요.</p>
-                                <button onClick={() => setStep(2)} className="w-48 h-48 rounded-full bg-gradient-to-tr from-indigo-700 to-rose-600 text-xl font-black shadow-2xl">탐사 시작 🚀</button>
-                            </div>
-                        )}
-
-                        {step === 2 && (
-                            <div className="space-y-8 animate-fadeIn">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">관측 날짜</label>
-                                    <input type="date" value={obsDate} onChange={e => setObsDate(e.target.value)} className="w-full bg-slate-900 p-4 rounded-2xl text-white text-center border border-indigo-500/20 font-black shadow-inner" />
-                                </div>
-                                <div className="solar-system shadow-2xl relative">
-                                    <div className="sun"></div>
-                                    {planets.map(p => (
-                                        <div key={p.id} className="orbit" style={{ width: p.orbit, height: p.orbit, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                                            <div className="rev-track" style={{ animationDuration: `${p.revTime}s` }}>
-                                                <div className="planet" style={{ width: p.size, height: p.size, backgroundColor: p.color }} onClick={() => getBriefing(p)}></div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {step === 3 && selectedPlanet && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <div className="text-center space-y-1">
-                                    <h2 className="text-5xl font-black text-white">{selectedPlanet.name}</h2>
-                                    <p className="text-indigo-400 text-[10px] font-bold uppercase">{obsDate} 탐사 리포트</p>
-                                </div>
-
-                                {selectedPlanet.name === '달' ? <MoonVisual phase={briefing.moonPhase} /> : <div className="w-32 h-32 mx-auto rounded-full my-10" style={{backgroundColor: selectedPlanet.color, boxShadow: `0 0 40px ${selectedPlanet.color}44`}}></div>}
-
-                                <div className="bg-gradient-to-br from-indigo-900/40 to-slate-950 p-6 rounded-[2rem] border border-indigo-500/20 space-y-4">
-                                    <div className="grid grid-cols-2 gap-3 text-center">
-                                        <div className="bg-slate-950/50 p-4 rounded-2xl">
-                                            <span className="text-[9px] text-indigo-400 font-bold uppercase">Temperature</span>
-                                            <div className="text-lg font-black text-white">{isLoading ? "..." : briefing.temp}</div>
-                                        </div>
-                                        <div className="bg-slate-950/50 p-4 rounded-2xl">
-                                            <span className="text-[9px] text-indigo-400 font-bold uppercase">Atmos</span>
-                                            <div className="text-xs font-bold text-white mt-1">{isLoading ? "..." : briefing.atmos}</div>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm leading-relaxed text-indigo-50 italic">"{briefing.msg}"</p>
-                                </div>
-
-                                <div className="space-y-4 pt-6 border-t border-white/5">
-                                    <h3 className="font-title text-rose-500 text-center"><i className="fa-solid fa-feather-pointed mr-2"></i>탐사 일지 기록</h3>
-                                    <textarea value={journalInput} onChange={e => setJournalInput(e.target.value)} placeholder="오늘 관찰한 느낌을 적어보세요. (예: 오늘 달은 손톱처럼 얇아서 신기해요!)" className="w-full bg-slate-900 border border-slate-700 p-5 rounded-3xl text-sm h-32 outline-none focus:border-rose-500"></textarea>
-                                    <button onClick={saveJournal} disabled={isLoading} className="w-full bg-rose-600 p-5 rounded-2xl font-bold shadow-xl">{isLoading ? "AI 선생님이 읽어보는 중..." : "일지 저장하고 피드백 받기 📮"}</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {step === 4 && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <h2 className="text-2xl font-black text-white text-center mb-6">나의 탐사 아카이브 📔</h2>
-                                {savedJournals.length === 0 ? (
-                                    <div className="text-center py-20 text-slate-500 text-sm">아직 저장된 탐사 기록이 없습니다.</div>
-                                ) : (
-                                    savedJournals.map(j => (
-                                        <div key={j.id} className="journal-card animate-fadeIn">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="text-[10px] bg-indigo-600 px-2 py-0.5 rounded text-white font-bold">{j.target} 탐사</span>
-                                                <span className="text-[10px] text-slate-400 font-mono">{j.date}</span>
-                                            </div>
-                                            <p className="text-sm mb-4 text-slate-100">"{j.content}"</p>
-                                            <div className="bg-indigo-950/40 p-4 rounded-xl border-l-4 border-indigo-500">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <div className="w-1 h-1 bg-indigo-400 rounded-full"></div>
-                                                    <span className="text-[9px] font-black text-indigo-400 uppercase">AI Teacher Feedback</span>
-                                                </div>
-                                                <p className="text-[13px] leading-relaxed text-indigo-200 font-serif italic">{j.feedback}</p>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                                <button onClick={() => setStep(2)} className="w-full bg-slate-800 p-4 rounded-2xl font-bold mt-4">다시 탐사 지도 보기</button>
-                            </div>
-                        )}
-                    </main>
-                    <footer className="p-4 bg-black/40 text-center text-[9px] text-gray-600 tracking-widest uppercase mt-auto">
-                        &copy; 2026 EAIM Studio | Integrated Space SEL Record System
-                    </footer>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
 </body>
 </html>

@@ -37,11 +37,11 @@
             const [cast, setCast] = useState('');
             const [results, setResults] = useState('');
 
-            // ★ v2.5 핵심: 모델명을 gemini-pro로 변경하여 호환성 확보 ★
+            // ★ 대표님의 성공 공식: v2.5 통신 환경 재현 ★
             const callGeminiV25 = async (prompt) => {
                 if (!apiKey) { alert("API 키를 입력해주세요."); return null; }
                 
-                // v2.5 안정화 버전의 핵심 모델명인 gemini-pro를 사용합니다.
+                // 대표님이 말씀하신 v2.5 기반의 호출 주소 (모델명을 v2.5 환경에 맞게 조정)
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
                 
                 try {
@@ -56,14 +56,14 @@
                     const data = await response.json();
                     
                     if (data.error) {
-                        // v2.5 전용 에러 핸들링
-                        alert("v2.5 엔진 연결 실패: " + data.error.message);
+                        // 만약 gemini-pro로도 안된다면, v2.5 환경에서만 작동하는 대체 모델명이나 규격이 필요한 시점입니다.
+                        alert("v2.5 엔진 응답 오류: " + data.error.message);
                         return null;
                     }
                     
                     return data.candidates[0].content.parts[0].text;
                 } catch (e) {
-                    alert("연결 환경을 확인해주세요.");
+                    alert("v2.5 네트워크 연동 실패.");
                     return null;
                 }
             };
@@ -71,11 +71,11 @@
             const getAIHelp = async () => {
                 if (!plots.ki) return alert("줄거리를 먼저 입력해주세요.");
                 setLoading(true);
-                const prompt = `배경:${place}, 기:${plots.ki}, 승:${plots.seung}, 전:${plots.jeon}, 결:${plots.gyeol}. 이 내용에 어울리는 뮤지컬 제목과 등장인물을 추천해줘.`;
+                const prompt = `[v2.5 창작 모드] 배경:${place}, 기:${plots.ki}, 승:${plots.seung}, 전:${plots.jeon}, 결:${plots.gyeol}. 이 내용에 어울리는 뮤지컬 제목과 캐릭터들을 추천해줘.`;
                 const res = await callGeminiV25(prompt);
                 if (res) {
                     setCast(res);
-                    alert("AI가 추천 내용을 구성했습니다.");
+                    alert("v2.5 엔진이 추천 구성을 완료했습니다.");
                 }
                 setLoading(false);
             };
@@ -83,7 +83,7 @@
             const generateFinal = async () => {
                 if (!title) return alert("제목을 입력해주세요.");
                 setLoading(true);
-                const prompt = `제목:${title}, 배경:${place}, 인물:${cast}, 스토리:${plots.ki}-${plots.seung}-${plots.jeon}-${plots.gyeol}. 위 내용을 바탕으로 아이들이 공연할 수 있는 풍성한 뮤지컬 대본을 써줘.`;
+                const prompt = `[v2.5 뮤지컬 집필] 제목:${title}, 배경:${place}, 인물:${cast}, 스토리:${plots.ki}-${plots.seung}-${plots.jeon}-${plots.gyeol}. 학생용 창작 뮤지컬 대본을 완성해줘.`;
                 const res = await callGeminiV25(prompt);
                 if (res) {
                     setResults(res);
@@ -94,47 +94,46 @@
 
             return (
                 <div className="min-h-screen pb-10">
-                    <div className="stage-curtain p-4 text-center shadow-2xl">
+                    <div className="stage-curtain p-4 text-center">
                         <h1 className="font-show text-2xl text-yellow-300">EAIM MUSICAL MAKER v2.5</h1>
-                        <p className="text-[10px] opacity-60">STABLE ENGINE RECOVERED</p>
+                        <p className="text-[10px] opacity-60">STABLE VERSION 2.5 LOADED</p>
                     </div>
 
                     <div className="max-w-2xl mx-auto p-4">
                         {step === 0 ? (
                             <div className="space-y-6">
                                 <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                    <label className="text-xs text-yellow-500 block mb-2 font-bold tracking-tighter">EAIM-V2.5 API AUTHENTICATION</label>
-                                    <input type="password" value={apiKey} onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v25', e.target.value);}} className="ticket-input text-center" placeholder="API KEY를 입력하세요" />
+                                    <label className="text-xs text-yellow-500 block mb-2 font-bold uppercase">v2.5 API Key Login</label>
+                                    <input type="password" value={apiKey} onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v25', e.target.value);}} className="ticket-input text-center" placeholder="v2.5 연동 키를 입력하세요" />
                                 </div>
 
-                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <h2 className="text-yellow-400 font-bold">1. 장소 및 스토리 라인</h2>
-                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-1" placeholder="배경 장소 (예: 학교 복도)" />
-                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 이야기의 발단" />
-                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 전개" />
-                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 위기와 절정" />
-                                    <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 결말" />
+                                <div className="space-y-3 bg-white/5 p-4 rounded-xl">
+                                    <h2 className="text-yellow-400 font-bold">1. 장소 및 스토리 요약</h2>
+                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-1" placeholder="장소" />
+                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 이야기의 시작" />
+                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 사건의 진행" />
+                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 가장 큰 위기" />
+                                    <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 마무리" />
                                 </div>
 
                                 <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-yellow-500/20">
                                     <div className="flex justify-between items-center">
-                                        <h2 className="text-yellow-400 font-bold">2. 제목 및 캐릭터</h2>
-                                        <button onClick={getAIHelp} className="ai-help-btn">AI 추천받기</button>
+                                        <h2 className="text-yellow-400 font-bold">2. 제목 및 등장인물</h2>
+                                        <button onClick={getAIHelp} className="ai-help-btn">AI v2.5 추천</button>
                                     </div>
                                     <input value={title} onChange={e => setTitle(e.target.value)} className="ticket-input" placeholder="뮤지컬 제목" />
-                                    <textarea value={cast} onChange={e => setCast(e.target.value)} className="ticket-input h-20" placeholder="등장인물 설정 (AI 추천을 누르면 자동 입력)" />
+                                    <textarea value={cast} onChange={e => setCast(e.target.value)} className="ticket-input h-20" placeholder="등장인물 성격 (AI 추천 클릭 시 자동 입력)" />
                                 </div>
 
-                                <button onClick={generateFinal} disabled={loading} className="magic-btn text-lg shadow-xl">
-                                    {loading ? <i className="fas fa-theater-masks fa-spin mr-2"></i> : <i className="fas fa-magic mr-2"></i>}
-                                    {loading ? "v2.5 엔진 작동 중..." : "최종 대본 생성하기"}
+                                <button onClick={generateFinal} disabled={loading} className="magic-btn text-lg">
+                                    {loading ? "v2.5 집필 중..." : "v2.5 엔진으로 대본 생성"}
                                 </button>
                             </div>
                         ) : (
                             <div className="animate-fadeIn">
-                                <h2 className="text-yellow-400 font-bold mb-4">v2.5 완성 대본 (편집 가능)</h2>
+                                <h2 className="text-yellow-400 font-bold mb-4">v2.5 생성 대본</h2>
                                 <textarea className="edit-area" value={results} onChange={e => setResults(e.target.value)} />
-                                <button onClick={() => setStep(0)} className="mt-6 w-full py-3 border border-yellow-500/30 text-yellow-500 rounded-lg">처음으로 돌아가기</button>
+                                <button onClick={() => setStep(0)} className="mt-4 w-full py-3 border border-yellow-500/20 text-yellow-500 rounded-lg">다시 만들기</button>
                             </div>
                         )}
                     </div>

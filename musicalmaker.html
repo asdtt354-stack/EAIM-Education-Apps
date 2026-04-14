@@ -12,38 +12,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #1a0509; color: #FFF; margin: 0; padding: 0; }
-        .font-drama { font-family: 'Gowun Batang', serif; }
-        .font-show { font-family: 'Black Han Sans', sans-serif; }
         .stage-curtain { background: linear-gradient(to bottom, #9F1239, #881337); border-bottom: 4px solid #FCD34D; position: sticky; top: 0; z-index: 50; }
-        .ticket-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: 0.3s; outline: none; border-radius: 0.5rem; width: 100%; padding: 0.8rem 1rem; font-size: 0.9rem; }
+        .ticket-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; outline: none; border-radius: 0.5rem; width: 100%; padding: 0.8rem 1rem; font-size: 0.9rem; transition: 0.3s; }
         .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
-        .plot-box { border-left: 3px solid #FCD34D; padding-left: 1rem; margin-bottom: 1rem; }
-        .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; padding: 1rem; transition: 0.2s; cursor: pointer; border: none; width: 100%; }
-        .tab-btn { padding: 1rem 0.5rem; flex: 1; font-weight: bold; font-size: 0.85rem; transition: 0.3s; border-bottom: 3px solid transparent; color: #94a3b8; cursor: pointer; text-align: center; }
-        .tab-active { color: #FCD34D; border-bottom-color: #FCD34D; background: rgba(252, 211, 77, 0.1); }
-        .edit-area { background: rgba(0,0,0,0.4); color: #FDE68A; font-family: 'Gowun Batang', serif; line-height: 1.8; width: 100%; min-height: 450px; padding: 1.5rem; border: 1px dashed rgba(252, 211, 77, 0.3); border-radius: 0.5rem; outline: none; font-size: 1.05rem; }
+        .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; padding: 0.8rem 1rem; cursor: pointer; border: none; transition: 0.2s; }
+        .ai-help-btn { background: rgba(252, 211, 77, 0.15); color: #FCD34D; border: 1px solid #FCD34D; border-radius: 0.5rem; font-size: 0.75rem; padding: 0.4rem 0.8rem; margin-top: 0.5rem; transition: 0.2s; }
+        .ai-help-btn:hover { background: #FCD34D; color: #000; }
+        .edit-area { background: rgba(0,0,0,0.4); color: #FDE68A; font-family: 'Gowun Batang', serif; line-height: 1.8; width: 100%; min-height: 500px; padding: 1.5rem; border: 1px dashed rgba(252, 211, 77, 0.3); border-radius: 0.5rem; outline: none; font-size: 1.05rem; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState } = React;
 
         const App = () => {
             const [step, setStep] = useState(0); 
             const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v25') || '');
             const [loading, setLoading] = useState(false);
             
-            // 입력값
-            const [title, setTitle] = useState('');
+            // 1단계 입력: 장소 및 기승전결
             const [place, setPlace] = useState('');
-            const [cast, setCast] = useState('');
             const [plots, setPlots] = useState({ ki: '', seung: '', jeon: '', gyeol: '' });
 
-            // 결과값
-            const [activeTab, setActiveTab] = useState('script');
-            const [results, setResults] = useState({ script: '', images: '', music: '' });
+            // 2단계 입력: 제목 및 등장인물 (AI 도움 가능)
+            const [title, setTitle] = useState('');
+            const [cast, setCast] = useState('');
+
+            const [results, setResults] = useState({ script: '' });
 
             const callGeminiV25 = async (prompt) => {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
@@ -56,38 +53,31 @@
                     const data = await response.json();
                     return data.candidates[0].content.parts[0].text;
                 } catch (e) {
-                    console.error(e);
-                    return "연동 오류가 발생했습니다. 키를 확인해주세요.";
+                    return "오류가 발생했습니다. 키를 확인해주세요.";
                 }
             };
 
-            const runCreation = async () => {
-                if (!apiKey) return alert("API 키를 입력해주세요!");
+            // AI에게 제목과 캐릭터 추천받기
+            const getAIHelp = async () => {
+                if (!apiKey) return alert("API 키를 먼저 입력해주세요.");
+                if (!plots.ki) return alert("기승전결 내용을 먼저 입력해주세요.");
                 setLoading(true);
+                const helpPrompt = `배경: ${place}, 기: ${plots.ki}, 승: ${plots.seung}, 전: ${plots.jeon}, 결: ${plots.gyeol}. 이 내용을 바탕으로 멋진 뮤지컬 제목 한 개와 개성 있는 등장인물 3~4명의 이름과 특징을 추천해줘. 답변은 '제목: [제목] / 등장인물: [이름(특징),...]' 형식으로 짧게 해줘.`;
+                const suggestion = await callGeminiV25(helpPrompt);
                 
-                const fullPrompt = `
-                    뮤지컬 제목: ${title}
-                    장면 배경: ${place}
-                    등장인물: ${cast}
-                    줄거리 흐름:
-                    1. 기: ${plots.ki}
-                    2. 승: ${plots.seung}
-                    3. 전: ${plots.jeon}
-                    4. 결: ${plots.gyeol}
+                // 간단한 결과 표시 (사용자가 직접 보고 적을 수 있게 하거나 자동 입력)
+                alert("AI 추천 결과가 나왔습니다! 입력창을 확인해보세요.");
+                setTitle(suggestion.split('/')[0].replace('제목:', '').trim());
+                setCast(suggestion.split('/')[1]?.replace('등장인물:', '').trim() || '');
+                setLoading(false);
+            };
 
-                    위 정보를 바탕으로 아이들이 연기하기 좋은 뮤지컬 대본을 길게 작성해줘.
-                    그리고 장면에 어울리는 영어 이미지 프롬프트 3개와 Suno AI 음악 추천 프롬프트 3개도 포함해줘.
-                `;
-
-                const responseText = await callGeminiV25(fullPrompt);
-                
-                // 간단한 파싱 (대본/이미지/음악 분리 시도)
-                setResults({
-                    script: responseText,
-                    images: "위 대본을 바탕으로 이미지 생성을 진행하세요.",
-                    music: "위 대본의 분위기에 맞는 음악을 생성하세요."
-                });
-                
+            const finalizeMusical = async () => {
+                if (!title || !cast) return alert("제목과 등장인물을 입력(또는 AI 추천)해주세요.");
+                setLoading(true);
+                const fullPrompt = `제목: ${title}, 배경: ${place}, 인물: ${cast}, 흐름: ${plots.ki}-${plots.seung}-${plots.jeon}-${plots.gyeol}. 초중등 학생용 뮤지컬 대본과 영어 이미지 프롬프트 3개, Suno AI 음악 추천 3개를 써줘.`;
+                const finalScript = await callGeminiV25(fullPrompt);
+                setResults({ script: finalScript });
                 setLoading(false);
                 setStep(1);
             };
@@ -96,54 +86,51 @@
                 <div className="min-h-screen pb-10">
                     <div className="stage-curtain p-4 text-center">
                         <h1 className="font-show text-2xl text-yellow-300">EAIM MUSICAL MAKER v2.5</h1>
-                        <p className="text-[10px] opacity-70 tracking-widest">PROTOTYPE STABILIZED VERSION</p>
+                        <p className="text-[10px] opacity-70 tracking-widest">CREATIVE STEP-BY-STEP</p>
                     </div>
 
                     <div className="max-w-2xl mx-auto p-4">
                         {step === 0 ? (
                             <div className="space-y-6">
-                                <input 
-                                    type="password" 
-                                    value={apiKey} 
-                                    onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v25', e.target.value);}} 
-                                    className="ticket-input text-center" 
-                                    placeholder="🔑 v2.5 전용 API KEY 입력" 
-                                />
-
-                                <div className="space-y-4 bg-white/5 p-4 rounded-xl border border-white/10">
-                                    <h2 className="text-yellow-400 font-bold"><i className="fas fa-play-circle mr-2"></i>기본 설정</h2>
-                                    <input value={title} onChange={e => setTitle(e.target.value)} className="ticket-input" placeholder="뮤지컬 제목" />
-                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input" placeholder="배경 장소" />
-                                    <input value={cast} onChange={e => setCast(e.target.value)} className="ticket-input" placeholder="등장인물 성격/특징" />
-                                </div>
+                                <input type="password" value={apiKey} onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v25', e.target.value);}} className="ticket-input text-center" placeholder="🔑 API KEY" />
 
                                 <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/10">
-                                    <h2 className="text-yellow-400 font-bold"><i className="fas fa-list-ol mr-2"></i>기승전결 스토리 입력</h2>
-                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 이야기가 시작되는 부분" />
-                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 사건이 커지는 부분" />
-                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 가장 큰 위기와 갈등" />
+                                    <h2 className="text-yellow-400 font-bold"><i className="fas fa-map-marked-alt mr-2"></i>1. 장소 및 스토리 흐름</h2>
+                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-2" placeholder="공연 배경 (예: 학교 뒷마당, 낡은 피아노 속)" />
+                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 이야기의 시작" />
+                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 전개와 모험" />
+                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 위기와 절정" />
                                     <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 마무리와 교훈" />
                                 </div>
 
-                                <button onClick={runCreation} disabled={loading} className="magic-btn text-lg">
-                                    {loading ? <i className="fas fa-theater-masks fa-spin mr-2"></i> : <i className="fas fa-wand-sparkles mr-2"></i>}
-                                    {loading ? "뮤지컬 제작 중..." : "v2.5 엔진으로 창작 시작"}
+                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-yellow-500/20">
+                                    <h2 className="text-yellow-400 font-bold flex justify-between items-center">
+                                        <span><i className="fas fa-user-tag mr-2"></i>2. 제목 및 등장인물</span>
+                                        <button onClick={getAIHelp} disabled={loading} className="ai-help-btn">
+                                            {loading ? "생각 중..." : "AI에게 추천받기"}
+                                        </button>
+                                    </h2>
+                                    <input value={title} onChange={e => setTitle(e.target.value)} className="ticket-input" placeholder="뮤지컬 제목 (AI가 추천해줄 수 있어요)" />
+                                    <textarea value={cast} onChange={e => setCast(e.target.value)} className="ticket-input h-20" placeholder="등장인물 이름과 성격 (AI가 추천해줄 수 있어요)" />
+                                </div>
+
+                                <button onClick={finalizeMusical} disabled={loading} className="magic-btn w-full text-lg">
+                                    {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-magic mr-2"></i>}
+                                    {loading ? "집필 중..." : "최종 대본 생성하기"}
                                 </button>
                             </div>
                         ) : (
                             <div className="animate-fadeIn">
-                                <div className="flex bg-white/5 rounded-t-lg">
-                                    <div onClick={() => setActiveTab('script')} className={`tab-btn ${activeTab === 'script' ? 'tab-active' : ''}`}>실시간 대본 편집창</div>
-                                </div>
+                                <h2 className="text-yellow-400 font-bold mb-4 flex justify-between items-center">
+                                    <span>완성된 창작 대본</span>
+                                    <span className="text-xs opacity-50">수정이 가능합니다</span>
+                                </h2>
                                 <textarea 
                                     className="edit-area" 
                                     value={results.script} 
                                     onChange={(e) => setResults({...results, script: e.target.value})}
                                 />
-                                <div className="flex gap-2 mt-4">
-                                    <button onClick={() => setStep(0)} className="flex-1 py-3 bg-white/10 rounded-lg">다시 만들기</button>
-                                    <button onClick={() => alert('대본이 복사되었습니다.')} className="flex-1 py-3 bg-yellow-600 rounded-lg font-bold">저장 및 복사</button>
-                                </div>
+                                <button onClick={() => setStep(0)} className="mt-6 w-full py-3 border border-white/20 rounded-lg">다시 만들기</button>
                             </div>
                         )}
                     </div>

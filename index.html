@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EAIM AI Education Platform</title>
     <style>
-        /* 배경 및 기본 폰트 설정 */
+        /* 기본 레이아웃 설정 */
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
-            background: linear-gradient(135deg, #6e8efb, #a777e3); /* 이미지의 보라색 그라데이션 재현 */
-            height: 100vh;
+            font-family: 'Pretendard', sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh; /* height 대신 min-height 사용으로 내용물 수용 */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -20,78 +20,95 @@
             text-align: center;
         }
 
-        /* 헤더 섹션 */
+        /* 헤더 섹션: 간격 축소 */
+        header {
+            margin-top: 20px;
+        }
         header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 5px;
+            font-size: 2rem; /* 크기 약간 줄임 */
+            margin-bottom: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
         }
         header p {
-            font-size: 1.1rem;
+            font-size: 1rem;
             opacity: 0.9;
-            margin-bottom: 40px;
+            margin-bottom: 25px; /* 여백 축소 */
         }
 
-        /* 6개 카드 그리드 시스템 */
+        /* 그리드 컨테이너: 간격 최적화 */
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3열 구성 */
-            gap: 20px;
-            width: 90%;
-            max-width: 1000px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px; /* 카드 간 간격 축소 */
+            width: 95%;
+            max-width: 900px;
+            margin-bottom: 30px;
         }
 
-        /* 개별 카드 디자인 */
+        /* 개별 카드 디자인: 패딩 대폭 축소 */
         .card {
-            background: rgba(255, 255, 255, 0.15); /* 반투명 유리 효과 */
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px 20px;
+            border-radius: 15px;
+            padding: 15px 10px; /* 기존 30px -> 15px로 축소 */
             border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease, background 0.3s ease;
-            cursor: pointer;
+            transition: transform 0.3s ease;
             text-decoration: none;
             color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-5px);
             background: rgba(255, 255, 255, 0.25);
         }
 
-        /* 아이콘 크기 및 스타일 */
+        /* 아이콘 및 텍스트 크기 미세 조정 */
         .icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            display: block;
+            font-size: 2.2rem; /* 3rem -> 2.2rem 축소 */
+            margin-bottom: 8px;
         }
 
         .title {
-            font-size: 1.3rem;
+            font-size: 1.1rem; /* 1.3rem -> 1.1rem 축소 */
             font-weight: bold;
-            margin-bottom: 8px;
-            display: block;
+            margin-bottom: 4px;
         }
 
         .subtitle {
-            font-size: 0.9rem;
+            font-size: 0.8rem; /* 0.9rem -> 0.8rem 축소 */
             opacity: 0.8;
+            white-space: nowrap; /* 글자가 옆으로 퍼지게 */
         }
 
         /* 하단 카피라이트 */
         footer {
-            margin-top: 50px;
-            font-size: 0.85rem;
+            padding-bottom: 20px;
+            font-size: 0.8rem;
             opacity: 0.7;
         }
 
-        /* 모바일 대응 (반응형) */
+        /* 📱 모바일 및 태블릿 대응 (반응형) */
         @media (max-width: 768px) {
             .grid-container {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, 1fr); /* 모바일 2열 */
+                gap: 10px;
+            }
+            header h1 { font-size: 1.6rem; }
+            .icon { font-size: 2rem; }
+            .title { font-size: 1rem; }
+        }
+
+        @media (max-width: 480px) {
+            .grid-container {
+                grid-template-columns: repeat(1, 1fr); /* 초소형 화면 1열 */
+                width: 80%;
             }
         }
     </style>

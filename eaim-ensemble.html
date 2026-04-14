@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 앙상블 V3.0 - 감정 합주</title>
+    <title>EAIM 앙상블 v2.5 - 감정 합주</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -37,57 +37,78 @@
             const timerRef = useRef(null);
 
             useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key');
+                const savedKey = localStorage.getItem('gemini_api_key_v25');
                 if (savedKey) { setApiKey(savedKey); setStep(1); }
             }, []);
 
-            // 1. 감정에 따른 곡 추천 로직
+            // ★ v2.5 핵심 API 호출 로직 ★
+            const callGeminiV25 = async (prompt) => {
+                // 대표님의 성공 공식: v1beta 환경의 gemini-pro 모델 활용
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
+                    return data.candidates[0].content.parts[0].text;
+                } catch (e) {
+                    console.error("v2.5 연동 오류:", e);
+                    return null;
+                }
+            };
+
             const getRecommendations = async () => {
                 if (!emotion) return alert("현재 기분을 입력해주세요!");
                 setIsAnalyzing(true);
                 const prompt = `사용자의 기분: "${emotion}"
-                이 감정에 어울리는 합주하기 좋은 대중음악(K-POP 또는 팝송) 3곡을 추천하세요.
+                이 감정에 어울리는 합주하기 좋은 K-POP 또는 팝송 3곡을 추천하세요.
                 반드시 다음 JSON 형식으로만 답하세요: [{"title": "곡제목 - 아티스트", "reason": "추천이유", "url": "유튜브검색키워드"}]`;
 
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await response.json();
-                    const jsonMatch = data.candidates[0].content.parts[0].text.match(/\[[\s\S]*\]/);
-                    setRecommendations(JSON.parse(jsonMatch[0]));
-                    setStep(1.5); // 추천 리스트 단계
-                } catch (e) { alert("추천 실패"); }
-                finally { setIsAnalyzing(false); }
+                const result = await callGeminiV25(prompt);
+                if (result) {
+                    try {
+                        const jsonMatch = result.match(/\[[\s\S]*\]/);
+                        setRecommendations(JSON.parse(jsonMatch[0]));
+                        setStep(1.5);
+                    } catch (e) { alert("결과 분석 실패"); }
+                } else { alert("추천 실패. v2.5 인증을 확인해주세요."); }
+                setIsAnalyzing(false);
             };
 
-            // 2. 선택된 곡의 유튜브 링크 찾기 (간소화를 위해 검색 UI 제공)
             const analyzeSelectedSong = async (song) => {
                 setSelectedSong(song);
                 setIsAnalyzing(true);
-                // 실제 구현에선 YouTube API 검색을 쓰거나, 검색 키워드로 분석 요청
                 const prompt = `곡명: ${song.title}
-                이 곡을 4마디 단위로 분석하여 '다이어트 코드' 리스트를 만드세요.
-                반드시 JSON 배열 형식으로만 답하세요: [{"time": 초, "chord": "코드", "scale": "계이름", "tip": "운지"}]`;
+                이 곡을 4마디 단위로 분석하여 초보자용 '다이어트 코드' 리스트를 만드세요.
+                반드시 JSON 배열 형식으로만 답하세요: [{"time": 초, "chord": "코드", "scale": "계이름", "tip": "운지법"}]`;
 
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await response.json();
-                    const jsonMatch = data.candidates[0].content.parts[0].text.match(/\[[\s\S]*\]/);
-                    setChords(JSON.parse(jsonMatch[0]));
-                    setStep(2);
-                    // 데모용: 실제 유튜브 검색 로직 대신 키워드 활용 (실제 앱에선 곡별 URL 매칭 필요)
-                    setTimeout(() => initYouTube("kY3Lp-D_oas"), 100); 
-                } catch (e) { alert("분석 실패"); }
-                finally { setIsAnalyzing(false); }
+                const result = await callGeminiV25(prompt);
+                if (result) {
+                    try {
+                        const jsonMatch = result.match(/\[[\s\S]*\]/);
+                        setChords(JSON.parse(jsonMatch[0]));
+                        setStep(2);
+                        // 유튜브 데모 연결용 (실제 곡에 맞춰 비디오 ID 연동 필요)
+                        setTimeout(() => initYouTube("kY3Lp-D_oas"), 100); 
+                    } catch (e) { alert("코드 분석 실패"); }
+                } else { alert("분석 실패. v2.5 인증을 확인해주세요."); }
+                setIsAnalyzing(false);
             };
 
             const initYouTube = (videoId) => {
-                if (!window.YT) return;
+                if (!window.YT) {
+                    const tag = document.createElement('script');
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    const firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                    window.onYouTubeIframeAPIReady = () => createPlayer(videoId);
+                } else { createPlayer(videoId); }
+            };
+
+            const createPlayer = (videoId) => {
                 playerRef.current = new window.YT.Player('yt-player', {
                     videoId: videoId,
                     events: {
@@ -104,39 +125,39 @@
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-zinc-900 flex flex-col shadow-2xl overflow-hidden">
-                    <header className="p-4 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center">
-                        <h1 className="font-title text-cyan-400 italic">EAIM SEL ENSEMBLE</h1>
-                        {step > 0 && <button onClick={() => location.reload()} className="text-[10px] text-zinc-500">RESET</button>}
+                    <header className="p-4 bg-zinc-950 border-b border-cyan-900 flex justify-between items-center">
+                        <h1 className="font-title text-cyan-400 italic">EAIM ENSEMBLE v2.5</h1>
+                        {step > 0 && <button onClick={() => location.reload()} className="text-[10px] text-zinc-500 uppercase tracking-tighter">Restart</button>}
                     </header>
 
                     <main className="p-4 flex-grow">
                         {step === 0 && (
-                            <div className="py-10 space-y-4">
-                                <h2 className="text-xl font-bold">🔑 스튜디오 인증</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="w-full p-4 bg-zinc-800 rounded-xl outline-none border border-zinc-700 focus:border-cyan-500" />
-                                <button onClick={() => {localStorage.setItem('gemini_api_key', apiKey); setStep(1);}} className="w-full bg-cyan-600 p-4 rounded-xl font-bold">입장하기</button>
+                            <div className="py-10 space-y-4 animate-pulse">
+                                <h2 className="text-xl font-bold">🔑 v2.5 스튜디오 인증</h2>
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="v2.5 API Key" className="w-full p-4 bg-zinc-800 rounded-xl outline-none border border-zinc-700 focus:border-cyan-500" />
+                                <button onClick={() => {localStorage.setItem('gemini_api_key_v25', apiKey); setStep(1);}} className="w-full bg-cyan-600 p-4 rounded-xl font-bold shadow-lg shadow-cyan-900/50">인증 완료</button>
                             </div>
                         )}
 
                         {step === 1 && (
                             <div className="py-10 space-y-6">
                                 <div className="text-center">
-                                    <h2 className="text-2xl font-title mb-2">오늘 기분이 어떠신가요?</h2>
-                                    <p className="text-zinc-500 text-sm">기분에 맞춰 AI가 합주곡을 골라줍니다.</p>
+                                    <h2 className="text-2xl font-title mb-2 text-cyan-50">지금 기분이 어때요?</h2>
+                                    <p className="text-zinc-500 text-sm italic">기분에 따라 AI v2.5가 곡을 추천합니다.</p>
                                 </div>
-                                <textarea value={emotion} onChange={e => setEmotion(e.target.value)} placeholder="예: 구름 위를 걷는 것처럼 행복해!" className="w-full h-32 p-4 bg-zinc-800 rounded-2xl border-2 border-zinc-700 focus:border-cyan-500 outline-none resize-none" />
-                                <button onClick={getRecommendations} disabled={isAnalyzing} className="w-full bg-cyan-600 p-5 rounded-2xl font-bold text-lg">
-                                    {isAnalyzing ? "감정 분석 중..." : "감정 합주곡 찾기 🎵"}
+                                <textarea value={emotion} onChange={e => setEmotion(e.target.value)} placeholder="예: 오늘따라 밤바다가 보고 싶은 잔잔한 기분이야." className="w-full h-32 p-4 bg-zinc-800 rounded-2xl border-2 border-zinc-700 focus:border-cyan-500 outline-none resize-none transition-all" />
+                                <button onClick={getRecommendations} disabled={isAnalyzing} className="w-full bg-cyan-600 p-5 rounded-2xl font-bold text-lg shadow-xl shadow-cyan-900/30">
+                                    {isAnalyzing ? "감정 분석 중..." : "v2.5 합주곡 찾기 🎵"}
                                 </button>
                             </div>
                         )}
 
                         {step === 1.5 && (
                             <div className="py-6 space-y-4">
-                                <h2 className="text-lg font-bold text-cyan-400">당신을 위한 추천 곡</h2>
+                                <h2 className="text-lg font-bold text-cyan-400"><i className="fas fa-music mr-2"></i>추천 합주 리스트</h2>
                                 {recommendations.map((song, i) => (
                                     <div key={i} onClick={() => analyzeSelectedSong(song)} className="glass-panel p-4 rounded-2xl cursor-pointer emotion-btn">
-                                        <div className="font-bold text-lg">{song.title}</div>
+                                        <div className="font-bold text-lg text-white">{song.title}</div>
                                         <div className="text-xs text-zinc-400 mt-1">{song.reason}</div>
                                     </div>
                                 ))}
@@ -144,19 +165,20 @@
                         )}
 
                         {step === 2 && (
-                            <div className="space-y-4">
-                                <div id="yt-player" className="w-full aspect-video rounded-2xl border border-zinc-700 overflow-hidden bg-black"></div>
+                            <div className="space-y-4 animate-fadeIn">
+                                <div id="yt-player" className="w-full aspect-video rounded-2xl border border-zinc-700 overflow-hidden bg-black shadow-2xl"></div>
                                 <div className="space-y-3">
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">AI v2.5 Diet Chord Guide</p>
                                     {chords.map((item, idx) => {
                                         const isActive = currentTime >= item.time && (chords[idx+1] ? currentTime < chords[idx+1].time : true);
                                         return (
-                                            <div key={idx} className={`glass-panel p-4 rounded-xl transition-all duration-300 flex items-center justify-between ${isActive ? 'active-chord' : 'opacity-30'}`}>
+                                            <div key={idx} className={`glass-panel p-4 rounded-xl transition-all duration-300 flex items-center justify-between ${isActive ? 'active-chord' : 'opacity-20'}`}>
                                                 <div>
                                                     <div className="text-2xl font-black">{item.chord}</div>
-                                                    <div className="text-cyan-400 text-xs font-bold">{item.scale}</div>
+                                                    <div className="text-cyan-400 text-[10px] font-bold uppercase">{item.scale}</div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className="bg-zinc-700 px-3 py-1 rounded-full text-[10px] text-zinc-200">{item.tip}</span>
+                                                    <span className="bg-zinc-800 px-3 py-1 rounded-full text-[10px] text-cyan-300 border border-cyan-900/50">{item.tip}</span>
                                                 </div>
                                             </div>
                                         );

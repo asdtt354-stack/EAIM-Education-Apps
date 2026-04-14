@@ -2,254 +2,155 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 비트 & 바스켓 2.5 PRO</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>EAIM 에임우주탐험대 v4.3 - 3D 입체 마스터</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
-        .font-title { font-family: 'Black Han Sans', sans-serif; }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .rhythm-score { background: rgba(0, 0, 0, 0.3); padding: 1.2rem; border-radius: 1rem; font-family: monospace; letter-spacing: 2px; }
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        :root { --main-color: #00d4ff; --bg-dark: #000; --accent: #2ecc71; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        #main-view { flex-grow: 1; display: flex; flex-direction: column; position: relative; width: 100%; height: 100%; }
+        #canvas-container { flex: 1; background: radial-gradient(circle, #0a0a25 0%, #000 100%); cursor: pointer; position: relative; }
+        #header-ui { position: absolute; top: 0; left: 0; width: 100%; padding: 25px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 100; }
+        .btn-home { background: rgba(0,212,255,0.3); color: white; padding: 10px 25px; border-radius: 20px; border: 1px solid var(--main-color); pointer-events: auto; cursor: pointer; z-index: 110; transition: 0.3s; }
+        #side-panel { width: 380px; min-width: 380px; background: rgba(10,10,25,0.98); border-left: 1px solid #333; display: none; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 200; overflow-y: auto; }
+        .obs-info-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid var(--accent); font-size: 0.9em; }
+        textarea { width: 100%; height: 100px; background: #161625; color: white; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .btn-analyze { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--main-color); color: #000; }
+        #ai-response { margin-top: 15px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; font-size: 0.95em; line-height: 1.7; border: 1px dashed #444; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+<div id="main-view">
+    <div id="header-ui">
+        <div style="width: 150px;"></div>
+        <div style="text-align: center; pointer-events: none;">
+            <h1 style="color:var(--main-color); margin:0; font-size: 2.5em; text-shadow: 0 0 15px #00d4ff;">에임 우주 탐험대</h1>
+            <p id="sub-msg" style="color:#aaa; margin-top: 5px; font-size: 1.1em;">입체감 넘치는 3D 행성을 클릭하여 정밀 관찰하세요!</p>
+        </div>
+        <button class="btn-home" onclick="location.reload()">☀️ 태양계 복귀</button>
+    </div>
+    <div id="canvas-container"></div>
+</div>
 
-        const getYouTubeId = (url) => {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        };
+<div id="side-panel">
+    <h2 style="color:var(--main-color); margin-top: 0;">🔭 실시간 관측 로그</h2>
+    <div class="obs-info-box" id="observatory-data"></div>
+    <textarea id="student-answer" placeholder="행성의 입체적인 표면 특징을 기록하세요..."></textarea>
+    <button class="btn-analyze" onclick="callGemini25Flash()">AI 가이드 분석 (Engine 2.5)</button>
+    <div id="ai-response"></div>
+</div>
 
-        const emotionList = [
-            { name: '화남 😡', color: '#ef4444' }, { name: '우울함 🌧️', color: '#3b82f6' },
-            { name: '불안함 😰', color: '#eab308' }, { name: '평온함 😌', color: '#22c55e' },
-            { name: '신남 😆', color: '#f97316' }, { name: '무기력함 🫠', color: '#64748b' }
-        ];
+<script>
+    const API_KEY = "발급받으신_API_키를_넣으세요"; 
+    let isObserving = false, currentTarget = null;
 
-        const App = () => {
-            const [step, setStep] = useState(0);
-            const [apiKey, setApiKey] = useState('');
-            const [isAnalyzing, setIsAnalyzing] = useState(false);
-            const [selectedEmotion, setSelectedEmotion] = useState(null);
-            const [prescription, setPrescription] = useState({ songTitle: '', bpm: '', msg: '' });
-            const [youtubeLink, setYoutubeLink] = useState('');
-            const [videoId, setVideoId] = useState('');
-            const [rhythmData, setRhythmData] = useState({ intro: '', teamA: '', teamB: '', teamC: '' });
-            const [studentJournal, setStudentJournal] = useState('');
-            const [teacherFeedback, setTeacherFeedback] = useState('');
+    const planetsData = {
+        mercury: { name: "수성", dist: 150, size: 10, speed: 0.04, color: 0xaaaaaa, obs: "라 실라 천문대", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mercury.jpg" },
+        venus: { name: "금성", dist: 220, size: 15, speed: 0.015, color: 0xffcc33, obs: "마우나케아 천문대", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/venus_atmosphere.jpg" },
+        earth: { name: "지구", dist: 320, size: 18, speed: 0.01, color: 0x2233ff, obs: "보현산 천문대", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg" },
+        mars: { name: "화성", dist: 420, size: 14, speed: 0.008, color: 0xff4400, obs: "우티 전파 천문대", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mars.jpg" },
+        jupiter: { name: "목성", dist: 600, size: 45, speed: 0.004, color: 0xffaa88, obs: "팔로마 천문대", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg" },
+        saturn: { name: "토성", dist: 800, size: 38, speed: 0.002, color: 0xffdd88, obs: "사이딩 스프링 천문대", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturn.png" }
+    };
 
-            useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key_basket_pro');
-                if (savedKey) { setApiKey(savedKey); setStep(1); }
-            }, []);
+    const scene = new THREE.Scene();
+    const container = document.getElementById('canvas-container');
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
 
-            // 💡 정제 로직 추가: AI 응답에서 순수 JSON만 추출
-            const parseRobustJSON = (text) => {
-                try {
-                    const match = text.match(/\{[\s\S]*\}/);
-                    if (match) return JSON.parse(match[0]);
-                    return JSON.parse(text);
-                } catch (e) {
-                    console.error("JSON 파싱 에러:", text);
-                    return null;
-                }
-            };
+    // ★ 조명 재설정 (입체감 복구 포인트) ★
+    // 전체 밝기는 유지하되, 측면 조명을 추가하여 행성의 '그림자'와 '질감'이 살아나게 했습니다.
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2)); // 기본 밝기 낮춤
+    const mainLight = new THREE.PointLight(0xffffff, 2.5, 5000); // 중앙 태양 빛
+    scene.add(mainLight);
+    
+    // 입체감을 위한 보조광 (대각선 위에서 비춤)
+    const sideLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    sideLight.position.set(50, 100, 50);
+    scene.add(sideLight);
 
-            const callGemini = async (prompt, isJSON = false) => {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-                const config = { temperature: 0.7, maxOutputTokens: 1000 };
-                // 💡 JSON 모드 명시적 활성화
-                if (isJSON) config.responseMimeType = "application/json";
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(80, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+    scene.add(sun);
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: config })
-                });
+    const meshes = {}, loader = new THREE.TextureLoader();
+    Object.keys(planetsData).forEach(key => {
+        const p = planetsData[key];
+        const mat = new THREE.MeshStandardMaterial({ 
+            map: loader.load(p.texture), 
+            emissive: new THREE.Color(p.color), 
+            emissiveIntensity: 0.3 // 발광을 낮춰서 조명에 의한 3D 질감이 보이게 함
+        });
+        const m = new THREE.Mesh(new THREE.SphereGeometry(p.size, 64, 64), mat);
+        m.userData = { id: key, name: p.name };
+        meshes[key] = m;
+        scene.add(m);
 
-                if (!response.ok) throw new Error("API 연결 실패");
-                const data = await response.json();
-                const rawText = data.candidates[0].content.parts[0].text;
-                
-                return isJSON ? parseRobustJSON(rawText) : rawText;
-            };
+        // 궤도 라인
+        const orbitGeom = new THREE.RingGeometry(p.dist - 1, p.dist + 1, 256);
+        const orbitMat = new THREE.MeshBasicMaterial({ color: 0x444444, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+        const orbit = new THREE.Mesh(orbitGeom, orbitMat);
+        orbit.rotation.x = Math.PI/2;
+        scene.add(orbit);
+    });
 
-            const handleEmotionSelect = async (emotion) => {
-                if (isAnalyzing) return;
-                setSelectedEmotion(emotion);
-                setIsAnalyzing(true);
-                setStep(2);
-                const prompt = `학생 감정: '${emotion.name}'. 이 감정을 승화할 농구 활동용 음악 한 곡 추천(JSON): {"songTitle":"제목","bpm":"숫자","msg":"응원문구"}`;
-                try {
-                    const res = await callGemini(prompt, true);
-                    if (res) setPrescription(res);
-                } catch (e) { alert('분석 실패. 다시 시도해 주세요.'); setStep(1); } 
-                finally { setIsAnalyzing(false); }
-            };
+    camera.position.set(0, 1500, 2500);
+    camera.lookAt(0, 0, 0);
 
-            const handleGenerateRhythm = async () => {
-                if (isAnalyzing) return;
-                if (!youtubeLink) return alert("유튜브 링크를 넣어주세요!");
-                const extractedId = getYouTubeId(youtubeLink);
-                if (!extractedId) return alert("올바른 링크가 아닙니다.");
-                
-                setVideoId(extractedId);
-                setIsAnalyzing(true);
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now() * 0.0005;
+        if (!isObserving) {
+            Object.keys(meshes).forEach(key => {
+                const p = planetsData[key], m = meshes[key];
+                // ★ 공전 속도 광속 상향 (50 -> 100) ★
+                m.position.x = Math.cos(time * p.speed * 100) * p.dist;
+                m.position.z = Math.sin(time * p.speed * 100) * p.dist;
+                m.rotation.y += 0.05; // 자전도 시원하게
+            });
+        } else {
+            meshes[currentTarget].rotation.y += 0.005;
+        }
+        renderer.render(scene, camera);
+    }
+    animate();
 
-                const prompt = `농구 리듬 트레이닝 전문가로서 다음 세 팀의 4박자 구음 리듬을 생성하세요. 
-                Team A: 드리블, Team B: 드리블&패스, Team C: 드리블&패스&슛.
-                JSON 형식: {"intro": "목표", "teamA": "리듬", "teamB": "리듬", "teamC": "리듬"}`;
+    container.onclick = (e) => {
+        if(isObserving) return;
+        const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(Object.values(meshes));
+        if(intersects.length > 0) startObservation(intersects[0].object.userData.id);
+    };
 
-                try {
-                    const res = await callGemini(prompt, true);
-                    if (res) {
-                        setRhythmData(res);
-                        setStep(3);
-                    } else {
-                        throw new Error("데이터 파싱 실패");
-                    }
-                } catch (e) { alert('리듬 생성 중 오류가 발생했습니다. 다시 눌러주세요.'); } 
-                finally { setIsAnalyzing(false); }
-            };
+    function startObservation(id) {
+        isObserving = true; currentTarget = id;
+        const p = planetsData[id];
+        document.getElementById('header-ui').style.display = 'none';
+        document.getElementById('side-panel').style.display = 'flex';
+        document.getElementById('observatory-data').innerHTML = `<strong>📍 관측 지점:</strong> ${p.obs}<br><strong>🔭 관측 대상:</strong> ${p.name} (NASA 3D Engine)`;
+        
+        meshes[id].position.set(0,0,0);
+        
+        // ★ 카메라 줌 보정 포인트 ★
+        // 행성이 커진 만큼 카메라를 p.size의 5배 거리로 떨어뜨려 전체가 보이게 함
+        camera.position.set(0, p.size * 1.5, p.size * 4); 
+        camera.lookAt(0, 0, 0);
+    }
 
-            const handleSubmitJournal = async () => {
-                if (isAnalyzing || !studentJournal) return;
-                setIsAnalyzing(true);
-                const prompt = `농구 훈련 후 소감: "${studentJournal}". 다정한 피드백 3문장.`;
-                try {
-                    const res = await callGemini(prompt, false);
-                    setTeacherFeedback(res);
-                    setStep(4);
-                } catch (e) { alert('피드백 오류'); } finally { setIsAnalyzing(false); }
-            };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen bg-slate-950 flex flex-col relative shadow-2xl font-sans">
-                    <header className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 sticky top-0 z-50">
-                        <h1 className="text-lg font-title text-orange-500 uppercase tracking-tight italic">BEAT&BALL EAIM 비트 & 바스켓</h1>
-                        {step > 0 && <button onClick={() => window.location.reload()} className="text-[10px] text-slate-500 underline">RESET</button>}
-                    </header>
-
-                    <main className="flex-grow p-6 overflow-y-auto pb-24">
-                        {step === 0 && (
-                            <div className="py-10 text-center animate-fadeIn space-y-6">
-                                <div className="text-7xl">🏀✨</div>
-                                <h2 className="text-xl font-bold font-title uppercase">Rhythm & Basket</h2>
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Gemini API Key" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-center outline-none focus:border-orange-500" />
-                                <button onClick={() => { localStorage.setItem('gemini_api_key_basket_pro', apiKey.trim()); setStep(1); }} className="w-full bg-orange-600 p-4 rounded-2xl font-bold shadow-xl">훈련 시작</button>
-                            </div>
-                        )}
-
-                        {step === 1 && (
-                            <div className="space-y-8 animate-fadeIn">
-                                <div className="text-center">
-                                    <h2 className="text-2xl font-title text-slate-200">감정 체크</h2>
-                                    <p className="text-xs text-slate-500 mt-2">오늘의 기분에 맞춰 리듬 농구 과제를 분석합니다.</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {emotionList.map(em => (
-                                        <button key={em.name} onClick={() => handleEmotionSelect(em)} className="p-5 rounded-3xl bg-slate-900 border border-slate-800 hover:border-orange-500 transition-all text-center">
-                                            <div className="text-sm font-bold text-slate-200">{em.name}</div>
-                                            <div className="w-full h-1 mt-3 rounded-full" style={{backgroundColor: em.color}}></div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {step === 2 && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <div className="glass-panel p-7 rounded-[2.5rem] border-t-4 border-orange-500">
-                                    <h3 className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-4">리듬 농구과제 분석</h3>
-                                    {isAnalyzing ? (
-                                        <div className="py-10 text-center animate-pulse text-sm text-slate-400">데이터를 분석하고 있습니다...</div>
-                                    ) : (
-                                        <div className="space-y-5">
-                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/10 text-center">
-                                                <span className="text-xl font-black text-white">{prescription.songTitle}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-sm font-bold">
-                                                <span className="text-slate-400 uppercase">TEMPO</span>
-                                                <span className="text-orange-400">{prescription.bpm} BPM</span>
-                                            </div>
-                                            <p className="text-sm italic text-slate-300">"{prescription.msg}"</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {!isAnalyzing && (
-                                    <div className="space-y-4 pt-4 animate-fadeIn">
-                                        <div className="bg-orange-600/20 p-3 rounded-xl text-center text-orange-500 font-bold text-sm">농구 🏀 전용 모드</div>
-                                        <input type="text" value={youtubeLink} onChange={e => setYoutubeLink(e.target.value)} placeholder="분석할 유튜브 주소" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-2xl text-sm" />
-                                        <button onClick={handleGenerateRhythm} className="w-full bg-indigo-600 p-5 rounded-2xl font-black text-lg shadow-xl">리듬 스코어 생성 ✨</button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {step === 3 && (
-                            <div className="space-y-6 animate-fadeIn pb-10">
-                                <div className="youtube-box aspect-video rounded-3xl overflow-hidden border-2 border-slate-800 shadow-2xl">
-                                    <iframe src={`https://www.youtube.com/embed/${videoId}`} className="w-full h-full" frameBorder="0" allowFullScreen></iframe>
-                                </div>
-                                <div className="bg-orange-500/10 p-4 rounded-2xl border-l-4 border-orange-500 text-sm font-bold">
-                                    "{rhythmData.intro}"
-                                </div>
-                                
-                                <div className="space-y-4">
-                                    <div className="glass-panel p-5 rounded-2xl border-l-4 border-rose-500">
-                                        <h4 className="text-[11px] font-black text-rose-400 uppercase mb-2">Team A : 드리블</h4>
-                                        <div className="rhythm-score text-xl font-black text-white text-center">{rhythmData.teamA}</div>
-                                    </div>
-                                    <div className="glass-panel p-5 rounded-2xl border-l-4 border-blue-500">
-                                        <h4 className="text-[11px] font-black text-blue-400 uppercase mb-2">Team B : 드리블 & 패스</h4>
-                                        <div className="rhythm-score text-xl font-black text-white text-center">{rhythmData.teamB}</div>
-                                    </div>
-                                    <div className="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
-                                        <h4 className="text-[11px] font-black text-emerald-400 uppercase mb-2">Team C : 드리블 & 패스 & 슛</h4>
-                                        <div className="rhythm-score text-xl font-black text-white text-center">{rhythmData.teamC}</div>
-                                    </div>
-                                </div>
-                                
-                                <div className="pt-6 space-y-4">
-                                    <h3 className="text-center font-title text-orange-500 text-lg uppercase">훈련 일지</h3>
-                                    <textarea value={studentJournal} onChange={e => setStudentJournal(e.target.value)} placeholder="훈련 소감을 적어주세요." className="w-full bg-slate-900 border border-slate-700 p-5 rounded-3xl text-sm h-32 outline-none focus:border-orange-500"></textarea>
-                                    <button onClick={handleSubmitJournal} className="w-full bg-orange-600 p-5 rounded-2xl font-bold">기록 제출 📮</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {step === 4 && (
-                            <div className="space-y-8 animate-fadeIn text-center">
-                                <div className="text-7xl mt-10">🥇</div>
-                                <h2 className="text-2xl font-title text-orange-400 uppercase">Coach Feedback</h2>
-                                <div className="glass-panel p-8 rounded-[3rem] text-left border-t-8 border-orange-500">
-                                    <p className="text-base leading-relaxed text-slate-100 italic">"{teacherFeedback}"</p>
-                                </div>
-                                <button onClick={() => window.location.reload()} className="w-full bg-slate-800 p-5 rounded-2xl font-bold text-slate-400">다음 훈련 준비</button>
-                            </div>
-                        )}
-                    </main>
-                    <footer className="p-4 bg-slate-950 text-center text-[9px] text-slate-700 tracking-widest uppercase border-t border-white/5">
-                        &copy; 2026 EAIM STUDIO | Rhythm & Basketball Sync
-                    </footer>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+    async function callGemini25Flash() {
+        const ans = document.getElementById('student-answer').value;
+        if(!ans) return alert("내용을 입력하세요!");
+        document.getElementById('ai-response').innerHTML = "📡 Engine 2.5 Flash가 분석 데이터를 수신 중입니다...";
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+        try {
+            const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: `과학 선생님으로서 학생의 관측 답변 "${ans}"에 대해 칭찬하고 보완할 점을 말해줘.` }] }] }) });
+            const data = await res.json();
+            document.getElementById('ai-response').innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+        } catch(e) { document.getElementById('ai-response').innerHTML = "❌ 엔진 연동 오류"; }
+    }
+</script>
 </body>
 </html>

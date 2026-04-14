@@ -3,195 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EAIM 우주탐험대 - Ver 2.5</title>
+    <title>EAIM 에임우주탐험대 - 태양계 마스터 v2.5</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
         :root { --main-color: #00d4ff; --bg-dark: #020205; --accent: #2ecc71; }
-        body { margin: 0; padding: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
         
-        /* 왼쪽 사이드바 (고정 폭) */
-        #side-panel { width: 350px; min-width: 350px; background: #0a0a15; border-right: 1px solid #333; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; z-index: 10; }
-        
-        /* 오른쪽 메인 뷰 (유연한 폭) */
-        #main-view { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; position: relative; }
-        #canvas-container { height: 60%; width: 100%; background: radial-gradient(circle, #0d0d20 0%, #000 100%); overflow: hidden; }
-        #interaction-area { height: 40%; background: #080810; padding: 20px; border-top: 1px solid #222; overflow-y: auto; box-sizing: border-box; }
+        #side-panel { width: 350px; min-width: 350px; background: #0a0a15; border-right: 1px solid #333; display: none; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        #main-view { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        #canvas-container { flex-grow: 1; background: radial-gradient(circle, #0d0d20 0%, #000 100%); cursor: pointer; }
+        #interaction-area { height: 35%; background: #080810; padding: 20px; border-top: 1px solid #222; overflow-y: auto; display: none; }
 
-        h2, h3 { color: var(--main-color); margin: 0 0 15px 0; }
-        label { display: block; margin: 10px 0 5px 0; font-size: 0.85em; color: #888; }
-        select, textarea, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; background: #161625; color: white; box-sizing: border-box; }
+        h2, h3 { color: var(--main-color); margin: 0 0 10px 0; }
+        .btn-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        button { flex: 1; padding: 10px; border-radius: 6px; border: none; background: var(--main-color); font-weight: bold; cursor: pointer; }
+        .btn-home { position: absolute; top: 20px; right: 20px; width: auto; background: #444; color: white; padding: 10px 20px; z-index: 100; }
+        .btn-save-img { background: var(--accent); color: white; }
         
-        button { background: var(--main-color); color: #000; font-weight: bold; cursor: pointer; border: none; }
-        .btn-save { background: var(--accent); color: white; }
+        #obs-info { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; font-size: 0.8em; margin-bottom: 15px; color: #00d4ff; }
+        textarea { width: 100%; height: 60px; background: #161625; color: white; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+        #ai-response { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px dashed #444; font-size: 0.9em; }
         
-        /* 일지 리스트 */
-        #log-list { flex-grow: 1; overflow-y: auto; margin-top: 20px; border-top: 1px solid #222; padding-top: 15px; }
-        .log-card { background: #1a1a2e; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid var(--main-color); font-size: 0.85em; }
-        .log-card small { color: #666; display: block; margin-bottom: 4px; }
-        
-        #ai-response { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border: 1px dashed #444; line-height: 1.6; }
+        /* 인트로 안내 */
+        #intro-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
     </style>
 </head>
 <body>
 
+<button class="btn-home" onclick="goHome()">☀️ 태양계 전체보기</button>
+
 <div id="side-panel">
     <h2>🔭 탐사 설정</h2>
-    <p style="font-size:0.7em; color:#555;">EAIM Intelligent System v2.5</p>
+    <div id="obs-info">📍 관측 정보 수신 중...</div>
     
-    <label>📅 관측 날짜 (위상 자동 계산)</label>
-    <select id="date-select" onchange="updateObservation()">
-        <option value="2026-04-14">2026-04-14 (그믐달)</option>
-        <option value="2026-04-20">2026-04-20 (초승달)</option>
-        <option value="2026-04-25">2026-04-25 (상현달)</option>
-        <option value="2026-05-01">2026-05-01 (보름달)</option>
-    </select>
+    <label style="font-size:0.8em; color:#888;">관측 날짜</label>
+    <select id="date-select" onchange="updateObservation()" style="width:100%; padding:10px; background:#161625; color:white; margin-bottom:15px;"></select>
 
-    <label>☄️ 관측 대상</label>
-    <select id="target-select" onchange="updateObservation()">
-        <option value="moon">달 (Moon)</option>
-        <option value="jupiter">목성 (Jupiter)</option>
-    </select>
-
-    <div id="log-list">
-        <h3>📖 나의 관측 일지</h3>
+    <div id="log-list" style="flex-grow:1; border-top:1px solid #222; padding-top:15px; overflow-y:auto;">
+        <h3>📖 탐사 일지</h3>
         <div id="log-container"></div>
     </div>
-    <button onclick="clearLogs()" style="background:#444; font-size:0.7em;">일지 전체 초기화</button>
 </div>
 
 <div id="main-view">
-    <div id="canvas-container"></div>
+    <div id="canvas-container">
+        <div id="intro-msg">
+            <h1 style="color:var(--main-color); text-shadow: 0 0 20px #00d4ff;">에임 우주 탐험대</h1>
+            <p>탐사할 행성을 클릭하여 관측을 시작하세요</p>
+        </div>
+    </div>
     <div id="interaction-area">
         <h3 id="target-title">관측 기록실</h3>
-        <p id="question" style="color:#aaa; margin-bottom:15px;"></p>
-        
+        <p id="question" style="font-size:0.9em; color:#aaa;"></p>
         <textarea id="student-answer" placeholder="관측한 특징을 적어보세요..."></textarea>
-        
-        <div style="display:flex; gap:10px;">
+        <div class="btn-group">
             <button onclick="runGemini25()">AI 분석</button>
-            <button class="btn-save" onclick="saveToLocal()">일지 저장</button>
+            <button onclick="saveToLocal()" style="background:#2ecc71; color:white;">일지 저장</button>
+            <button id="save-img-btn" class="btn-save-img" onclick="exportImage()" style="display:none;">📷 사진 저장</button>
         </div>
-
-        <div id="ai-response">답변을 입력하고 분석을 받아보세요.</div>
+        <div id="ai-response"></div>
     </div>
 </div>
 
 <script>
-    // --- [1] 데이터 및 초기화 ---
-    const obsConfig = {
-        "moon": { name: "달", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg", q: "오늘 달의 어두운 부분과 밝은 부분이 어떻게 나뉘어 있나요?" },
-        "jupiter": { name: "목성", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg", q: "목성의 가로 줄무늬와 대적점을 관찰해 보세요." }
+    // --- [1] 데이터: NASA 텍스처 및 행성 정보 ---
+    const planets = {
+        mercury: { name: "수성", dist: 15, size: 0.8, speed: 0.04, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mercury.jpg", obs: "칠레 - 라 실라 천문대" },
+        venus: { name: "금성", dist: 22, size: 1.2, speed: 0.015, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/venus_atmosphere.jpg", obs: "미국 - 마우나케아 천문대" },
+        earth: { name: "지구", dist: 30, size: 1.3, speed: 0.01, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg", obs: "대한민국 - 보현산 천문대" },
+        mars: { name: "화성", dist: 38, size: 1.0, speed: 0.008, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mars.jpg", obs: "인도 - 우티 전파 천문대" },
+        jupiter: { name: "목성", dist: 55, size: 3.0, speed: 0.004, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg", obs: "미국 - 팔로마 천문대" },
+        saturn: { name: "토성", dist: 75, size: 2.6, speed: 0.002, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturn.png", obs: "호주 - 사이딩 스프링 천문대" },
+        uranus: { name: "천왕성", dist: 90, size: 1.8, speed: 0.001, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/uranus.jpg", obs: "유럽 남방 천문대 (ESO)" },
+        neptune: { name: "해왕성", dist: 105, size: 1.7, speed: 0.0008, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/neptune.jpg", obs: "칠레 - 파라날 천문대" },
+        moon: { name: "달", texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg", obs: "대한민국 - 보현산 천문대" }
     };
 
-    // --- [2] Three.js 엔진 (복구 버전) ---
+    let isObserving = false;
+    let currentTarget = null;
+
+    // --- [2] Three.js 엔진 세팅 ---
     const scene = new THREE.Scene();
     const container = document.getElementById('canvas-container');
-    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 2000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    const planet = new THREE.Mesh(new THREE.SphereGeometry(3, 64, 64), new THREE.MeshPhongMaterial());
-    scene.add(planet);
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    sunLight.position.set(10, 0, 10); // 위상 표현을 위해 조명 조절
-    scene.add(sunLight);
-    scene.add(new THREE.AmbientLight(0x111111));
-    camera.position.z = 7;
+    // 태양 및 조명
+    const sunGeom = new THREE.SphereGeometry(5, 32, 32);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd00 });
+    const sun = new THREE.Mesh(sunGeom, sunMat);
+    scene.add(sun);
 
-    function animate() { 
-        requestAnimationFrame(animate); 
-        planet.rotation.y += 0.001; 
-        renderer.render(scene, camera); 
+    const pointLight = new THREE.PointLight(0xffffff, 2, 300);
+    scene.add(pointLight);
+    scene.add(new THREE.AmbientLight(0x222222));
+
+    // 행성 객체 생성
+    const planetMeshes = {};
+    Object.keys(planets).forEach(key => {
+        if(key === 'moon') return;
+        const p = planets[key];
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(p.size, 32, 32),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load(p.texture) })
+        );
+        mesh.userData = { id: key };
+        planetMeshes[key] = mesh;
+        scene.add(mesh);
+    });
+
+    camera.position.set(0, 80, 150);
+    camera.lookAt(0, 0, 0);
+
+    // --- [3] 애니메이션 및 클릭 이벤트 ---
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now() * 0.001;
+
+        if (!isObserving) {
+            Object.keys(planetMeshes).forEach(key => {
+                const p = planets[key];
+                const mesh = planetMeshes[key];
+                mesh.position.x = Math.cos(time * p.speed) * p.dist;
+                mesh.position.z = Math.sin(time * p.speed) * p.dist;
+                mesh.rotation.y += 0.01;
+            });
+        } else {
+            planetMeshes[currentTarget].rotation.y += 0.005;
+        }
+        renderer.render(scene, camera);
     }
     animate();
 
-    function updateObservation() {
-        const target = document.getElementById('target-select').value;
-        const date = document.getElementById('date-select').value;
+    // 행성 클릭 감지
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    container.onclick = (e) => {
+        if(isObserving) return;
+        mouse.x = (e.clientX - 350) / container.clientWidth * 2 - 1;
+        mouse.y = -(e.clientY / container.clientHeight) * 2 + 1;
         
-        // 텍스처 로드
-        planet.material.map = new THREE.TextureLoader().load(obsConfig[target].texture);
-        planet.material.needsUpdate = true;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(scene.children);
         
-        // 날짜별 위상 조명 연출 (달일 때만)
-        if(target === 'moon') {
-            if(date === '2026-05-01') sunLight.position.set(0, 0, 10); // 보름
-            else if(date === '2026-04-25') sunLight.position.set(10, 0, 0); // 상현
-            else sunLight.position.set(10, 0, 10); // 기본
+        if(intersects.length > 0 && intersects[0].object.userData.id) {
+            startObservation(intersects[0].object.userData.id);
         }
+    };
 
-        document.getElementById('target-title').innerText = `🚀 ${obsConfig[target].name} 탐사 미션`;
-        document.getElementById('question').innerText = `질문: ${obsConfig[target].q}`;
+    // --- [4] 관측 모드 전환 로직 ---
+    function startObservation(id) {
+        isObserving = true;
+        currentTarget = id;
+        const p = planets[id];
+
+        document.getElementById('intro-msg').style.display = 'none';
+        document.getElementById('side-panel').style.display = 'flex';
+        document.getElementById('interaction-area').style.display = 'block';
+        
+        // 카메라 줌인 (행성을 크게 보이게 조절)
+        planetMeshes[id].position.set(0, 0, 0);
+        camera.position.set(0, 0, p.size * 3.5); // 행성 크기에 맞춰 거리 자동 조절
+        camera.lookAt(0, 0, 0);
+
+        document.getElementById('obs-info').innerText = `🔭 관측지: ${p.obs}`;
+        document.getElementById('target-title').innerText = `${p.name} 탐사 미션`;
+        document.getElementById('question').innerText = `${p.name}의 표면 특징을 관찰하고 배운 내용을 적어주세요.`;
+        
+        // 달 저장 버튼 활성화 여부
+        document.getElementById('save-img-btn').style.display = (id === 'moon' || id === 'earth') ? 'block' : 'none';
+        
+        // 달 전용 모드 (텍스처 교체 등)
+        if(id === 'earth') { /* 필요시 달 선택 옵션 추가 가능 */ }
     }
 
-    // --- [3] 로컬 저장 및 일지 카드 ---
-    function saveToLocal() {
-        const log = {
-            date: document.getElementById('date-select').value,
-            target: document.getElementById('target-select').value,
-            answer: document.getElementById('student-answer').value,
-            ai: document.getElementById('ai-response').innerText,
-            id: Date.now()
-        };
-        if(!log.answer) return alert("내용을 입력해주세요.");
-
-        let logs = JSON.parse(localStorage.getItem('eaim_space_logs') || "[]");
-        logs.unshift(log);
-        localStorage.setItem('eaim_space_logs', JSON.stringify(logs));
-        displayLogs();
-        alert("일지에 기록되었습니다!");
+    function goHome() {
+        location.reload(); // 간단하게 초기 상태로 복구
     }
 
-    function displayLogs() {
-        const container = document.getElementById('log-container');
-        const logs = JSON.parse(localStorage.getItem('eaim_space_logs') || "[]");
-        container.innerHTML = logs.map(l => `
-            <div class="log-card">
-                <small>${l.date} | ${l.target}</small>
-                <strong>${l.answer.substring(0,20)}...</strong>
-            </div>
-        `).join('');
+    // 사진 저장 기능
+    function exportImage() {
+        const link = document.createElement('a');
+        link.download = `EAIM_관측_${planets[currentTarget].name}.png`;
+        link.href = renderer.domElement.toDataURL("image/png");
+        link.click();
     }
 
-    function clearLogs() {
-        if(confirm("일지를 모두 지울까요?")) {
-            localStorage.removeItem('eaim_space_logs');
-            displayLogs();
-        }
-    }
-
-    // --- [4] Gemini 2.5 API ---
+    // --- [5] Gemini API 및 로컬 저장 (기존 로직 최적화) ---
     const API_KEY = "여기에_성공하셨던_API_키를_넣으세요"; 
 
     async function runGemini25() {
-        const answer = document.getElementById('student-answer').value;
-        if(!answer) return alert("답변을 적어주세요.");
-        document.getElementById('ai-response').innerHTML = "📡 분석 중...";
-        
+        const ans = document.getElementById('student-answer').value;
+        const resp = document.getElementById('ai-response');
+        if(!ans) return alert("내용을 입력하세요.");
+        resp.innerHTML = "📡 분석 중...";
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: `과학 선생님으로서 이 관측 답변에 대해 친절하게 피드백해줘: ${answer}` }] }] })
+                body: JSON.stringify({ contents: [{ parts: [{ text: `과학 선생님으로서 피드백해줘: ${ans}` }] }] })
             });
             const data = await res.json();
-            document.getElementById('ai-response').innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-        } catch(e) {
-            document.getElementById('ai-response').innerHTML = "API 키를 확인하세요.";
-        }
+            resp.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+        } catch(e) { resp.innerHTML = "연결 오류"; }
     }
 
-    // 창 크기 조절 대응
-    window.addEventListener('resize', () => {
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        renderer.setSize(w, h);
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-    });
+    function saveToLocal() {
+        const log = { target: planets[currentTarget].name, ans: document.getElementById('student-answer').value, date: new Date().toLocaleDateString() };
+        let logs = JSON.parse(localStorage.getItem('eaim_logs_v2') || "[]");
+        logs.unshift(log);
+        localStorage.setItem('eaim_logs_v2', JSON.stringify(logs));
+        displayLogs();
+    }
 
-    window.onload = () => { updateObservation(); displayLogs(); };
+    function displayLogs() {
+        const container = document.getElementById('log-container');
+        const logs = JSON.parse(localStorage.getItem('eaim_logs_v2') || "[]");
+        container.innerHTML = logs.map(l => `<div style="background:#1a1a2e; padding:10px; border-radius:6px; margin-bottom:5px; font-size:0.8em;"><b>${l.date} ${l.target}</b><br>${l.ans.substring(0,20)}...</div>`).join('');
+    }
+
+    window.onload = displayLogs;
 </script>
 
 </body>

@@ -2,82 +2,67 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>EAIM 에임우주탐험대 - 선명한 8행성 v3.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EAIM 에임우주탐험대 v2.5</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
         :root { --main-color: #00d4ff; --bg-dark: #000; --accent: #2ecc71; }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-        
         #main-view { flex-grow: 1; display: flex; flex-direction: column; position: relative; width: 100%; height: 100%; }
         #canvas-container { flex: 1; background: #000; cursor: pointer; position: relative; z-index: 1; }
-
         #header-ui { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 100; }
         #intro-text { pointer-events: none; text-align: center; flex-grow: 1; }
         .btn-home { background: rgba(0,212,255,0.3); color: white; padding: 10px 20px; border-radius: 20px; border: 1px solid var(--main-color); pointer-events: auto; cursor: pointer; z-index: 110; }
-
         .planet-label { position: absolute; color: white; background: rgba(0,0,0,0.8); padding: 4px 10px; border-radius: 5px; font-size: 13px; font-weight: bold; pointer-events: none; border: 1px solid var(--main-color); white-space: nowrap; z-index: 90; }
-        
-        #side-panel { width: 320px; min-width: 320px; background: rgba(10,10,25,0.98); border-right: 1px solid #333; display: none; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 200; }
-        #interaction-area { height: 35%; background: #080810; padding: 20px; border-top: 1px solid #222; overflow-y: auto; display: none; z-index: 200; }
-        textarea { width: 100%; height: 60px; background: #161625; color: white; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
-        button { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+        #side-panel { width: 320px; min-width: 320px; background: rgba(10,10,25,0.98); border-left: 1px solid #333; display: none; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 200; }
+        #interaction-area { background: #080810; padding: 20px; border-top: 1px solid #222; overflow-y: auto; }
+        textarea { width: 100%; height: 80px; background: #161625; color: white; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+        button { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<div id="side-panel">
-    <h2>🔭 탐사 설정</h2>
-    <div id="obs-location" style="color:var(--accent); font-size:0.9em; margin: 10px 0;">📍 보현산 천문대 연결됨</div>
-    
-    <div id="phase-control" style="display:none; border:1px solid #333; padding:15px; border-radius:8px;">
-        <label>🌗 달 위상 조절</label>
-        <input type="range" id="moon-slider" min="0" max="6.28" step="0.1" value="0" style="width:100%" oninput="changeMoonPhase(this.value)">
-        <p id="phase-name" style="text-align:center; color:var(--main-color);">신월</p>
+<div id="main-view">
+    <div id="header-ui">
+        <div style="width: 100px;"></div>
+        <div id="intro-text">
+            <h1 style="color:var(--main-color); margin:0; font-size: 1.8em; text-shadow: 0 0 10px #00d4ff;">에임 우주 탐험대 v2.5</h1>
+            <p style="color:#aaa; font-size: 0.9em; margin: 5px 0;">관찰할 행성을 클릭하세요!</p>
+        </div>
+        <button class="btn-home" onclick="location.reload()">☀️ 전체 태양계</button>
     </div>
-    
+    <div id="canvas-container">
+        <div id="label-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:80;"></div>
+    </div>
+</div>
+
+<div id="side-panel">
+    <h2>🔭 행성 관측 로그</h2>
+    <div id="interaction-area">
+        <p id="target-title" style="color:var(--main-color); font-weight:bold;"></p>
+        <textarea id="student-answer" placeholder="관측 내용을 적어보세요..."></textarea>
+        <button onclick="runGeminiV25()" style="background:var(--main-color);">AI 가이드 분석 (v2.5)</button>
+        <div id="ai-response" style="margin-top:15px; font-size:0.85em; line-height:1.6; color:#ddd; max-height:200px; overflow-y:auto;"></div>
+    </div>
     <div id="log-list" style="flex-grow:1; border-top:1px solid #333; margin-top:20px; overflow-y:auto;">
         <h3>📖 탐사 일지</h3>
         <div id="log-container"></div>
     </div>
 </div>
 
-<div id="main-view">
-    <div id="header-ui">
-        <div style="width: 100px;"></div>
-        <div id="intro-text">
-            <h1 style="color:var(--main-color); margin:0; font-size: 1.8em; text-shadow: 0 0 10px #00d4ff;">에임 우주 탐험대</h1>
-            <p style="color:#aaa; font-size: 0.9em; margin: 5px 0;">행성을 클릭하여 3D 관찰을 시작하세요!</p>
-        </div>
-        <button class="btn-home" onclick="location.reload()">☀️ 태양계 복귀</button>
-    </div>
-
-    <div id="canvas-container">
-        <div id="label-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:80;"></div>
-    </div>
-
-    <div id="interaction-area">
-        <h3 id="target-title">관측 기록실</h3>
-        <p id="question" style="font-size:0.9em; color:#aaa;"></p>
-        <textarea id="student-answer" placeholder="관측 내용을 기록하세요..."></textarea>
-        <div style="display:flex; gap:10px;">
-            <button onclick="runGemini25()" style="background:var(--main-color); flex:1;">AI 분석</button>
-            <button onclick="saveToLocal()" style="background:var(--accent); flex:1; color:white;">기록 저장</button>
-        </div>
-        <div id="ai-response" style="margin-top:10px; font-size:0.9em;"></div>
-    </div>
-</div>
-
 <script>
+    // 대표님의 v2.5 성공 공식: 안정적인 gemini-pro 모델명 활용
+    const API_KEY = localStorage.getItem('gemini_api_key_v25') || "여기에_키를_넣어두면_자동저장";
+    let isObserving = false;
+    let currentTarget = null;
+
     const planetsData = {
-        mercury: { name: "수성", dist: 30, size: 1.2, speed: 0.04, color: 0xaaaaaa, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mercury.jpg" },
-        venus: { name: "금성", dist: 45, size: 1.8, speed: 0.015, color: 0xffdd88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/venus_atmosphere.jpg" },
-        earth: { name: "지구", dist: 60, size: 2.0, speed: 0.01, color: 0x2233ff, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg" },
-        mars: { name: "화성", dist: 75, size: 1.5, speed: 0.008, color: 0xff3300, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mars.jpg" },
-        jupiter: { name: "목성", dist: 100, size: 5.0, speed: 0.004, color: 0xffaa88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg" },
-        saturn: { name: "토성", dist: 130, size: 4.2, speed: 0.002, color: 0xffdd88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturn.png" },
-        uranus: { name: "천왕성", dist: 155, size: 2.6, speed: 0.0015, color: 0x88ddff, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/uranus.jpg" },
-        neptune: { name: "해왕성", dist: 175, size: 2.5, speed: 0.001, color: 0x3355ff, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/neptune.jpg" },
-        moon: { name: "달", size: 3.5, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg" }
+        mercury: { name: "수성", dist: 30, size: 1.5, speed: 0.04, color: 0xaaaaaa, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mercury.jpg" },
+        venus: { name: "금성", dist: 50, size: 2.2, speed: 0.015, color: 0xffdd88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/venus_atmosphere.jpg" },
+        earth: { name: "지구", dist: 75, size: 2.5, speed: 0.01, color: 0x2233ff, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg" },
+        mars: { name: "화성", dist: 100, size: 1.8, speed: 0.008, color: 0xff3300, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mars.jpg" },
+        jupiter: { name: "목성", dist: 140, size: 6.0, speed: 0.004, color: 0xffaa88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg" },
+        saturn: { name: "토성", dist: 190, size: 5.0, speed: 0.002, color: 0xffdd88, texture: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturn.png" }
     };
 
     const scene = new THREE.Scene();
@@ -87,25 +72,14 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    // 태양 및 조명 설정 (대폭 강화)
-    const sun = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(12, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
     scene.add(sun);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 2.0)); // 우주를 환하게 밝힘
-    const moonLight = new THREE.DirectionalLight(0xffffff, 3.0);
-    moonLight.position.set(10, 0, 10);
-    scene.add(moonLight);
-
     const meshes = {}, labels = {}, loader = new THREE.TextureLoader();
-
     Object.keys(planetsData).forEach(key => {
-        if(key === 'moon') return;
         const p = planetsData[key];
-        const m = new THREE.Mesh(new THREE.SphereGeometry(p.size, 64, 64), new THREE.MeshStandardMaterial({ 
-            map: loader.load(p.texture), 
-            emissive: new THREE.Color(p.color), 
-            emissiveIntensity: 0.8 // 스스로 선명하게 빛나게 함
-        }));
+        const m = new THREE.Mesh(new THREE.SphereGeometry(p.size, 64, 64), new THREE.MeshStandardMaterial({ map: loader.load(p.texture) }));
         m.userData = { id: key, name: p.name };
         meshes[key] = m;
         scene.add(m);
@@ -117,20 +91,12 @@
         labels[key] = lbl;
     });
 
-    const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(3.5, 64, 64), new THREE.MeshStandardMaterial({ map: loader.load(planetsData.moon.texture) }));
-    moonMesh.visible = false;
-    scene.add(moonMesh);
-
-    // 카메라 시점 조정 (더 낮고 선명하게)
-    camera.position.set(0, 100, 300);
+    camera.position.set(0, 150, 400);
     camera.lookAt(0, 0, 0);
-
-    const vector = new THREE.Vector3();
 
     function animate() {
         requestAnimationFrame(animate);
         const time = Date.now() * 0.0005;
-        
         Object.keys(meshes).forEach(key => {
             const p = planetsData[key], m = meshes[key], lbl = labels[key];
             if (!isObserving) {
@@ -138,17 +104,15 @@
                 m.position.z = Math.sin(time * p.speed * 10) * p.dist;
                 m.rotation.y += 0.01;
                 m.visible = true;
-
-                vector.setFromObjectPosition(m).project(camera);
-                const rect = container.getBoundingClientRect();
-                const x = (vector.x * 0.5 + 0.5) * rect.width;
-                const y = (vector.y * -0.5 + 0.5) * rect.height;
-                
+                const vector = new THREE.Vector3().setFromObjectPosition(m).project(camera);
+                const x = (vector.x * 0.5 + 0.5) * container.clientWidth;
+                const y = (vector.y * -0.5 + 0.5) * container.clientHeight;
                 lbl.style.display = 'block';
-                lbl.style.transform = `translate(-50%, -50%) translate(${x}px, ${y-25}px)`;
+                lbl.style.left = `${x}px`; lbl.style.top = `${y-30}px`;
             } else {
                 lbl.style.display = 'none';
                 if (key !== currentTarget) m.visible = false;
+                else { m.position.set(0,0,0); m.rotation.y += 0.005; }
             }
         });
         renderer.render(scene, camera);
@@ -162,62 +126,38 @@
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(Object.values(meshes));
-        if(intersects.length > 0) startObservation(intersects[0].object.userData.id);
-        else if(Math.abs(mouse.x) < 0.1 && Math.abs(mouse.y) < 0.1) startObservation('moon');
+        if(intersects.length > 0) {
+            isObserving = true;
+            currentTarget = intersects[0].object.userData.id;
+            document.getElementById('side-panel').style.display = 'flex';
+            document.getElementById('target-title').innerText = `[${intersects[0].object.userData.name} 관측 중]`;
+            camera.position.set(0, 0, 15);
+            camera.lookAt(0,0,0);
+        }
     };
 
-    function startObservation(id) {
-        isObserving = true; currentTarget = id;
-        document.getElementById('header-ui').style.display = 'none';
-        document.getElementById('side-panel').style.display = 'flex';
-        document.getElementById('interaction-area').style.display = 'block';
-        if(id === 'moon') {
-            moonMesh.visible = true;
-            document.getElementById('phase-control').style.display = 'block';
-        } else {
-            meshes[id].position.set(0,0,0);
-        }
-        camera.position.set(0, 0, 12);
-        camera.lookAt(0, 0, 0);
-    }
-
-    function changeMoonPhase(val) {
-        moonLight.position.set(Math.cos(val)*10, 0, Math.sin(val)*10);
-        const phases = ["신월", "초승달", "상현달", "보름달", "하현달", "그믐달"];
-        document.getElementById('phase-name').innerText = phases[Math.floor((val / 6.28) * 6) % 6];
-    }
-    
-    // API 및 저장 로직은 기존 성공하신 코드와 동일하게 유지
-    const API_KEY = "발급받으신_API키"; 
-    async function runGemini25() {
+    // ★ v2.5 안정화 AI 로직 ★
+    async function runGeminiV25() {
         const ans = document.getElementById('student-answer').value;
-        const resp = document.getElementById('ai-response');
-        if(!ans) return alert("답변을 입력하세요.");
-        resp.innerHTML = "📡 AI 가이드 분석 중...";
+        if(!ans) return alert("관측 내용을 먼저 적어주세요!");
+        const respArea = document.getElementById('ai-response');
+        respArea.innerHTML = "📡 v2.5 AI 가이드가 분석 중입니다...";
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: `과학 선생님으로서 학생 답변 피드백해줘: ${ans}` }] }] })
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: `과학 선생님으로서 학생의 행성 관측 기록에 대해 칭찬과 보완할 점을 다정하게 말해줘: ${ans}` }] }] })
             });
             const data = await res.json();
-            resp.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-            saveToLocal();
-        } catch(e) { resp.innerHTML = "연결 오류"; }
+            respArea.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+            saveToLocal(ans);
+        } catch(e) {
+            respArea.innerHTML = "❌ v2.5 연결 오류. API 키를 확인해주세요.";
+        }
     }
 
-    function saveToLocal() {
-        const log = { target: planetsData[currentTarget]?.name || "달", ans: document.getElementById('student-answer').value, time: new Date().toLocaleString() };
-        let logs = JSON.parse(localStorage.getItem('eaim_logs_final') || "[]");
-        logs.unshift(log);
-        localStorage.setItem('eaim_logs_final', JSON.stringify(logs));
-        displayLogs();
-    }
-
-    function displayLogs() {
-        const logs = JSON.parse(localStorage.getItem('eaim_logs_final') || "[]");
-        document.getElementById('log-container').innerHTML = logs.map(l => `<div style="background:#1a1a2e; padding:8px; border-radius:5px; margin-bottom:8px; border-left:3px solid #00d4ff;"><small>${l.time}</small><br><b>${l.target}</b>: ${l.ans.substring(0,25)}...</div>`).join('');
-    }
-    window.onload = displayLogs;
-</script>
-</body>
-</html>
+    function saveToLocal(ans) {
+        const log = { target: planetsData[currentTarget].name, ans

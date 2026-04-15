@@ -246,3 +246,266 @@
     }
 
     function createFlare() {
+        if(flareSprite) currentMesh.remove(flareSprite);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: gasTexture, color: 0xffffaa, transparent: true, blending: THREE.AdditiveBlending, opacity: 0 });
+        flareSprite = new THREE.Sprite(spriteMaterial);
+        flareSprite.scale.set(1.5, 1.5, 1);
+        const angle = Math.random() * Math.PI * 2;
+        const y = (Math.random() - 0.5) * 2; 
+        const dist = 2.05; 
+        flareSprite.position.set(Math.cos(angle) * dist, y, Math.sin(angle) * dist);
+        currentMesh.add(flareSprite);
+    }
+
+    function loadPlanet(target) {
+        if (currentMesh) scene.remove(currentMesh);
+        if (saturnRingMesh) currentMesh.remove(saturnRingMesh); 
+        prominenceSprites.forEach(s => currentMesh.remove(s)); 
+        if(flareSprite) currentMesh.remove(flareSprite); 
+        prominenceSprites = []; flareSprite = null;
+
+        isMoon = (target === 'moon');
+        isSun = (target === 'sun');
+
+        const geometry = new THREE.SphereGeometry(2, 64, 64);
+        let material;
+
+        // ★ 천왕성/해왕성 폴백 색상 추가 ★
+        const onError = (err) => {
+            const fallbackColors = { mars: 0xff3300, jupiter: 0xffaa88, saturn: 0xffdd88, venus: 0xffcc33, mercury: 0xaaaaaa, earth: 0x2233ff, moon: 0xcccccc, uranus: 0x4b70dd, neptune: 0x274687 };
+            if(fallbackColors[target]) currentMesh.material = new THREE.MeshStandardMaterial({ color: fallbackColors[target] });
+        };
+
+        if (isSun) {
+            material = new THREE.MeshBasicMaterial({ map: createSunTexture() });
+        } else {
+            material = new THREE.MeshStandardMaterial({ 
+                map: loader.load(textures[target], undefined, undefined, onError),
+                roughness: (target === 'earth' || target === 'neptune' || target === 'uranus') ? 0.5 : 0.8
+            });
+        }
+        
+        currentMesh = new THREE.Mesh(geometry, material);
+        scene.add(currentMesh);
+
+        if (target === 'saturn') {
+            const ringGeom = new THREE.RingGeometry(2.1, 4.0, 128);
+            const ringMat = new THREE.MeshStandardMaterial({ 
+                map: loader.load(textures.saturn_ring, undefined, undefined, (err) => {
+                    saturnRingMesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+                }), 
+                side: THREE.DoubleSide, transparent: true, opacity: 0.8 
+            });
+            saturnRingMesh = new THREE.Mesh(ringGeom, ringMat);
+            saturnRingMesh.rotation.x = Math.PI / 2.5; 
+            currentMesh.add(saturnRingMesh);
+        }
+
+        if (isSun) {
+            createProminences(document.getElementById('prominence-count').value);
+            createFlare();
+            updateSunFeatures(); 
+        }
+
+        const select = document.getElementById('planet-select');
+        document.getElementById('view-title').innerText = select.options[select.selectedIndex].text;
+        
+        document.getElementById('moon-phase-control').style.display = isMoon ? 'block' : 'none';
+        document.getElementById('sun-warning').style.display = isSun ? 'block' : 'none';
+        document.getElementById('sun-controls').style.display = isSun ? 'block' : 'none'; 
+        
+        if (isSun) {
+            document.getElementById('view-meta').innerHTML = "NASA SDO 데이터 기반 시뮬레이션";
+        } else {
+            document.getElementById('view-meta').innerHTML = "NASA 고해상도 텍스처 연결됨";
+        }
+        
+        directionalLight.position.set(5, 3, 5);
+        if(isMoon) document.getElementById('moon-slider').value = 0;
+    }
+
+    function updateSunFeatures() {
+        if (!isSun || !currentMesh) return;
+        const count = document.getElementById('prominence-count').value;
+        if(prominenceSprites.length != count) createProminences(count); 
+        
+        const size = document.getElementById('prominence-size').value;
+        prominenceSprites.forEach(s => s.scale.set(size, size, 1)); 
+
+        const flareIntensity = document.getElementById('flare-intensity').value;
+        if(flareSprite) flareSprite.material.opacity = flareIntensity; 
+    }
+
+    // 초기 화면은 지구로 유지 (관측 대상 순서는 태양계 순서로 드롭다운에 배치)
+    loadPlanet('earth'); 
+    camera.position.z = 6;
+
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    container.addEventListener('mousedown', (e) => { isDragging = true; });
+    container.addEventListener('mouseup', () => { isDragging = false; });
+    container.addEventListener('touchstart', (e) => { 
+        isDragging = true; 
+        previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, {passive: false});
+    container.addEventListener('touchend', () => { isDragging = false; });
+
+    container.addEventListener('mousemove', (e) => {
+        if (isDragging && currentMesh) {
+            const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
+            currentMesh.rotation.y += deltaMove.x * 0.01;
+            currentMesh.rotation.x += deltaMove.y * 0.01;
+        }
+        previousMousePosition = { x: e.offsetX, y: e.offsetY };
+    });
+
+    container.addEventListener('touchmove', (e) => {
+        if (isDragging && currentMesh) {
+            e.preventDefault(); 
+            const deltaMove = { x: e.touches[0].clientX - previousMousePosition.x, y: e.touches[0].clientY - previousMousePosition.y };
+            currentMesh.rotation.y += deltaMove.x * 0.01;
+            currentMesh.rotation.x += deltaMove.y * 0.01;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+    }, {passive: false});
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (currentMesh && !isDragging) {
+            currentMesh.rotation.y += isSun ? 0.001 : 0.002; 
+        }
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    function changeTarget(target) {
+        loadPlanet(target);
+    }
+
+    function updateMoonPhase(val) {
+        directionalLight.position.set(Math.cos(val)*5, 0, Math.sin(val)*5);
+        const phases = ["신월", "초승달", "상현달", "보름달", "하현달", "그믐달"];
+        document.getElementById('phase-name').innerText = phases[Math.floor((val / 6.28) * 6) % 6];
+    }
+
+    async function submitLog() {
+        const logText = document.getElementById('student-log').value;
+        const targetName = document.getElementById('view-title').innerText;
+        const respDiv = document.getElementById('ai-response');
+        if(!logText) return alert("관찰 내용을 먼저 기록해 주세요!");
+        
+        respDiv.style.display = 'block';
+        respDiv.innerHTML = "📡 제미나이 2.5 플래시 엔진이 기록을 분석 중입니다...";
+
+        const prompt = `당신은 에임 천문대의 과학 교사입니다. 학생이 '${targetName}'을 관측하고 다음 일지를 썼습니다: "${logText}"
+        학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징을 1~2문장으로 보완 설명해주세요.`;
+
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await res.json();
+            respDiv.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+            saveToStorage(targetName, logText);
+        } catch(e) {
+            respDiv.innerHTML = "❌ 분석 엔진과 연결할 수 없습니다. API 키를 확인하세요.";
+        }
+    }
+
+    function saveToStorage(target, logText) {
+        const date = document.getElementById('obs-date').value;
+        const loc = document.getElementById('obs-location').value;
+        const log = { target, logText, date, loc };
+        let logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+        logs.unshift(log);
+        localStorage.setItem('eaim_observatory_logs', JSON.stringify(logs));
+        renderLogs();
+    }
+
+    function renderLogs() {
+        const logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+        const listDiv = document.getElementById('log-list');
+        listDiv.innerHTML = logs.map(l => `
+            <div class="log-item">
+                <div class="log-date">${l.date} | ${l.loc}</div>
+                <strong>${l.target}</strong>: ${l.logText.substring(0, 40)}...
+            </div>
+        `).join('');
+    }
+    renderLogs();
+
+    // --- 2. 실제 크기 비교 모달 로직 (천왕성/해왕성 추가) ---
+    // 크기가 작은 순서대로 배열하여 스크롤할수록 압도감을 주도록 설계
+    const scaleData = {
+        moon: { name: "달", scale: 0.27, img: textures.moon },
+        mercury: { name: "수성", scale: 0.38, img: textures.mercury },
+        mars: { name: "화성", scale: 0.53, img: textures.mars },
+        venus: { name: "금성", scale: 0.95, img: textures.venus },
+        earth: { name: "지구", scale: 1, img: textures.earth }, 
+        neptune: { name: "해왕성", scale: 3.88, img: textures.neptune }, // 지구의 약 3.88배
+        uranus: { name: "천왕성", scale: 4.0, img: textures.uranus },  // 지구의 약 4배
+        saturn: { name: "토성", scale: 9.4, img: textures.saturn },
+        jupiter: { name: "목성", scale: 11.2, img: textures.jupiter },
+        sun: { name: "태양", scale: 109, img: "" } 
+    };
+
+    function openSizeModal() {
+        document.getElementById('size-modal').style.display = 'flex';
+        const container = document.getElementById('size-container');
+        container.innerHTML = ''; 
+
+        const baseEarthSize = 30; 
+
+        Object.keys(scaleData).forEach(key => {
+            const p = scaleData[key];
+            const realSize = p.scale * baseEarthSize;
+            
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.gap = '20px';
+
+            const planetDiv = document.createElement('div');
+            planetDiv.style.width = realSize + 'px';
+            planetDiv.style.height = realSize + 'px';
+            planetDiv.style.borderRadius = '50%';
+            planetDiv.style.flexShrink = '0';
+            
+            if(key === 'sun') {
+                planetDiv.style.background = 'radial-gradient(circle, #ffaa00, #ff4400)';
+                planetDiv.style.boxShadow = '0 0 80px #ffaa00, inset -50px -50px 100px rgba(0,0,0,0.6)';
+            } else {
+                planetDiv.style.backgroundImage = `url(${p.img})`;
+                planetDiv.style.backgroundSize = 'cover';
+                planetDiv.style.backgroundPosition = 'center';
+                planetDiv.style.boxShadow = 'inset -10px -10px 20px rgba(0,0,0,0.8)'; 
+            }
+
+            const label = document.createElement('div');
+            label.style.color = 'white';
+            label.style.textAlign = 'center';
+            label.style.fontWeight = 'bold';
+            label.style.fontSize = '1.1em';
+            label.innerHTML = `${p.name}<br><span style="color:var(--accent); font-size:0.8em;">지구의 ${p.scale}배</span>`;
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(planetDiv);
+            container.appendChild(wrapper);
+        });
+    }
+
+    function closeSizeModal() {
+        document.getElementById('size-modal').style.display = 'none';
+    }
+</script>
+</body>
+</html>

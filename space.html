@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EAIM 태양계 오디세이 - 공전/자전 시뮬레이터</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
@@ -11,17 +12,34 @@
         #canvas-container { width: 100vw; height: 100vh; display: block; cursor: grab; }
         #canvas-container:active { cursor: grabbing; }
         
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 40px; box-sizing: border-box; }
+        /* UI 오버레이 전체 영역 (플렉스 해제 후 절대 위치로 변경) */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         
-        .header { text-align: center; }
+        /* 상단 헤더 (제목) */
+        .header { position: absolute; top: 40px; left: 0; width: 100%; text-align: center; }
         .header h1 { color: var(--main-color); margin: 0; font-size: 3em; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); letter-spacing: 2px; }
         .header p { color: #aaa; font-size: 1.2em; margin-top: 10px; font-weight: 300; }
         
-        .control-panel { background: rgba(10, 10, 20, 0.85); border: 1px solid #333; padding: 25px 35px; border-radius: 15px; pointer-events: auto; width: 420px; margin: 0 auto; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        .slider-group { margin-bottom: 25px; }
+        /* ★ 하단 제어 패널 (우측 하단으로 이동) ★ */
+        .control-panel { 
+            position: absolute; 
+            bottom: 40px; 
+            right: 40px; 
+            background: rgba(10, 10, 20, 0.85); 
+            border: 1px solid #333; 
+            padding: 25px; 
+            border-radius: 15px; 
+            pointer-events: auto; 
+            width: 320px; 
+            backdrop-filter: blur(10px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
+        }
+        
+        .slider-group { margin-bottom: 20px; }
         .slider-group:last-child { margin-bottom: 0; }
         
-        .control-panel label { display: block; margin-bottom: 12px; font-weight: bold; font-size: 1.1em; text-align: center; }
+        /* 라벨 좌측 정렬로 깔끔하게 */
+        .control-panel label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 1em; text-align: left; }
         .label-speed { color: var(--main-color); }
         .label-size { color: var(--accent); }
         
@@ -29,7 +47,27 @@
         .slider-speed { accent-color: var(--main-color); }
         .slider-size { accent-color: var(--accent); }
         
-        .speed-labels { display: flex; justify-content: space-between; color: #888; font-size: 0.85em; margin-top: 8px; font-weight: bold; }
+        .speed-labels { display: flex; justify-content: space-between; color: #888; font-size: 0.8em; margin-top: 5px; font-weight: bold; }
+
+        /* ★ 모바일 반응형 UI 세팅 ★ */
+        @media (max-width: 768px) {
+            .header { top: 20px; }
+            .header h1 { font-size: 2em; }
+            .header p { font-size: 0.9em; }
+            
+            /* 모바일에서는 패널을 화면 하단 중앙에 납작하게 배치 */
+            .control-panel {
+                bottom: 20px;
+                right: auto;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 400px;
+                padding: 15px 20px;
+            }
+            .control-panel label { text-align: center; font-size: 0.9em; }
+            .slider-group { margin-bottom: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -68,7 +106,6 @@
     const loader = new THREE.TextureLoader();
     loader.crossOrigin = "Anonymous";
 
-    // ★ 천왕성, 해왕성 텍스처 추가 ★
     const textures = {
         mercury: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/mercurymap.jpg",
         venus: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/venusmap.jpg",
@@ -81,8 +118,6 @@
         neptune: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/neptunemap.jpg"
     };
 
-    // ★ 천왕성, 해왕성 궤도 데이터 추가 ★
-    // 우주 스케일에 맞춰 거리를 넉넉하게 잡았습니다.
     const planetsData = {
         mercury: { name: "수성", dist: 120, size: 4, speed: 0.04, color: 0xaaaaaa, texture: textures.mercury },
         venus: { name: "금성", dist: 180, size: 7, speed: 0.015, color: 0xffcc33, texture: textures.venus },
@@ -104,13 +139,13 @@
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
     let cameraAngle = 0; 
-    let cameraHeight = 1200; // 카메라를 조금 더 높게 시작 (천왕성, 해왕성이 잘 보이도록)
-    const cameraRadius = 1500; // 카메라도 조금 더 멀리서 시작
+    let cameraHeight = 1200; 
+    const cameraRadius = 1500; 
 
     const starsGeometry = new THREE.BufferGeometry();
     const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0.8 });
     const starsVertices = [];
-    for(let i=0; i<4000; i++) { // 별 개수 3000 -> 4000으로 늘려 더 광활하게 표현
+    for(let i=0; i<4000; i++) { 
         const x = (Math.random() - 0.5) * 5000;
         const y = (Math.random() - 0.5) * 5000;
         const z = (Math.random() - 0.5) * 5000;
@@ -170,13 +205,12 @@
             const deltaY = e.offsetY - previousMousePosition.y;
             cameraAngle -= deltaX * 0.005;
             cameraHeight += deltaY * 2;
-            if(cameraHeight > 2000) cameraHeight = 2000; // 카메라 높이 제한 완화
+            if(cameraHeight > 2000) cameraHeight = 2000; 
             if(cameraHeight < 100) cameraHeight = 100;
         }
         previousMousePosition = { x: e.offsetX, y: e.offsetY };
     });
 
-    // 모바일 터치 지원
     container.addEventListener('touchstart', (e) => { 
         isDragging = true; 
         previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };

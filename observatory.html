@@ -1,562 +1,1129 @@
 <!DOCTYPE html>
+
 <html lang="ko">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>EAIM 천문대 관측소 - NASA 정밀 관측</title>
+
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
+
     <style>
+
         :root { --main-color: #2ecc71; --bg-dark: #050508; --accent: #00d4ff; }
+
         body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
+
         
+
         #viewer-section { flex: 6; position: relative; background: radial-gradient(circle, #0a1020 0%, #000 100%); min-height: 300px; }
+
         #canvas-container { width: 100%; height: 100%; cursor: grab; }
+
         #canvas-container:active { cursor: grabbing; }
 
+
+
         #log-section { flex: 4; min-width: 400px; max-width: 500px; background: rgba(15, 15, 20, 0.95); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 200; overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
+
         
+
+        /* 헤더 영역을 가로로 정렬하여 설정 버튼 배치 */
+
         .header-container { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+
         h1 { color: var(--main-color); margin: 0; font-size: 2em; }
+
         .btn-settings { background: transparent; border: 1px solid #555; color: #aaa; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8em; transition: 0.2s; }
+
         .btn-settings:hover { background: #333; color: white; }
+
+
 
         p.sub-text { color: #888; font-size: 0.9em; margin-bottom: 20px; }
 
+
+
         .control-group { background: #111; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #222; }
+
         label { display: block; color: var(--accent); font-weight: bold; margin-bottom: 8px; font-size: 0.9em; }
+
         select, input[type="date"], input[type="range"] { width: 100%; padding: 10px; background: #222; color: white; border: 1px solid #444; border-radius: 5px; font-family: inherit; box-sizing: border-box; }
+
         
+
         #moon-phase-control { display: none; margin-top: 10px; }
+
         #phase-name { text-align: center; color: #fff; font-weight: bold; margin-top: 5px; }
+
+
 
         #sun-warning { display: none; margin-top: 10px; color: #ffcc00; font-size: 0.85em; font-weight: bold; background: rgba(255,204,0,0.1); padding: 10px; border-radius: 5px; border: 1px solid #ffcc00; text-align: center; }
 
+
+
         #sun-controls { display: none; margin-top: 10px; padding: 10px; border-radius: 5px; border: 1px solid var(--accent); }
+
         .sun-slider-group { margin-bottom: 10px; }
+
         .sun-slider-group label { color: white; font-weight: normal; font-size: 0.8em; margin-bottom: 5px; }
 
+
+
         textarea { width: 100%; height: 100px; background: #1a1a24; color: white; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 0.95em; box-sizing: border-box; resize: none; }
+
         .btn-submit { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--main-color); color: #000; font-size: 1.05em; transition: 0.2s; }
+
         .btn-submit:hover { background: #27ae60; }
+
         
+
         #ai-response { margin-top: 15px; background: rgba(46, 204, 113, 0.1); padding: 15px; border-radius: 8px; font-size: 0.9em; line-height: 1.6; border: 1px solid rgba(46, 204, 113, 0.3); display: none; }
+
         
+
         #saved-logs { margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; }
+
         .log-item { background: #111; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--accent); font-size: 0.85em; }
 
+
+
         .btn-compare { width: 100%; padding: 15px; border-radius: 8px; border: 1px solid var(--accent); font-weight: bold; cursor: pointer; background: rgba(0, 212, 255, 0.05); color: var(--accent); font-size: 1.05em; transition: 0.2s; margin-top: 20px; }
+
         .btn-compare:hover { background: rgba(0, 212, 255, 0.2); }
 
+
+
         @media (max-width: 850px) {
+
             body { flex-direction: column; height: auto; overflow-y: auto; }
+
             #viewer-section { width: 100%; height: 50vh; flex: none; border-bottom: 2px solid var(--accent); }
+
             #log-section { width: 100%; max-width: 100%; min-width: 100%; height: auto; flex: none; border-left: none; padding: 15px; }
+
             h1 { font-size: 1.5em; }
+
         }
+
+
+
+        /* ★ 모달 공통 스타일 ★ */
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 99999; flex-direction: column; }
+
         .modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; background: #0a0a0a; }
+
         .btn-close { padding: 10px 25px; background: #e74c3c; border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer; }
+
     </style>
+
 </head>
+
 <body>
 
+
+
 <div id="settings-modal" class="modal-overlay" style="background: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
+
     <div style="background: #161625; border: 1px solid var(--accent); border-radius: 15px; padding: 30px; width: 90%; max-width: 400px;">
+
         <h2 style="margin: 0 0 15px 0; color: var(--main-color);">⚙️ AI 엔진 설정</h2>
+
         <p style="font-size: 0.9em; color: #aaa; margin-bottom: 20px;">
+
             Google AI Studio에서 발급받은 Gemini API 키를 입력하세요. 키는 이 기기에만 안전하게 저장됩니다.
+
         </p>
+
         <input type="password" id="api-key-input" placeholder="AIzaSy..." style="width: 100%; padding: 12px; background: #000; color: white; border: 1px solid #444; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box;">
+
         <div style="display: flex; gap: 10px;">
+
             <button onclick="saveApiKey()" style="flex: 1; padding: 12px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 8px; cursor: pointer;">저장하기</button>
+
             <button onclick="closeSettings()" style="flex: 1; padding: 12px; background: #333; border: none; color: white; border-radius: 8px; cursor: pointer;">취소</button>
+
         </div>
+
     </div>
+
 </div>
+
+
 
 <div id="size-modal" class="modal-overlay">
+
     <div class="modal-header">
+
         <h2 style="margin:0; color:var(--accent); font-size:1.5em;">🪐 태양계 실제 크기 비교 <span style="font-size:0.6em; color:#888;">(우측으로 스크롤하세요)</span></h2>
+
         <button class="btn-close" onclick="closeSizeModal()">닫기 ✖</button>
+
     </div>
+
     <div id="size-container" style="flex:1; display:flex; align-items:center; overflow-x:auto; overflow-y:hidden; padding:50px; gap:80px;">
+
     </div>
+
 </div>
+
+
 
 <div id="viewer-section">
+
     <div style="position: absolute; top: 15px; left: 15px; z-index: 100; pointer-events: none;">
+
         <h2 id="view-title" style="color: white; text-shadow: 0 0 10px #000; margin:0; font-size: 1.5em;">지구 (Earth)</h2>
+
         <p id="view-meta" style="color: var(--accent); font-size: 0.8em; margin: 5px 0;">NASA 고해상도 텍스처 연결됨</p>
+
     </div>
+
     <div id="canvas-container"></div>
+
 </div>
+
+
 
 <div id="log-section">
+
     <div class="header-container">
+
         <h1>에임 천문대</h1>
+
         <button class="btn-settings" onclick="openSettings()">⚙️ AI 설정</button>
+
     </div>
+
     <p class="sub-text">NASA 데이터 기반 3D 정밀 관측 및 일지 작성</p>
 
+
+
     <div class="control-group">
+
         <label>🔭 관측 대상 선택</label>
+
         <select id="planet-select" onchange="changeTarget(this.value)">
+
             <option value="sun">태양 (Sun) - 흑점·홍염·플레어 관측</option>
+
             <option value="mercury">수성 (Mercury)</option>
+
             <option value="venus">금성 (Venus)</option>
+
             <option value="earth" selected>지구 (Earth)</option>
+
             <option value="moon">달 (Moon) - 위상 변화 관측</option>
+
             <option value="mars">화성 (Mars)</option>
+
             <option value="jupiter">목성 (Jupiter)</option>
+
             <option value="saturn">토성 (Saturn)</option>
+
             <option value="uranus">천왕성 (Uranus)</option>
+
             <option value="neptune">해왕성 (Neptune)</option>
+
         </select>
+
+
 
         <label style="margin-top: 15px;">📅 관측 날짜</label>
+
         <input type="date" id="obs-date" value="2026-04-15">
 
+
+
         <label style="margin-top: 15px;">📍 관측소 위치</label>
+
         <select id="obs-location">
+
             <option>보현산 천문대 (대한민국)</option>
+
             <option>마우나케아 천문대 (하와이)</option>
+
             <option>라 실라 천문대 (칠레)</option>
+
             <option>그리니치 천문대 (영국)</option>
+
         </select>
+
         
+
         <div id="moon-phase-control">
+
             <label style="margin-top: 15px;">🌗 달 위상 시뮬레이션</label>
+
             <input type="range" id="moon-slider" min="0" max="6.28" step="0.05" value="0" oninput="updateMoonPhase(this.value)">
+
             <div id="phase-name">신월 (New Moon)</div>
+
         </div>
+
+
 
         <div id="sun-warning">⚠️ 망원경 태양 특수 필터 장착 완료<br><small>(H-alpha 필터 사용)</small></div>
+
         
+
         <div id="sun-controls">
+
             <div class="sun-slider-group">
+
                 <label for="prominence-count">홍염(Prominence) 개수 조절</label>
+
                 <input type="range" id="prominence-count" min="0" max="10" step="1" value="5" oninput="updateSunFeatures()">
+
             </div>
+
             <div class="sun-slider-group">
+
                 <label for="prominence-size">홍염 크기 조절</label>
+
                 <input type="range" id="prominence-size" min="0.5" max="3" step="0.1" value="1.5" oninput="updateSunFeatures()">
+
             </div>
+
             <div class="sun-slider-group">
+
                 <label for="flare-intensity">플레어(Flare) 강도 조절</label>
+
                 <input type="range" id="flare-intensity" min="0" max="1" step="0.05" value="0.5" oninput="updateSunFeatures()">
+
             </div>
+
         </div>
+
     </div>
+
+
 
     <div class="control-group" style="flex-grow: 1; display: flex; flex-direction: column;">
+
         <label>📝 관찰 일지 작성</label>
+
         <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면 특징을 상세히 기록하세요. 달은 위상 원리를, 태양은 흑점·홍염의 위치를 기록하세요."></textarea>
+
         <button class="btn-submit" onclick="submitLog()">AI 가이드 피드백 받기</button>
-        <p style="font-size: 0.7em; color: #888; margin-top: 5px; text-align: center;">※ 우측 상단의 [⚙️ AI 설정] 버튼을 눌러 API 키를 등록하세요.</p>
+
         <div id="ai-response"></div>
+
     </div>
+
+
 
     <div id="saved-logs">
+
         <h3 style="color: #aaa; margin: 0 0 10px 0; font-size: 1em;">보관된 관측 일지</h3>
+
         <div id="log-list"></div>
+
     </div>
 
+
+
     <button class="btn-compare" onclick="openSizeModal()">🪐 태양계 10개 천체 실제 크기 비교하기</button>
+
 </div>
 
+
+
 <script>
+
+    // ★ 브라우저에서 저장된 키를 불러옵니다. 코드를 직접 수정할 필요 없습니다! ★
+
     let API_KEY = localStorage.getItem('eaim_api_key') || "";
 
+
+
     function openSettings() {
+
         document.getElementById('api-key-input').value = API_KEY;
+
         document.getElementById('settings-modal').style.display = 'flex';
+
     }
+
+
 
     function closeSettings() {
+
         document.getElementById('settings-modal').style.display = 'none';
+
     }
+
+
 
     function saveApiKey() {
+
         const inputVal = document.getElementById('api-key-input').value.trim();
+
         if(!inputVal) return alert("API 키를 입력해주세요.");
+
         API_KEY = inputVal;
+
         localStorage.setItem('eaim_api_key', API_KEY);
+
         closeSettings();
+
         alert("✅ API 키가 안전하게 저장되었습니다!");
+
     }
+
+
+
+    // --- 3D 관측소 시스템 로직 ---
 
     const container = document.getElementById('canvas-container');
+
     const scene = new THREE.Scene();
+
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
     renderer.setSize(container.clientWidth, container.clientHeight);
+
     container.appendChild(renderer.domElement);
 
+
+
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+
     directionalLight.position.set(5, 3, 5);
+
     scene.add(directionalLight);
 
+
+
     THREE.ImageUtils.crossOrigin = '';
+
     const loader = new THREE.TextureLoader();
+
     loader.crossOrigin = "Anonymous"; 
 
+
+
     let currentMesh = null;
+
     let saturnRingMesh = null; 
+
     let isMoon = false;
+
     let isSun = false;
+
     let prominenceSprites = []; 
+
     let flareSprite = null; 
 
-    // ★ 여기서부터 핵심입니다! 대표님이 주신 "완벽하게 나오던" 위키미디어 고화질 링크로 100% 롤백 완료! ★
+
+
     const textures = {
+
         earth: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Solarsystemscope_texture_8k_earth_daymap.jpg/1024px-Solarsystemscope_texture_8k_earth_daymap.jpg",
+
         moon: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Moonmap_from_clementine_data.png/1024px-Moonmap_from_clementine_data.png",
+
         mars: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Mars_equirectangular_projection.jpg/1024px-Mars_equirectangular_projection.jpg",
+
         jupiter: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1024px-Jupiter.jpg",
+
         saturn: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Saturn_%28planet%29_large.jpg/1024px-Saturn_%28planet%29_large.jpg",
+
         venus: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Venus_map_NASA_JPL_Magellan_Magellan_colorized.jpg/1024px-Venus_map_NASA_JPL_Magellan_Magellan_colorized.jpg",
+
         mercury: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Mercury_in_color_-_Prockter07_centered.jpg/1024px-Mercury_in_color_-_Prockter07_centered.jpg",
+
         uranus: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Solarsystemscope_texture_2k_uranus.jpg/1024px-Solarsystemscope_texture_2k_uranus.jpg",
+
         neptune: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Solarsystemscope_texture_2k_neptune.jpg/1024px-Solarsystemscope_texture_2k_neptune.jpg",
+
         saturn_ring: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Solarsystemscope_texture_8k_saturn_ring_alpha.png/1024px-Solarsystemscope_texture_8k_saturn_ring_alpha.png"
+
     };
 
+
+
     function createSunTexture() {
+
         const canvas = document.createElement('canvas');
+
         canvas.width = 1024; canvas.height = 512;
+
         const ctx = canvas.getContext('2d');
+
         ctx.fillStyle = '#ff9900';
+
         ctx.fillRect(0, 0, 1024, 512);
+
         for(let i=0; i<3000; i++) {
+
             ctx.fillStyle = `rgba(255, 220, 0, ${Math.random()*0.4})`;
+
             ctx.fillRect(Math.random()*1024, Math.random()*512, Math.random()*20, Math.random()*20);
+
         }
+
         ctx.shadowBlur = 10;
+
         ctx.shadowColor = '#551100'; 
+
         for(let i=0; i<20; i++) {
+
             const cx = Math.random() * 1024;
+
             const cy = 100 + Math.random() * 312; 
+
             const baseRadius = Math.random() * 6 + 4;
+
             const clusterSize = Math.floor(Math.random() * 4) + 2;
+
             for(let j=0; j<clusterSize; j++) {
+
                 const offsetX = (Math.random() - 0.5) * baseRadius * 2;
+
                 const offsetY = (Math.random() - 0.5) * baseRadius * 2;
+
                 const r = baseRadius * (Math.random() * 0.5 + 0.5);
+
                 ctx.beginPath();
+
                 ctx.ellipse(cx + offsetX, cy + offsetY, r * 2.5, r * 1.8, Math.random() * Math.PI, 0, Math.PI * 2);
+
                 ctx.fillStyle = 'rgba(150, 40, 0, 0.5)';
+
                 ctx.fill();
+
                 ctx.beginPath();
+
                 ctx.ellipse(cx + offsetX, cy + offsetY, r * 1.2, r * 0.9, Math.random() * Math.PI, 0, Math.PI * 2);
+
                 ctx.fillStyle = '#1a0300';
+
                 ctx.fill();
+
             }
+
         }
+
         ctx.shadowBlur = 0; 
+
         return new THREE.CanvasTexture(canvas);
+
     }
+
+
 
     function createGasTexture() {
+
         const canvas = document.createElement('canvas');
+
         canvas.width = 64; canvas.height = 64;
+
         const ctx = canvas.getContext('2d');
+
         const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+
         gradient.addColorStop(0.5, 'rgba(255, 150, 0, 0.5)');
+
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
         ctx.fillStyle = gradient;
+
         ctx.fillRect(0, 0, 64, 64);
+
         return new THREE.CanvasTexture(canvas);
+
     }
+
     const gasTexture = createGasTexture();
 
+
+
     function createProminences(count) {
+
         prominenceSprites.forEach(s => currentMesh.remove(s));
+
         prominenceSprites = [];
+
         for(let i=0; i<count; i++) {
+
             const spriteMaterial = new THREE.SpriteMaterial({ map: gasTexture, color: 0xff4400, transparent: true, blending: THREE.AdditiveBlending });
+
             const sprite = new THREE.Sprite(spriteMaterial);
+
             const size = document.getElementById('prominence-size').value;
+
             sprite.scale.set(size, size, 1);
+
             const angle = Math.random() * Math.PI * 2;
+
             const y = (Math.random() - 0.5) * 4; 
+
             const dist = 2.01; 
+
             sprite.position.set(Math.cos(angle) * dist, y, Math.sin(angle) * dist);
+
             currentMesh.add(sprite); 
+
             prominenceSprites.push(sprite);
+
         }
+
     }
+
+
 
     function createFlare() {
+
         if(flareSprite) currentMesh.remove(flareSprite);
+
         const spriteMaterial = new THREE.SpriteMaterial({ map: gasTexture, color: 0xffffaa, transparent: true, blending: THREE.AdditiveBlending, opacity: 0 });
+
         flareSprite = new THREE.Sprite(spriteMaterial);
+
         flareSprite.scale.set(1.5, 1.5, 1);
+
         const angle = Math.random() * Math.PI * 2;
+
         const y = (Math.random() - 0.5) * 2; 
+
         const dist = 2.05; 
+
         flareSprite.position.set(Math.cos(angle) * dist, y, Math.sin(angle) * dist);
+
         currentMesh.add(flareSprite);
+
     }
+
+
 
     function loadPlanet(target) {
+
         if (currentMesh) scene.remove(currentMesh);
+
         if (saturnRingMesh) currentMesh.remove(saturnRingMesh); 
+
         prominenceSprites.forEach(s => currentMesh.remove(s)); 
+
         if(flareSprite) currentMesh.remove(flareSprite); 
+
         prominenceSprites = []; flareSprite = null;
 
+
+
         isMoon = (target === 'moon');
+
         isSun = (target === 'sun');
 
+
+
         const geometry = new THREE.SphereGeometry(2, 64, 64);
+
         let material;
 
+
+
         const onError = (err) => {
+
             const fallbackColors = { mars: 0xff3300, jupiter: 0xffaa88, saturn: 0xffdd88, venus: 0xffcc33, mercury: 0xaaaaaa, earth: 0x2233ff, moon: 0xcccccc, uranus: 0x4b70dd, neptune: 0x274687 };
+
             if(fallbackColors[target]) currentMesh.material = new THREE.MeshStandardMaterial({ color: fallbackColors[target] });
+
         };
 
+
+
         if (isSun) {
+
             material = new THREE.MeshBasicMaterial({ map: createSunTexture() });
+
         } else {
+
             material = new THREE.MeshStandardMaterial({ 
+
                 map: loader.load(textures[target], undefined, undefined, onError),
+
                 roughness: (target === 'earth' || target === 'neptune' || target === 'uranus') ? 0.5 : 0.8
+
             });
+
         }
+
         
+
         currentMesh = new THREE.Mesh(geometry, material);
+
         scene.add(currentMesh);
 
+
+
         if (target === 'saturn') {
+
             const ringGeom = new THREE.RingGeometry(2.1, 4.0, 128);
+
             const ringMat = new THREE.MeshStandardMaterial({ 
+
                 map: loader.load(textures.saturn_ring, undefined, undefined, (err) => {
+
                     saturnRingMesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+
                 }), 
+
                 side: THREE.DoubleSide, transparent: true, opacity: 0.8 
+
             });
+
             saturnRingMesh = new THREE.Mesh(ringGeom, ringMat);
+
             saturnRingMesh.rotation.x = Math.PI / 2.5; 
+
             currentMesh.add(saturnRingMesh);
+
         }
 
+
+
         if (isSun) {
+
             createProminences(document.getElementById('prominence-count').value);
+
             createFlare();
+
             updateSunFeatures(); 
+
         }
+
+
 
         const select = document.getElementById('planet-select');
+
         document.getElementById('view-title').innerText = select.options[select.selectedIndex].text;
+
         
+
         document.getElementById('moon-phase-control').style.display = isMoon ? 'block' : 'none';
+
         document.getElementById('sun-warning').style.display = isSun ? 'block' : 'none';
+
         document.getElementById('sun-controls').style.display = isSun ? 'block' : 'none'; 
+
         
+
         if (isSun) {
+
             document.getElementById('view-meta').innerHTML = "NASA SDO 데이터 기반 시뮬레이션";
+
         } else {
+
             document.getElementById('view-meta').innerHTML = "NASA 고해상도 텍스처 연결됨";
+
         }
+
         
+
         directionalLight.position.set(5, 3, 5);
+
         if(isMoon) document.getElementById('moon-slider').value = 0;
+
     }
+
+
 
     function updateSunFeatures() {
+
         if (!isSun || !currentMesh) return;
+
         const count = document.getElementById('prominence-count').value;
+
         if(prominenceSprites.length != count) createProminences(count); 
+
         
+
         const size = document.getElementById('prominence-size').value;
+
         prominenceSprites.forEach(s => s.scale.set(size, size, 1)); 
 
+
+
         const flareIntensity = document.getElementById('flare-intensity').value;
+
         if(flareSprite) flareSprite.material.opacity = flareIntensity; 
+
     }
+
+
 
     loadPlanet('earth'); 
+
     camera.position.z = 6;
 
+
+
     let isDragging = false;
+
     let previousMousePosition = { x: 0, y: 0 };
 
+
+
     container.addEventListener('mousedown', (e) => { isDragging = true; });
+
     container.addEventListener('mouseup', () => { isDragging = false; });
+
     container.addEventListener('touchstart', (e) => { 
+
         isDragging = true; 
+
         previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
     }, {passive: false});
+
     container.addEventListener('touchend', () => { isDragging = false; });
 
+
+
     container.addEventListener('mousemove', (e) => {
+
         if (isDragging && currentMesh) {
+
             const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
+
             currentMesh.rotation.y += deltaMove.x * 0.01;
+
             currentMesh.rotation.x += deltaMove.y * 0.01;
+
         }
+
         previousMousePosition = { x: e.offsetX, y: e.offsetY };
+
     });
+
+
 
     container.addEventListener('touchmove', (e) => {
+
         if (isDragging && currentMesh) {
+
             e.preventDefault(); 
+
             const deltaMove = { x: e.touches[0].clientX - previousMousePosition.x, y: e.touches[0].clientY - previousMousePosition.y };
+
             currentMesh.rotation.y += deltaMove.x * 0.01;
+
             currentMesh.rotation.x += deltaMove.y * 0.01;
+
             previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
         }
+
     }, {passive: false});
 
+
+
     function animate() {
+
         requestAnimationFrame(animate);
+
         if (currentMesh && !isDragging) {
+
             currentMesh.rotation.y += isSun ? 0.001 : 0.002; 
+
         }
+
         renderer.render(scene, camera);
+
     }
+
     animate();
 
+
+
     window.addEventListener('resize', () => {
+
         camera.aspect = container.clientWidth / container.clientHeight;
+
         camera.updateProjectionMatrix();
+
         renderer.setSize(container.clientWidth, container.clientHeight);
+
     });
 
+
+
     function changeTarget(target) {
+
         loadPlanet(target);
+
     }
+
+
 
     function updateMoonPhase(val) {
+
         directionalLight.position.set(Math.cos(val)*5, 0, Math.sin(val)*5);
+
         const phases = ["신월", "초승달", "상현달", "보름달", "하현달", "그믐달"];
+
         document.getElementById('phase-name').innerText = phases[Math.floor((val / 6.28) * 6) % 6];
+
     }
 
+
+
     async function submitLog() {
+
         const logText = document.getElementById('student-log').value;
+
         const targetName = document.getElementById('view-title').innerText;
+
         const respDiv = document.getElementById('ai-response');
+
         if(!logText) return alert("관찰 내용을 먼저 기록해 주세요!");
+
         
+
+        // ★ API 키 설정 유무 검사 ★
+
         if(!API_KEY || API_KEY.trim() === "") {
+
             alert("상단의 [⚙️ AI 설정] 버튼을 눌러 API 키를 먼저 입력해주세요.");
+
             openSettings();
+
             return;
+
         }
 
+
+
         respDiv.style.display = 'block';
+
         respDiv.innerHTML = "📡 제미나이 2.5 플래시 엔진이 기록을 분석 중입니다...";
+
+
 
         const prompt = `당신은 에임 천문대의 과학 교사입니다. 학생이 '${targetName}'을 관측하고 다음 일지를 썼습니다: "${logText}"\n학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징을 1~2문장으로 보완 설명해주세요.`;
 
+
+
         try {
+
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
+
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+
             });
+
             
+
             if(!res.ok) {
+
                 const errData = await res.json();
+
                 throw new Error(errData.error.message || "알 수 없는 API 에러 발생");
+
             }
+
             
+
             const data = await res.json();
+
             respDiv.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+
             saveToStorage(targetName, logText);
+
         } catch(e) {
+
             respDiv.innerHTML = `❌ 분석 엔진 연결 오류: ${e.message}`;
+
         }
+
     }
+
+
 
     function saveToStorage(target, logText) {
+
         const date = document.getElementById('obs-date').value;
+
         const loc = document.getElementById('obs-location').value;
+
         const log = { target, logText, date, loc };
+
         let logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+
         logs.unshift(log);
+
         localStorage.setItem('eaim_observatory_logs', JSON.stringify(logs));
+
         renderLogs();
+
     }
+
+
 
     function renderLogs() {
+
         const logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+
         const listDiv = document.getElementById('log-list');
+
         listDiv.innerHTML = logs.map(l => `
+
             <div class="log-item">
+
                 <div class="log-date">${l.date} | ${l.loc}</div>
+
                 <strong>${l.target}</strong>: ${l.logText.substring(0, 40)}...
+
             </div>
+
         `).join('');
+
     }
+
     renderLogs();
 
+
+
     const scaleData = {
+
         moon: { name: "달", scale: 0.27, img: textures.moon },
+
         mercury: { name: "수성", scale: 0.38, img: textures.mercury },
+
         mars: { name: "화성", scale: 0.53, img: textures.mars },
+
         venus: { name: "금성", scale: 0.95, img: textures.venus },
+
         earth: { name: "지구", scale: 1, img: textures.earth }, 
+
         neptune: { name: "해왕성", scale: 3.88, img: textures.neptune }, 
+
         uranus: { name: "천왕성", scale: 4.0, img: textures.uranus },  
+
         saturn: { name: "토성", scale: 9.4, img: textures.saturn },
+
         jupiter: { name: "목성", scale: 11.2, img: textures.jupiter },
+
         sun: { name: "태양", scale: 109, img: "" } 
+
     };
 
+
+
     function openSizeModal() {
+
         document.getElementById('size-modal').style.display = 'flex';
+
         const container = document.getElementById('size-container');
+
         container.innerHTML = ''; 
+
+
 
         const baseEarthSize = 30; 
 
+
+
         Object.keys(scaleData).forEach(key => {
+
             const p = scaleData[key];
+
             const realSize = p.scale * baseEarthSize;
+
             
+
             const wrapper = document.createElement('div');
+
             wrapper.style.display = 'flex';
+
             wrapper.style.flexDirection = 'column';
+
             wrapper.style.alignItems = 'center';
+
             wrapper.style.gap = '20px';
 
+
+
             const planetDiv = document.createElement('div');
+
             planetDiv.style.width = realSize + 'px';
+
             planetDiv.style.height = realSize + 'px';
+
             planetDiv.style.borderRadius = '50%';
+
             planetDiv.style.flexShrink = '0';
+
             
+
             if(key === 'sun') {
+
                 planetDiv.style.background = 'radial-gradient(circle, #ffaa00, #ff4400)';
+
                 planetDiv.style.boxShadow = '0 0 80px #ffaa00, inset -50px -50px 100px rgba(0,0,0,0.6)';
+
             } else {
+
                 planetDiv.style.backgroundImage = `url(${p.img})`;
+
                 planetDiv.style.backgroundSize = 'cover';
+
                 planetDiv.style.backgroundPosition = 'center';
+
                 planetDiv.style.boxShadow = 'inset -10px -10px 20px rgba(0,0,0,0.8)'; 
+
             }
 
+
+
             const label = document.createElement('div');
+
             label.style.color = 'white';
+
             label.style.textAlign = 'center';
+
             label.style.fontWeight = 'bold';
+
             label.style.fontSize = '1.1em';
+
             label.innerHTML = `${p.name}<br><span style="color:var(--accent); font-size:0.8em;">지구의 ${p.scale}배</span>`;
 
+
+
             wrapper.appendChild(label);
+
             wrapper.appendChild(planetDiv);
+
             container.appendChild(wrapper);
+
         });
+
     }
 
+
+
     function closeSizeModal() {
+
         document.getElementById('size-modal').style.display = 'none';
+
     }
+
 </script>
+
 </body>
+
 </html>

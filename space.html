@@ -5,6 +5,236 @@
     <title>EAIM 태양계 오디세이 - 공전/자전 시뮬레이터</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
+        :root { --main-color: #00d4ff; --bg-dark: #020205; --accent: #2ecc71; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; }
+        
+        #canvas-container { width: 100vw; height: 100vh; display: block; cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+        
+        /* 미니멀한 UI 오버레이 */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 40px; box-sizing: border-box; }
+        
+        .header { text-align: center; }
+        .header h1 { color: var(--main-color); margin: 0; font-size: 3em; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); letter-spacing: 2px; }
+        .header p { color: #aaa; font-size: 1.2em; margin-top: 10px; font-weight: 300; }
+        
+        /* 조절기 패널 */
+        .control-panel { background: rgba(10, 10, 20, 0.85); border: 1px solid #333; padding: 25px 35px; border-radius: 15px; pointer-events: auto; width: 420px; margin: 0 auto; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .slider-group { margin-bottom: 25px; }
+        .slider-group:last-child { margin-bottom: 0; }
+        
+        .control-panel label { display: block; margin-bottom: 12px; font-weight: bold; font-size: 1.1em; text-align: center; }
+        .label-speed { color: var(--main-color); }
+        .label-size { color: var(--accent); }
+        
+        input[type=range] { width: 100%; cursor: pointer; }
+        .slider-speed { accent-color: var(--main-color); }
+        .slider-size { accent-color: var(--accent); }
+        
+        .speed-labels { display: flex; justify-content: space-between; color: #888; font-size: 0.85em; margin-top: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div class="header">
+        <h1>에임 태양계 오디세이</h1>
+        <p>마우스로 화면을 돌려보며 거대한 태양계의 움직임을 관찰하세요</p>
+    </div>
+    
+    <div class="control-panel">
+        <div class="slider-group">
+            <label class="label-speed">⏱️ 시간 가속기 (공전/자전 속도)</label>
+            <input type="range" id="speed-slider" class="slider-speed" min="0" max="10" step="0.1" value="1">
+            <div class="speed-labels">
+                <span>정지(0x)</span>
+                <span>초고속(10x)</span>
+            </div>
+        </div>
+
+        <div class="slider-group">
+            <label class="label-size">🔍 행성 돋보기 (크기 확대)</label>
+            <input type="range" id="size-slider" class="slider-size" min="1" max="15" step="0.5" value="3">
+            <div class="speed-labels">
+                <span>실제 궤도 비율</span>
+                <span>최대 확대(15x)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="canvas-container"></div>
+
+<script>
+    // ★ CORS 에러 방지 (까만 공 현상 해결) ★
+    THREE.ImageUtils.crossOrigin = '';
+    const loader = new THREE.TextureLoader();
+    loader.crossOrigin = "Anonymous";
+
+    // ★ 안전한 글로벌 CDN 텍스처로 전면 교체 ★
+    const textures = {
+        mercury: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/mercurymap.jpg",
+        venus: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/venusmap.jpg",
+        earth: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/earthmap1k.jpg",
+        mars: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/marsmap1k.jpg",
+        jupiter: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/jupitermap.jpg",
+        saturn: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/saturnmap.jpg",
+        saturn_ring: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/saturnringcolor.jpg"
+    };
+
+    const planetsData = {
+        mercury: { name: "수성", dist: 120, size: 4, speed: 0.04, color: 0xaaaaaa, texture: textures.mercury },
+        venus: { name: "금성", dist: 180, size: 7, speed: 0.015, color: 0xffcc33, texture: textures.venus },
+        earth: { name: "지구", dist: 250, size: 8, speed: 0.01, color: 0x2233ff, texture: textures.earth },
+        mars: { name: "화성", dist: 320, size: 5, speed: 0.008, color: 0xff3300, texture: textures.mars },
+        jupiter: { name: "목성", dist: 480, size: 22, speed: 0.004, color: 0xffaa88, texture: textures.jupiter },
+        saturn: { name: "토성", dist: 650, size: 18, speed: 0.002, color: 0xffdd88, texture: textures.saturn }
+    };
+
+    const scene = new THREE.Scene();
+    const container = document.getElementById('canvas-container');
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 20000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    // 카메라 마우스 컨트롤용 변수
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let cameraAngle = 0; // 카메라 궤도 각도
+    let cameraHeight = 800; // 카메라 높이
+    const cameraRadius = 1200; // 중심으로부터의 거리
+
+    // 우주 배경 별빛 추가
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0.8 });
+    const starsVertices = [];
+    for(let i=0; i<3000; i++) {
+        const x = (Math.random() - 0.5) * 4000;
+        const y = (Math.random() - 0.5) * 4000;
+        const z = (Math.random() - 0.5) * 4000;
+        starsVertices.push(x, y, z);
+    }
+    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+    const starField = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(starField);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5)); 
+    
+    // 태양 생성 (빛의 영향을 받지 않도록 MeshBasicMaterial 사용)
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(50, 64, 64), new THREE.MeshBasicMaterial({ color: 0xffdd00 }));
+    scene.add(sun);
+    
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending });
+    const sunGlow = new THREE.Mesh(new THREE.SphereGeometry(65, 32, 32), glowMat);
+    scene.add(sunGlow);
+
+    const meshes = {};
+    Object.keys(planetsData).forEach(key => {
+        const p = planetsData[key];
+        const mat = new THREE.MeshStandardMaterial({ 
+            map: loader.load(p.texture), 
+            emissive: new THREE.Color(p.color), 
+            emissiveIntensity: 0.3 
+        });
+        const m = new THREE.Mesh(new THREE.SphereGeometry(p.size, 64, 64), mat);
+        meshes[key] = m;
+        scene.add(m);
+
+        // ★ 보너스: 토성 고리 추가 ★
+        if(key === 'saturn') {
+            const ringGeom = new THREE.RingGeometry(p.size * 1.2, p.size * 2.2, 64);
+            const ringMat = new THREE.MeshBasicMaterial({ 
+                map: loader.load(textures.saturn_ring), 
+                side: THREE.DoubleSide, transparent: true, opacity: 0.8 
+            });
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            ring.rotation.x = Math.PI / 2.5;
+            m.add(ring); // 토성 메쉬에 자식으로 추가 (크기 조절 시 같이 커짐)
+        }
+
+        const orbitGeom = new THREE.RingGeometry(p.dist - 0.5, p.dist + 0.5, 256);
+        const orbitMat = new THREE.MeshBasicMaterial({ color: 0x555555, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+        const orbit = new THREE.Mesh(orbitGeom, orbitMat);
+        orbit.rotation.x = Math.PI/2;
+        scene.add(orbit);
+    });
+
+    camera.position.set(0, cameraHeight, cameraRadius);
+    camera.lookAt(0, 0, 0);
+
+    // 마우스 드래그로 화면 회전
+    container.addEventListener('mousedown', (e) => { isDragging = true; });
+    container.addEventListener('mouseup', () => { isDragging = false; });
+    container.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const deltaX = e.offsetX - previousMousePosition.x;
+            const deltaY = e.offsetY - previousMousePosition.y;
+            cameraAngle -= deltaX * 0.005;
+            cameraHeight += deltaY * 2;
+            // 카메라 높이 제한 (너무 위나 아래로 가지 않도록)
+            if(cameraHeight > 1500) cameraHeight = 1500;
+            if(cameraHeight < 100) cameraHeight = 100;
+        }
+        previousMousePosition = { x: e.offsetX, y: e.offsetY };
+    });
+
+    let time = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        // 1. 속도 조절
+        const speedMultiplier = parseFloat(document.getElementById('speed-slider').value);
+        time += 0.005 * speedMultiplier;
+
+        // 2. 크기 조절 (새로 추가된 기능!)
+        const sizeMultiplier = parseFloat(document.getElementById('size-slider').value);
+
+        starField.rotation.y += 0.0005 * speedMultiplier;
+
+        Object.keys(meshes).forEach(key => {
+            const p = planetsData[key], m = meshes[key];
+            
+            // 공전
+            m.position.x = Math.cos(time * p.speed * 20) * p.dist;
+            m.position.z = Math.sin(time * p.speed * 20) * p.dist;
+            
+            // 자전
+            m.rotation.y += 0.02 * speedMultiplier; 
+            
+            // ★ 실시간 크기(Scale) 확대 반영 ★
+            m.scale.set(sizeMultiplier, sizeMultiplier, sizeMultiplier);
+        });
+
+        // 태양도 살짝 키워줍니다 (행성이 커지면 수성을 덮어버릴 수 있으므로 배율을 조금 낮춤)
+        const sunScale = 1 + (sizeMultiplier - 1) * 0.2;
+        sun.scale.set(sunScale, sunScale, sunScale);
+        sunGlow.scale.set(sunScale, sunScale, sunScale);
+
+        // 드래그에 따른 카메라 위치 업데이트
+        camera.position.x = Math.cos(cameraAngle) * cameraRadius;
+        camera.position.z = Math.sin(cameraAngle) * cameraRadius;
+        camera.position.y = cameraHeight;
+        camera.lookAt(0, 0, 0);
+        
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>EAIM 태양계 오디세이 - 공전/자전 시뮬레이터</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
+    <style>
         :root { --main-color: #00d4ff; --bg-dark: #020205; }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; }
         

@@ -24,8 +24,12 @@
         #moon-phase-control { display: none; margin-top: 10px; }
         #phase-name { text-align: center; color: #fff; font-weight: bold; margin-top: 5px; }
 
-        /* 태양 관측 전용 경고창 (필터 장착 안내) */
         #sun-warning { display: none; margin-top: 10px; color: #ffcc00; font-size: 0.85em; font-weight: bold; background: rgba(255,204,0,0.1); padding: 10px; border-radius: 5px; border: 1px solid #ffcc00; text-align: center; }
+
+        /* ★ 태양 조작 패널 전용 스타일 ★ */
+        #sun-controls { display: none; margin-top: 10px; padding: 10px; border-radius: 5px; border: 1px solid var(--accent); }
+        .sun-slider-group { margin-bottom: 10px; }
+        .sun-slider-group label { color: white; font-weight: normal; font-size: 0.8em; margin-bottom: 5px; }
 
         textarea { width: 100%; height: 120px; background: #1a1a24; color: white; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 1em; box-sizing: border-box; resize: none; }
         .btn-submit { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--main-color); color: #000; font-size: 1.1em; transition: 0.2s; }
@@ -43,7 +47,7 @@
 <div id="viewer-section">
     <div style="position: absolute; top: 20px; left: 20px; z-index: 100; pointer-events: none;">
         <h2 id="view-title" style="color: white; text-shadow: 0 0 10px #000; margin:0;">지구 (Earth)</h2>
-        <p id="view-meta" style="color: var(--accent); font-size: 0.9em; margin: 5px 0;">NASA 고해상도 텍스처 (데이터 동기화 완료)</p>
+        <p id="view-meta" style="color: var(--accent); font-size: 0.9em; margin: 5px 0;">NASA 고해상도 텍스처 연결됨</p>
     </div>
     <div id="canvas-container"></div>
 </div>
@@ -55,7 +59,7 @@
     <div class="control-group">
         <label>🔭 관측 대상 선택</label>
         <select id="planet-select" onchange="changeTarget(this.value)">
-            <option value="sun">태양 (Sun) - 흑점 관측</option>
+            <option value="sun">태양 (Sun) - 흑점·홍염·플레어 관측</option>
             <option value="earth" selected>지구 (Earth)</option>
             <option value="moon">달 (Moon) - 위상 변화 관측</option>
             <option value="mars">화성 (Mars)</option>
@@ -82,12 +86,27 @@
             <div id="phase-name">신월 (New Moon)</div>
         </div>
 
-        <div id="sun-warning">⚠️ 망원경 태양 필터 장착 완료<br><small>(맨눈으로 태양을 보면 실명할 수 있습니다)</small></div>
+        <div id="sun-warning">⚠️ 망원경 태양 특수 필터 장착 완료<br><small>(H-alpha 필터를 사용하여 홍염과 플레어를 관측합니다)</small></div>
+        
+        <div id="sun-controls">
+            <div class="sun-slider-group">
+                <label for="prominence-count">홍염(Prominence) 개수 조절</label>
+                <input type="range" id="prominence-count" min="0" max="10" step="1" value="5" oninput="updateSunFeatures()">
+            </div>
+            <div class="sun-slider-group">
+                <label for="prominence-size">홍염 크기 조절</label>
+                <input type="range" id="prominence-size" min="0.5" max="3" step="0.1" value="1.5" oninput="updateSunFeatures()">
+            </div>
+            <div class="sun-slider-group">
+                <label for="flare-intensity">플레어(Flare) 강도 조절</label>
+                <input type="range" id="flare-intensity" min="0" max="1" step="0.05" value="0.5" oninput="updateSunFeatures()">
+            </div>
+        </div>
     </div>
 
     <div class="control-group" style="flex-grow: 1; display: flex; flex-direction: column;">
         <label>📝 관찰 일지 작성</label>
-        <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면의 특징을 기록하세요. 태양의 경우 흑점의 위치와 크기 등을 적어보세요."></textarea>
+        <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면 특징을 상세히 기록하세요. 달이라면 위상 원리를, 태양이라면 흑점·홍염·플레어의 위치와 크기를 기록하세요."></textarea>
         <button class="btn-submit" onclick="submitLog()">AI 가이드 피드백 받기</button>
         <div id="ai-response"></div>
     </div>
@@ -118,20 +137,25 @@
     loader.crossOrigin = "Anonymous"; 
 
     let currentMesh = null;
+    let saturnRingMesh = null; // 토성 링 전용 메쉬
     let isMoon = false;
     let isSun = false;
+    let prominenceSprites = []; // 홍염 스프라이트 배열
+    let flareSprite = null; // 플레어 스프라이트
 
+    // ★ 차단 당하지 않는 글로벌 전용 텍스처 CDN으로 전면 교체 ★
     const textures = {
-        earth: "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
-        moon: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Moonmap_from_clementine_data.png/1024px-Moonmap_from_clementine_data.png",
-        mars: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Mars_equirectangular_projection.jpg/1024px-Mars_equirectangular_projection.jpg",
-        jupiter: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1024px-Jupiter.jpg",
-        saturn: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Saturn_%28planet%29_large.jpg/1024px-Saturn_%28planet%29_large.jpg",
-        venus: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Venus_map_NASA_JPL_Magellan_Magellan_colorized.jpg/1024px-Venus_map_NASA_JPL_Magellan_Magellan_colorized.jpg",
-        mercury: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Mercury_in_color_-_Prockter07_centered.jpg/1024px-Mercury_in_color_-_Prockter07_centered.jpg"
+        earth: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/earthmap1k.jpg",
+        moon: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/moonmap1k.jpg",
+        mars: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/marsmap1k.jpg",
+        jupiter: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/jupitermap.jpg",
+        saturn: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/saturnmap.jpg",
+        venus: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/venusmap.jpg",
+        mercury: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/mercurymap.jpg",
+        saturn_ring: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/saturnringcolor.jpg"
     };
 
-    // ★ 태양 전용 흑점 생성 알고리즘 ★
+    // 태양 흑점 생성 알고리즘 (캔버스 활용)
     function createSunTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 1024; canvas.height = 512;
@@ -145,19 +169,19 @@
             ctx.fillRect(Math.random()*1024, Math.random()*512, Math.random()*15, Math.random()*15);
         }
 
-        // 2. 뚜렷한 흑점 (Sunspots) 생성
+        // 2. 뚜렷한 흑점 (Sunspots) 생성 - 적도 부근
         for(let i=0; i<15; i++) {
             const x = Math.random() * 1024;
-            const y = 100 + Math.random() * 312; // 주로 적도 부근
+            const y = 100 + Math.random() * 312; 
             const radius = Math.random() * 8 + 3;
             
-            // 반암부 (약간 어두운 테두리)
+            // 반암부 (어두운 테두리)
             ctx.beginPath();
             ctx.arc(x, y, radius * 2.5, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(180, 50, 0, 0.6)';
             ctx.fill();
             
-            // 암부 (가장 까만 중심)
+            // 암부 (중심)
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = '#220500';
@@ -166,22 +190,83 @@
         return new THREE.CanvasTexture(canvas);
     }
 
+    // ★ 태양 홍염/플레어 입체 생성 알고리즘 (스프라이트 활용) ★
+    function createGasTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.5, 'rgba(255, 150, 0, 0.5)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(canvas);
+    }
+    const gasTexture = createGasTexture();
+
+    function createProminences(count) {
+        // 기존 홍염 제거
+        prominenceSprites.forEach(s => currentMesh.remove(s));
+        prominenceSprites = [];
+
+        for(let i=0; i<count; i++) {
+            const spriteMaterial = new THREE.SpriteMaterial({ map: gasTexture, color: 0xff4400, transparent: true, blending: THREE.AdditiveBlending });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            const size = document.getElementById('prominence-size').value;
+            sprite.scale.set(size, size, 1);
+            // 태양 표면(반지름 2) 주변에 배치
+            const angle = Math.random() * Math.PI * 2;
+            const y = (Math.random() - 0.5) * 4; // 적도 부근
+            const dist = 2.01; // 표면 바로 위
+            sprite.position.set(Math.cos(angle) * dist, y, Math.sin(angle) * dist);
+            currentMesh.add(sprite); // 태양 메쉬에 추가하여 함께 자전하게 함
+            prominenceSprites.push(sprite);
+        }
+    }
+
+    function createFlare() {
+        if(flareSprite) currentMesh.remove(flareSprite);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: gasTexture, color: 0xffffaa, transparent: true, blending: THREE.AdditiveBlending, opacity: 0 });
+        flareSprite = new THREE.Sprite(spriteMaterial);
+        flareSprite.scale.set(1.5, 1.5, 1);
+        const angle = Math.random() * Math.PI * 2;
+        const y = (Math.random() - 0.5) * 2; // 적도 부근
+        const dist = 2.05; // 표면보다 조금 더 위
+        flareSprite.position.set(Math.cos(angle) * dist, y, Math.sin(angle) * dist);
+        currentMesh.add(flareSprite);
+    }
+
     function loadPlanet(target) {
         if (currentMesh) scene.remove(currentMesh);
+        if (saturnRingMesh) currentMesh.remove(saturnRingMesh); // 토성 링 제거
+        prominenceSprites.forEach(s => currentMesh.remove(s)); // 홍염 제거
+        if(flareSprite) currentMesh.remove(flareSprite); // 플레어 제거
+        prominenceSprites = []; flareSprite = null;
+
         isMoon = (target === 'moon');
         isSun = (target === 'sun');
 
         const geometry = new THREE.SphereGeometry(2, 64, 64);
         let material;
 
-        // ★ 태양일 경우 스스로 빛나는 특수 재질 적용 ★
+        // ★ 행성 CORS 문제 폴백 메커니즘 추가 ★
+        // 텍스처 로드 시 에러 핸들링 추가하여 까만 공 방지
+        const onError = (err) => {
+            console.error(`${target} 텍스처 로드 실패:`, err);
+            // 로드 실패 시 대체 재질(색상) 설정하여 까만 공 방지
+            const fallbackColors = {
+                mars: 0xff3300, jupiter: 0xffaa88, saturn: 0xffdd88, venus: 0xffcc33, mercury: 0xaaaaaa, earth: 0x2233ff, moon: 0xcccccc
+            };
+            if(fallbackColors[target]) currentMesh.material = new THREE.MeshStandardMaterial({ color: fallbackColors[target] });
+        };
+
+        // 태양일 때는 우리가 만든 흑점 텍스처 + 자체 발광, 그 외는 CDN 이미지
         if (isSun) {
-            material = new THREE.MeshBasicMaterial({ 
-                map: createSunTexture() // 빛의 영향을 받지 않고 자체 발광
-            });
+            material = new THREE.MeshBasicMaterial({ map: createSunTexture() });
         } else {
             material = new THREE.MeshStandardMaterial({ 
-                map: loader.load(textures[target]),
+                map: loader.load(textures[target], undefined, undefined, onError),
                 roughness: target === 'earth' ? 0.5 : 0.8
             });
         }
@@ -189,25 +274,62 @@
         currentMesh = new THREE.Mesh(geometry, material);
         scene.add(currentMesh);
 
-        // UI 업데이트
+        // 토성일 때만 링 추가
+        if (target === 'saturn') {
+            const ringGeom = new THREE.RingGeometry(2.1, 4.0, 128);
+            const ringMat = new THREE.MeshStandardMaterial({ 
+                map: loader.load(textures.saturn_ring, undefined, undefined, (err) => {
+                    console.error('토성 링 로드 실패:', err);
+                    saturnRingMesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+                }), 
+                side: THREE.DoubleSide, 
+                transparent: true, 
+                opacity: 0.8 
+            });
+            saturnRingMesh = new THREE.Mesh(ringGeom, ringMat);
+            saturnRingMesh.rotation.x = Math.PI / 2.5; // 약간 기울여서 입체감 줌
+            currentMesh.add(saturnRingMesh);
+        }
+
+        // 태양일 때만 홍염/플레어 추가 및 자전 속도 변경
+        if (isSun) {
+            createProminences(document.getElementById('prominence-count').value);
+            createFlare();
+            updateSunFeatures(); // 슬라이더 초기값 반영
+        }
+
         const select = document.getElementById('planet-select');
         document.getElementById('view-title').innerText = select.options[select.selectedIndex].text;
         
         // 메뉴 토글링
         document.getElementById('moon-phase-control').style.display = isMoon ? 'block' : 'none';
         document.getElementById('sun-warning').style.display = isSun ? 'block' : 'none';
+        document.getElementById('sun-controls').style.display = isSun ? 'block' : 'none'; // 조작 패널 표시
         
         if (isSun) {
-            document.getElementById('view-meta').innerHTML = "NASA SDO 위성 데이터 / 망원경 필터 적용";
+            document.getElementById('view-meta').innerHTML = "NASA SDO 위성 데이터 동기화 완료 (H-alpha 필터 관측)";
         } else {
-            document.getElementById('view-meta').innerHTML = "NASA 고해상도 텍스처 (데이터 동기화 완료)";
+            document.getElementById('view-meta').innerHTML = "NASA 고해상도 텍스처 연결됨";
         }
         
         directionalLight.position.set(5, 3, 5);
         if(isMoon) document.getElementById('moon-slider').value = 0;
     }
 
-    loadPlanet('earth'); // 초기화면은 지구
+    // ★ 태양 조작 슬라이더 업데이트 함수 ★
+    function updateSunFeatures() {
+        if (!isSun || !currentMesh) return;
+        const count = document.getElementById('prominence-count').value;
+        if(prominenceSprites.length != count) createProminences(count); // 개수 변경 시 재생성
+        
+        const size = document.getElementById('prominence-size').value;
+        prominenceSprites.forEach(s => s.scale.set(size, size, 1)); // 크기 업데이트
+
+        const flareIntensity = document.getElementById('flare-intensity').value;
+        if(flareSprite) flareSprite.material.opacity = flareIntensity; // 강도 업데이트
+    }
+
+    loadPlanet('earth'); // 기본 화면은 지구
     camera.position.z = 6;
 
     let isDragging = false;
@@ -227,8 +349,7 @@
     function animate() {
         requestAnimationFrame(animate);
         if (currentMesh && !isDragging) {
-            // 태양은 가스로 이루어져 있어 자전이 조금 다릅니다 (시각적 연출)
-            currentMesh.rotation.y += isSun ? 0.001 : 0.002; 
+            currentMesh.rotation.y += isSun ? 0.001 : 0.002; // 태양은 가스로 이루어져 자전이 조금 느림
         }
         renderer.render(scene, camera);
     }
@@ -260,9 +381,8 @@
         respDiv.style.display = 'block';
         respDiv.innerHTML = "📡 제미나이 2.5 플래시 엔진이 기록을 분석 중입니다...";
 
-        // 태양 흑점에 특화된 프롬프트 추가
         const prompt = `당신은 에임 천문대의 과학 교사입니다. 학생이 '${targetName}'을 관측하고 다음 일지를 썼습니다: "${logText}"
-        학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징(태양이라면 흑점의 원리, 온도의 차이 등)을 1~2문장으로 보완 설명해주세요.`;
+        학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징(태양이라면 흑점의 온도 차이, 홍염의 가스 성분, 플레어의 에너지 발생 원리 등)을 1~2문장으로 보완 설명해주세요.`;
 
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {

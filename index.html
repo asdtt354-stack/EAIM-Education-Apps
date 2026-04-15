@@ -9,7 +9,6 @@
             margin: 0;
             padding: 0;
             font-family: 'Pretendard', sans-serif;
-            /* 선생님의 브랜드 컬러를 반영한 그라데이션 */
             background: linear-gradient(135deg, #6e8efb, #a777e3);
             min-height: 100vh;
             display: flex;
@@ -28,7 +27,7 @@
         }
         
         header h1 {
-            font-size: 1.8rem; /* 폰 화면에 맞춰 최적화 */
+            font-size: 1.8rem; 
             margin: 0 0 8px 0;
             display: flex;
             align-items: center;
@@ -45,22 +44,28 @@
             word-break: keep-all;
         }
 
-        .grid-container {
-            display: grid;
-            /* 기본적으로 3열 정렬 */
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+        /* 🛠️ 핵심 수정: Grid에서 Flexbox로 변경하여 자동 중앙 정렬 */
+        .flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; /* 마지막 남은 카드도 무조건 가운데 정렬 */
+            gap: 15px;
             width: 92%;
-            max-width: 800px;
+            max-width: 850px;
             padding-bottom: 30px;
         }
 
         .card {
+            /* PC 화면에서는 3개씩 배치되도록 넓이 계산 */
+            flex: 0 0 calc(33.333% - 10px);
+            max-width: calc(33.333% - 10px);
+            box-sizing: border-box;
+
             background: rgba(255, 255, 255, 0.18);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border-radius: 20px; /* 더 둥글게 만들어 앱 아이콘 느낌 강조 */
-            padding: 18px 8px;
+            border-radius: 20px; 
+            padding: 20px 8px;
             border: 1px solid rgba(255, 255, 255, 0.25);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
@@ -69,11 +74,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            /* 2.5D 입체감을 위한 그림자  */
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
         }
 
-        /* 클릭/터치 시 2.5D 버튼처럼 눌리는 효과  */
         .card:active {
             transform: scale(0.92);
             background: rgba(255, 255, 255, 0.3);
@@ -102,22 +105,21 @@
             letter-spacing: 0.5px;
         }
 
-        /* 📱 모바일 핵심 수정: 768px 이하에서도 무조건 2열 유지 */
+        /* 📱 모바일 화면 (768px 이하): 2개씩 배치되도록 계산 */
         @media (max-width: 768px) {
-            .grid-container { 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 10px;
+            .card {
+                flex: 0 0 calc(50% - 8px);
+                max-width: calc(50% - 8px);
+                padding: 15px 5px;
             }
             header h1 { font-size: 1.6rem; }
             header p { font-size: 0.85rem; }
         }
 
-        /* 📱 아주 작은 폰에서도 1열로 떨어지지 않게 고정 */
+        /* 📱 초소형 모바일 화면: 그래도 2열 유지! */
         @media (max-width: 380px) {
-            .grid-container { 
-                grid-template-columns: repeat(2, 1fr); 
-            }
             .title { font-size: 0.85rem; }
+            .icon { font-size: 2rem; }
         }
     </style>
 </head>
@@ -128,7 +130,7 @@
         <p>예술 융합 사회정서학습(SEL)을 위한<br>교과별 AI 도구 모음</p>
     </header>
 
-    <div class="grid-container">
+    <div class="flex-container">
         <a href="korean.html" class="card">
             <span class="icon">📖</span>
             <span class="title">EAIM 감정 시인</span>

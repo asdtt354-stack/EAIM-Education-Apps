@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>EAIM 천문대 관측소 - NASA 정밀 관측</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
+    <style>
+        :root { --main-color: #2ecc71; --bg-dark: #050508; --accent: #00d4ff; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* 레이아웃 분리 */
+        #viewer-section { flex: 2; position: relative; background: radial-gradient(circle, #0a1020 0%, #000 100%); }
+        #canvas-container { width: 100%; height: 100%; cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+
+        /* 관측소 UI 패널 */
+        #log-section { flex: 1; min-width: 450px; background: rgba(15, 15, 20, 0.95); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 30px; box-sizing: border-box; z-index: 200; overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
+        
+        h1 { color: var(--main-color); margin: 0 0 5px 0; font-size: 2.2em; }
+        p.sub-text { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+
+        /* 컨트롤 영역 */
+        .control-group { background: #111; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #222; }
+        label { display: block; color: var(--accent); font-weight: bold; margin-bottom: 8px; font-size: 0.9em; }
+        select, input[type="date"], input[type="range"] { width: 100%; padding: 10px; background: #222; color: white; border: 1px solid #444; border-radius: 5px; font-family: inherit; }
+        
+        /* 달 위상 전용 */
+        #moon-phase-control { display: none; margin-top: 10px; }
+        #phase-name { text-align: center; color: #fff; font-weight: bold; margin-top: 5px; }
+
+        /* 관측 일지 영역 */
+        textarea { width: 100%; height: 120px; background: #1a1a24; color: white; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 1em; box-sizing: border-box; resize: none; }
+        .btn-submit { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--main-color); color: #000; font-size: 1.1em; transition: 0.2s; }
+        .btn-submit:hover { background: #27ae60; }
+        
+        #ai-response { margin-top: 20px; background: rgba(46, 204, 113, 0.1); padding: 15px; border-radius: 8px; font-size: 0.95em; line-height: 1.6; border: 1px solid rgba(46, 204, 113, 0.3); display: none; }
+        
+        /* 저장된 일지 리스트 */
+        #saved-logs { margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; }
+        .log-item { background: #111; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--accent); font-size: 0.85em; }
+        .log-date { color: #888; font-size: 0.8em; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="viewer-section">
+    <div style="position: absolute; top: 20px; left: 20px; z-index: 100; pointer-events: none;">
+        <h2 id="view-title" style="color: white; text-shadow: 0 0 10px #000; margin:0;">지구 (Earth)</h2>
+        <p id="view-meta" style="color: var(--accent); font-size: 0.9em; margin: 5px 0;">NASA 고해상도 텍스처</p>
+    </div>
+    <div id="canvas-container"></div>
+</div>
+
+<div id="log-section">
+    <h1>에임 천문대</h1>
+    <p class="sub-text">NASA 데이터 기반 3D 정밀 관측 및 일지 작성</p>
+
+    <div class="control-group">
+        <label>🔭 관측 대상 선택</label>
+        <select id="planet-select" onchange="changeTarget(this.value)">
+            <option value="earth">지구 (Earth)</option>
+            <option value="moon">달 (Moon) - 위상 변화 관측</option>
+            <option value="mars">화성 (Mars)</option>
+            <option value="jupiter">목성 (Jupiter)</option>
+            <option value="saturn">토성 (Saturn)</option>
+            <option value="venus">금성 (Venus)</option>
+            <option value="mercury">수성 (Mercury)</option>
+        </select>
+
+        <label style="margin-top: 15px;">📅 관측 날짜</label>
+        <input type="date" id="obs-date" value="2026-04-15">
+
+        <label style="margin-top: 15px;">📍 관측소 위치</label>
+        <select id="obs-location">
+            <option>보현산 천문대 (대한민국)</option>
+            <option>마우나케아 천문대 (하와이)</option>
+            <option>라 실라 천문대 (칠레)</option>
+            <option>그리니치 천문대 (영국)</option>
+        </select>
+        
+        <div id="moon-phase-control">
+            <label style="margin-top: 15px;">🌗 달 위상 시뮬레이션</label>
+            <input type="range" id="moon-slider" min="0" max="6.28" step="0.05" value="0" oninput="updateMoonPhase(this.value)">
+            <div id="phase-name">신월 (New Moon)</div>
+        </div>
+    </div>
+
+    <div class="control-group" style="flex-grow: 1; display: flex; flex-direction: column;">
+        <label>📝 관찰 일지 작성</label>
+        <textarea id="student-log" placeholder="3D 화면을 마우스로 돌려보며 표면의 특징(색깔, 무늬, 질감 등)을 상세히 기록하세요. 달의 경우 위상 변화의 원리를 적어보세요."></textarea>
+        <button class="btn-submit" onclick="submitLog()">AI 가이드 피드백 받기</button>
+        <div id="ai-response"></div>
+    </div>
+
+    <div id="saved-logs">
+        <h3 style="color: #aaa; margin: 0 0 10px 0; font-size: 1em;">보관된 관측 일지</h3>
+        <div id="log-list"></div>
+    </div>
+</div>
+
+<script>
+    // ★ 제미나이 2.5 플래시 API 키 입력 ★
+    const API_KEY = "API_키_입력"; 
+
+    // --- [1] 3D 뷰어 세팅 ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    // 입체감을 위한 조명 (측면 광원)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4)); // 어둡게 깔고
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0); // 강한 한 방향 빛
+    directionalLight.position.set(5, 3, 5);
+    scene.add(directionalLight);
+
+    const loader = new THREE.TextureLoader();
+    let currentMesh = null;
+    let isMoon = false;
+
+    // 행성 데이터 (NASA 텍스처)
+    const textures = {
+        earth: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg",
+        moon: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg",
+        mars: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mars.jpg",
+        jupiter: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg",
+        saturn: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturn.png",
+        venus: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/venus_atmosphere.jpg",
+        mercury: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mercury.jpg"
+    };
+
+    function loadPlanet(target) {
+        if (currentMesh) scene.remove(currentMesh);
+        isMoon = (target === 'moon');
+
+        const geometry = new THREE.SphereGeometry(2, 64, 64);
+        const material = new THREE.MeshStandardMaterial({ 
+            map: loader.load(textures[target]),
+            roughness: target === 'earth' ? 0.5 : 0.8 // 지구는 약간 반짝이게
+        });
+        currentMesh = new THREE.Mesh(geometry, material);
+        scene.add(currentMesh);
+
+        // UI 업데이트
+        const select = document.getElementById('planet-select');
+        document.getElementById('view-title').innerText = select.options[select.selectedIndex].text;
+        document.getElementById('moon-phase-control').style.display = isMoon ? 'block' : 'none';
+        
+        // 조명 초기화
+        directionalLight.position.set(5, 3, 5);
+        if(isMoon) document.getElementById('moon-slider').value = 0;
+    }
+
+    // 초기 로드
+    loadPlanet('earth');
+    camera.position.z = 6;
+
+    // --- [2] 마우스 드래그 (행성 돌려보기) 구현 ---
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    container.addEventListener('mousedown', (e) => { isDragging = true; });
+    container.addEventListener('mouseup', () => { isDragging = false; });
+    container.addEventListener('mousemove', (e) => {
+        if (isDragging && currentMesh) {
+            const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
+            currentMesh.rotation.y += deltaMove.x * 0.01;
+            currentMesh.rotation.x += deltaMove.y * 0.01;
+        }
+        previousMousePosition = { x: e.offsetX, y: e.offsetY };
+    });
+
+    // 애니메이션 루프 (천천히 자동 자전)
+    function animate() {
+        requestAnimationFrame(animate);
+        if (currentMesh && !isDragging) {
+            currentMesh.rotation.y += 0.002; // 매우 느리게 자전
+        }
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // 화면 리사이즈 대응
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // --- [3] 기능 로직 ---
+    function changeTarget(target) {
+        loadPlanet(target);
+    }
+
+    function updateMoonPhase(val) {
+        // 조명의 위치를 회전시켜 달의 위상을 만듦
+        directionalLight.position.set(Math.cos(val)*5, 0, Math.sin(val)*5);
+        const phases = ["신월", "초승달", "상현달", "보름달", "하현달", "그믐달"];
+        document.getElementById('phase-name').innerText = phases[Math.floor((val / 6.28) * 6) % 6];
+    }
+
+    // 제미나이 2.5 플래시 피드백
+    async function submitLog() {
+        const logText = document.getElementById('student-log').value;
+        const targetName = document.getElementById('view-title').innerText;
+        const respDiv = document.getElementById('ai-response');
+        
+        if(!logText) return alert("관찰 내용을 먼저 기록해 주세요!");
+        
+        respDiv.style.display = 'block';
+        respDiv.innerHTML = "📡 제미나이 2.5 플래시 엔진이 기록을 분석 중입니다...";
+
+        const prompt = `당신은 에임 천문대의 과학 교사입니다. 학생이 '${targetName}'을 관측하고 다음 일지를 썼습니다: "${logText}"
+        학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징(표면, 대기, 위상 변화 등)을 1~2문장으로 보완 설명해주세요.`;
+
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await res.json();
+            respDiv.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+            saveToStorage(targetName, logText);
+        } catch(e) {
+            respDiv.innerHTML = "❌ 분석 엔진과 연결할 수 없습니다. API 키를 확인하세요.";
+        }
+    }
+
+    function saveToStorage(target, logText) {
+        const date = document.getElementById('obs-date').value;
+        const loc = document.getElementById('obs-location').value;
+        const log = { target, logText, date, loc };
+        
+        let logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+        logs.unshift(log);
+        localStorage.setItem('eaim_observatory_logs', JSON.stringify(logs));
+        renderLogs();
+    }
+
+    function renderLogs() {
+        const logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+        const listDiv = document.getElementById('log-list');
+        listDiv.innerHTML = logs.map(l => `
+            <div class="log-item">
+                <div class="log-date">${l.date} | ${l.loc}</div>
+                <strong>${l.target}</strong>: ${l.logText.substring(0, 40)}...
+            </div>
+        `).join('');
+    }
+
+    // 초기 로그 로드
+    renderLogs();
+</script>
+</body>
+</html>

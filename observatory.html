@@ -2,52 +2,72 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EAIM 천문대 관측소 - NASA 정밀 관측</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <style>
         :root { --main-color: #2ecc71; --bg-dark: #050508; --accent: #00d4ff; }
-        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
         
-        #viewer-section { flex: 2; position: relative; background: radial-gradient(circle, #0a1020 0%, #000 100%); }
+        #viewer-section { flex: 6; position: relative; background: radial-gradient(circle, #0a1020 0%, #000 100%); min-height: 300px; }
         #canvas-container { width: 100%; height: 100%; cursor: grab; }
         #canvas-container:active { cursor: grabbing; }
 
-        #log-section { flex: 1; min-width: 450px; background: rgba(15, 15, 20, 0.95); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 30px; box-sizing: border-box; z-index: 200; overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
+        #log-section { flex: 4; min-width: 400px; max-width: 500px; background: rgba(15, 15, 20, 0.95); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 200; overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
         
-        h1 { color: var(--main-color); margin: 0 0 5px 0; font-size: 2.2em; }
+        h1 { color: var(--main-color); margin: 0 0 5px 0; font-size: 2em; }
         p.sub-text { color: #888; font-size: 0.9em; margin-bottom: 20px; }
 
         .control-group { background: #111; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #222; }
         label { display: block; color: var(--accent); font-weight: bold; margin-bottom: 8px; font-size: 0.9em; }
-        select, input[type="date"], input[type="range"] { width: 100%; padding: 10px; background: #222; color: white; border: 1px solid #444; border-radius: 5px; font-family: inherit; }
+        select, input[type="date"], input[type="range"] { width: 100%; padding: 10px; background: #222; color: white; border: 1px solid #444; border-radius: 5px; font-family: inherit; box-sizing: border-box; }
         
         #moon-phase-control { display: none; margin-top: 10px; }
         #phase-name { text-align: center; color: #fff; font-weight: bold; margin-top: 5px; }
 
         #sun-warning { display: none; margin-top: 10px; color: #ffcc00; font-size: 0.85em; font-weight: bold; background: rgba(255,204,0,0.1); padding: 10px; border-radius: 5px; border: 1px solid #ffcc00; text-align: center; }
 
-        /* ★ 태양 조작 패널 전용 스타일 ★ */
         #sun-controls { display: none; margin-top: 10px; padding: 10px; border-radius: 5px; border: 1px solid var(--accent); }
         .sun-slider-group { margin-bottom: 10px; }
         .sun-slider-group label { color: white; font-weight: normal; font-size: 0.8em; margin-bottom: 5px; }
 
-        textarea { width: 100%; height: 120px; background: #1a1a24; color: white; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 1em; box-sizing: border-box; resize: none; }
-        .btn-submit { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--main-color); color: #000; font-size: 1.1em; transition: 0.2s; }
+        textarea { width: 100%; height: 100px; background: #1a1a24; color: white; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 0.95em; box-sizing: border-box; resize: none; }
+        .btn-submit { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--main-color); color: #000; font-size: 1.05em; transition: 0.2s; }
         .btn-submit:hover { background: #27ae60; }
         
-        #ai-response { margin-top: 20px; background: rgba(46, 204, 113, 0.1); padding: 15px; border-radius: 8px; font-size: 0.95em; line-height: 1.6; border: 1px solid rgba(46, 204, 113, 0.3); display: none; }
+        #ai-response { margin-top: 15px; background: rgba(46, 204, 113, 0.1); padding: 15px; border-radius: 8px; font-size: 0.9em; line-height: 1.6; border: 1px solid rgba(46, 204, 113, 0.3); display: none; }
         
-        #saved-logs { margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; }
+        #saved-logs { margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; }
         .log-item { background: #111; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--accent); font-size: 0.85em; }
-        .log-date { color: #888; font-size: 0.8em; margin-bottom: 5px; }
+
+        /* ★ 크기 비교 버튼 스타일 ★ */
+        .btn-compare { width: 100%; padding: 15px; border-radius: 8px; border: 1px solid var(--accent); font-weight: bold; cursor: pointer; background: rgba(0, 212, 255, 0.05); color: var(--accent); font-size: 1.05em; transition: 0.2s; margin-top: 20px; }
+        .btn-compare:hover { background: rgba(0, 212, 255, 0.2); }
+
+        /* 모바일 반응형 UI */
+        @media (max-width: 850px) {
+            body { flex-direction: column; height: auto; overflow-y: auto; }
+            #viewer-section { width: 100%; height: 50vh; flex: none; border-bottom: 2px solid var(--accent); }
+            #log-section { width: 100%; max-width: 100%; min-width: 100%; height: auto; flex: none; border-left: none; padding: 15px; }
+            h1 { font-size: 1.5em; }
+        }
     </style>
 </head>
 <body>
 
+<div id="size-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.98); z-index:99999; flex-direction:column;">
+    <div style="padding:20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; background:#0a0a0a;">
+        <h2 style="margin:0; color:var(--accent); font-size:1.5em;">🪐 태양계 실제 크기 비교 <span style="font-size:0.6em; color:#888;">(스크롤하여 태양의 크기를 확인하세요)</span></h2>
+        <button onclick="closeSizeModal()" style="padding:10px 25px; background:#e74c3c; border:none; color:white; font-weight:bold; border-radius:5px; cursor:pointer;">닫기 ✖</button>
+    </div>
+    <div id="size-container" style="flex:1; display:flex; align-items:center; overflow-x:auto; overflow-y:hidden; padding:50px; gap:80px;">
+        </div>
+</div>
+
 <div id="viewer-section">
-    <div style="position: absolute; top: 20px; left: 20px; z-index: 100; pointer-events: none;">
-        <h2 id="view-title" style="color: white; text-shadow: 0 0 10px #000; margin:0;">지구 (Earth)</h2>
-        <p id="view-meta" style="color: var(--accent); font-size: 0.9em; margin: 5px 0;">NASA 고해상도 텍스처 연결됨</p>
+    <div style="position: absolute; top: 15px; left: 15px; z-index: 100; pointer-events: none;">
+        <h2 id="view-title" style="color: white; text-shadow: 0 0 10px #000; margin:0; font-size: 1.5em;">지구 (Earth)</h2>
+        <p id="view-meta" style="color: var(--accent); font-size: 0.8em; margin: 5px 0;">NASA 고해상도 텍스처 연결됨</p>
     </div>
     <div id="canvas-container"></div>
 </div>
@@ -86,7 +106,7 @@
             <div id="phase-name">신월 (New Moon)</div>
         </div>
 
-        <div id="sun-warning">⚠️ 망원경 태양 특수 필터 장착 완료<br><small>(H-alpha 필터를 사용하여 홍염과 플레어를 관측합니다)</small></div>
+        <div id="sun-warning">⚠️ 망원경 태양 특수 필터 장착 완료<br><small>(H-alpha 필터 사용)</small></div>
         
         <div id="sun-controls">
             <div class="sun-slider-group">
@@ -106,7 +126,7 @@
 
     <div class="control-group" style="flex-grow: 1; display: flex; flex-direction: column;">
         <label>📝 관찰 일지 작성</label>
-        <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면 특징을 상세히 기록하세요. 달이라면 위상 원리를, 태양이라면 흑점·홍염·플레어의 위치와 크기를 기록하세요."></textarea>
+        <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면 특징을 상세히 기록하세요. 달은 위상 원리를, 태양은 흑점·홍염의 위치를 기록하세요."></textarea>
         <button class="btn-submit" onclick="submitLog()">AI 가이드 피드백 받기</button>
         <div id="ai-response"></div>
     </div>
@@ -115,11 +135,14 @@
         <h3 style="color: #aaa; margin: 0 0 10px 0; font-size: 1em;">보관된 관측 일지</h3>
         <div id="log-list"></div>
     </div>
+
+    <button class="btn-compare" onclick="openSizeModal()">🪐 태양계 행성 실제 크기 비교하기</button>
 </div>
 
 <script>
     const API_KEY = "발급받으신_API_키를_넣어주세요"; 
 
+    // --- 1. 3D 관측소 시스템 로직 ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -137,13 +160,12 @@
     loader.crossOrigin = "Anonymous"; 
 
     let currentMesh = null;
-    let saturnRingMesh = null; // 토성 링 전용 메쉬
+    let saturnRingMesh = null; 
     let isMoon = false;
     let isSun = false;
-    let prominenceSprites = []; // 홍염 스프라이트 배열
-    let flareSprite = null; // 플레어 스프라이트
+    let prominenceSprites = []; 
+    let flareSprite = null; 
 
-    // ★ 차단 당하지 않는 글로벌 전용 텍스처 CDN으로 전면 교체 ★
     const textures = {
         earth: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/earthmap1k.jpg",
         moon: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/moonmap1k.jpg",
@@ -155,42 +177,41 @@
         saturn_ring: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/saturnringcolor.jpg"
     };
 
-    // 태양 흑점 생성 알고리즘 (캔버스 활용)
     function createSunTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 1024; canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        
-        // 1. 코로나(가스) 느낌의 기본 배경
-        ctx.fillStyle = '#ffaa00';
+        ctx.fillStyle = '#ff9900';
         ctx.fillRect(0, 0, 1024, 512);
-        for(let i=0; i<2000; i++) {
-            ctx.fillStyle = `rgba(255, 200, 0, ${Math.random()*0.3})`;
-            ctx.fillRect(Math.random()*1024, Math.random()*512, Math.random()*15, Math.random()*15);
+        for(let i=0; i<3000; i++) {
+            ctx.fillStyle = `rgba(255, 220, 0, ${Math.random()*0.4})`;
+            ctx.fillRect(Math.random()*1024, Math.random()*512, Math.random()*20, Math.random()*20);
         }
-
-        // 2. 뚜렷한 흑점 (Sunspots) 생성 - 적도 부근
-        for(let i=0; i<15; i++) {
-            const x = Math.random() * 1024;
-            const y = 100 + Math.random() * 312; 
-            const radius = Math.random() * 8 + 3;
-            
-            // 반암부 (어두운 테두리)
-            ctx.beginPath();
-            ctx.arc(x, y, radius * 2.5, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(180, 50, 0, 0.6)';
-            ctx.fill();
-            
-            // 암부 (중심)
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = '#220500';
-            ctx.fill();
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#551100'; 
+        for(let i=0; i<20; i++) {
+            const cx = Math.random() * 1024;
+            const cy = 100 + Math.random() * 312; 
+            const baseRadius = Math.random() * 6 + 4;
+            const clusterSize = Math.floor(Math.random() * 4) + 2;
+            for(let j=0; j<clusterSize; j++) {
+                const offsetX = (Math.random() - 0.5) * baseRadius * 2;
+                const offsetY = (Math.random() - 0.5) * baseRadius * 2;
+                const r = baseRadius * (Math.random() * 0.5 + 0.5);
+                ctx.beginPath();
+                ctx.ellipse(cx + offsetX, cy + offsetY, r * 2.5, r * 1.8, Math.random() * Math.PI, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(150, 40, 0, 0.5)';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cx + offsetX, cy + offsetY, r * 1.2, r * 0.9, Math.random() * Math.PI, 0, Math.PI * 2);
+                ctx.fillStyle = '#1a0300';
+                ctx.fill();
+            }
         }
+        ctx.shadowBlur = 0; 
         return new THREE.CanvasTexture(canvas);
     }
 
-    // ★ 태양 홍염/플레어 입체 생성 알고리즘 (스프라이트 활용) ★
     function createGasTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 64; canvas.height = 64;
@@ -206,21 +227,18 @@
     const gasTexture = createGasTexture();
 
     function createProminences(count) {
-        // 기존 홍염 제거
         prominenceSprites.forEach(s => currentMesh.remove(s));
         prominenceSprites = [];
-
         for(let i=0; i<count; i++) {
             const spriteMaterial = new THREE.SpriteMaterial({ map: gasTexture, color: 0xff4400, transparent: true, blending: THREE.AdditiveBlending });
             const sprite = new THREE.Sprite(spriteMaterial);
             const size = document.getElementById('prominence-size').value;
             sprite.scale.set(size, size, 1);
-            // 태양 표면(반지름 2) 주변에 배치
             const angle = Math.random() * Math.PI * 2;
-            const y = (Math.random() - 0.5) * 4; // 적도 부근
-            const dist = 2.01; // 표면 바로 위
+            const y = (Math.random() - 0.5) * 4; 
+            const dist = 2.01; 
             sprite.position.set(Math.cos(angle) * dist, y, Math.sin(angle) * dist);
-            currentMesh.add(sprite); // 태양 메쉬에 추가하여 함께 자전하게 함
+            currentMesh.add(sprite); 
             prominenceSprites.push(sprite);
         }
     }
@@ -231,17 +249,17 @@
         flareSprite = new THREE.Sprite(spriteMaterial);
         flareSprite.scale.set(1.5, 1.5, 1);
         const angle = Math.random() * Math.PI * 2;
-        const y = (Math.random() - 0.5) * 2; // 적도 부근
-        const dist = 2.05; // 표면보다 조금 더 위
+        const y = (Math.random() - 0.5) * 2; 
+        const dist = 2.05; 
         flareSprite.position.set(Math.cos(angle) * dist, y, Math.sin(angle) * dist);
         currentMesh.add(flareSprite);
     }
 
     function loadPlanet(target) {
         if (currentMesh) scene.remove(currentMesh);
-        if (saturnRingMesh) currentMesh.remove(saturnRingMesh); // 토성 링 제거
-        prominenceSprites.forEach(s => currentMesh.remove(s)); // 홍염 제거
-        if(flareSprite) currentMesh.remove(flareSprite); // 플레어 제거
+        if (saturnRingMesh) currentMesh.remove(saturnRingMesh); 
+        prominenceSprites.forEach(s => currentMesh.remove(s)); 
+        if(flareSprite) currentMesh.remove(flareSprite); 
         prominenceSprites = []; flareSprite = null;
 
         isMoon = (target === 'moon');
@@ -250,18 +268,11 @@
         const geometry = new THREE.SphereGeometry(2, 64, 64);
         let material;
 
-        // ★ 행성 CORS 문제 폴백 메커니즘 추가 ★
-        // 텍스처 로드 시 에러 핸들링 추가하여 까만 공 방지
         const onError = (err) => {
-            console.error(`${target} 텍스처 로드 실패:`, err);
-            // 로드 실패 시 대체 재질(색상) 설정하여 까만 공 방지
-            const fallbackColors = {
-                mars: 0xff3300, jupiter: 0xffaa88, saturn: 0xffdd88, venus: 0xffcc33, mercury: 0xaaaaaa, earth: 0x2233ff, moon: 0xcccccc
-            };
+            const fallbackColors = { mars: 0xff3300, jupiter: 0xffaa88, saturn: 0xffdd88, venus: 0xffcc33, mercury: 0xaaaaaa, earth: 0x2233ff, moon: 0xcccccc };
             if(fallbackColors[target]) currentMesh.material = new THREE.MeshStandardMaterial({ color: fallbackColors[target] });
         };
 
-        // 태양일 때는 우리가 만든 흑점 텍스처 + 자체 발광, 그 외는 CDN 이미지
         if (isSun) {
             material = new THREE.MeshBasicMaterial({ map: createSunTexture() });
         } else {
@@ -274,40 +285,34 @@
         currentMesh = new THREE.Mesh(geometry, material);
         scene.add(currentMesh);
 
-        // 토성일 때만 링 추가
         if (target === 'saturn') {
             const ringGeom = new THREE.RingGeometry(2.1, 4.0, 128);
             const ringMat = new THREE.MeshStandardMaterial({ 
                 map: loader.load(textures.saturn_ring, undefined, undefined, (err) => {
-                    console.error('토성 링 로드 실패:', err);
                     saturnRingMesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
                 }), 
-                side: THREE.DoubleSide, 
-                transparent: true, 
-                opacity: 0.8 
+                side: THREE.DoubleSide, transparent: true, opacity: 0.8 
             });
             saturnRingMesh = new THREE.Mesh(ringGeom, ringMat);
-            saturnRingMesh.rotation.x = Math.PI / 2.5; // 약간 기울여서 입체감 줌
+            saturnRingMesh.rotation.x = Math.PI / 2.5; 
             currentMesh.add(saturnRingMesh);
         }
 
-        // 태양일 때만 홍염/플레어 추가 및 자전 속도 변경
         if (isSun) {
             createProminences(document.getElementById('prominence-count').value);
             createFlare();
-            updateSunFeatures(); // 슬라이더 초기값 반영
+            updateSunFeatures(); 
         }
 
         const select = document.getElementById('planet-select');
         document.getElementById('view-title').innerText = select.options[select.selectedIndex].text;
         
-        // 메뉴 토글링
         document.getElementById('moon-phase-control').style.display = isMoon ? 'block' : 'none';
         document.getElementById('sun-warning').style.display = isSun ? 'block' : 'none';
-        document.getElementById('sun-controls').style.display = isSun ? 'block' : 'none'; // 조작 패널 표시
+        document.getElementById('sun-controls').style.display = isSun ? 'block' : 'none'; 
         
         if (isSun) {
-            document.getElementById('view-meta').innerHTML = "NASA SDO 위성 데이터 동기화 완료 (H-alpha 필터 관측)";
+            document.getElementById('view-meta').innerHTML = "NASA SDO 데이터 기반 시뮬레이션";
         } else {
             document.getElementById('view-meta').innerHTML = "NASA 고해상도 텍스처 연결됨";
         }
@@ -316,20 +321,19 @@
         if(isMoon) document.getElementById('moon-slider').value = 0;
     }
 
-    // ★ 태양 조작 슬라이더 업데이트 함수 ★
     function updateSunFeatures() {
         if (!isSun || !currentMesh) return;
         const count = document.getElementById('prominence-count').value;
-        if(prominenceSprites.length != count) createProminences(count); // 개수 변경 시 재생성
+        if(prominenceSprites.length != count) createProminences(count); 
         
         const size = document.getElementById('prominence-size').value;
-        prominenceSprites.forEach(s => s.scale.set(size, size, 1)); // 크기 업데이트
+        prominenceSprites.forEach(s => s.scale.set(size, size, 1)); 
 
         const flareIntensity = document.getElementById('flare-intensity').value;
-        if(flareSprite) flareSprite.material.opacity = flareIntensity; // 강도 업데이트
+        if(flareSprite) flareSprite.material.opacity = flareIntensity; 
     }
 
-    loadPlanet('earth'); // 기본 화면은 지구
+    loadPlanet('earth'); 
     camera.position.z = 6;
 
     let isDragging = false;
@@ -337,6 +341,12 @@
 
     container.addEventListener('mousedown', (e) => { isDragging = true; });
     container.addEventListener('mouseup', () => { isDragging = false; });
+    container.addEventListener('touchstart', (e) => { 
+        isDragging = true; 
+        previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, {passive: false});
+    container.addEventListener('touchend', () => { isDragging = false; });
+
     container.addEventListener('mousemove', (e) => {
         if (isDragging && currentMesh) {
             const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
@@ -346,10 +356,20 @@
         previousMousePosition = { x: e.offsetX, y: e.offsetY };
     });
 
+    container.addEventListener('touchmove', (e) => {
+        if (isDragging && currentMesh) {
+            e.preventDefault(); 
+            const deltaMove = { x: e.touches[0].clientX - previousMousePosition.x, y: e.touches[0].clientY - previousMousePosition.y };
+            currentMesh.rotation.y += deltaMove.x * 0.01;
+            currentMesh.rotation.x += deltaMove.y * 0.01;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+    }, {passive: false});
+
     function animate() {
         requestAnimationFrame(animate);
         if (currentMesh && !isDragging) {
-            currentMesh.rotation.y += isSun ? 0.001 : 0.002; // 태양은 가스로 이루어져 자전이 조금 느림
+            currentMesh.rotation.y += isSun ? 0.001 : 0.002; 
         }
         renderer.render(scene, camera);
     }
@@ -375,14 +395,13 @@
         const logText = document.getElementById('student-log').value;
         const targetName = document.getElementById('view-title').innerText;
         const respDiv = document.getElementById('ai-response');
-        
         if(!logText) return alert("관찰 내용을 먼저 기록해 주세요!");
         
         respDiv.style.display = 'block';
         respDiv.innerHTML = "📡 제미나이 2.5 플래시 엔진이 기록을 분석 중입니다...";
 
         const prompt = `당신은 에임 천문대의 과학 교사입니다. 학생이 '${targetName}'을 관측하고 다음 일지를 썼습니다: "${logText}"
-        학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징(태양이라면 흑점의 온도 차이, 홍염의 가스 성분, 플레어의 에너지 발생 원리 등)을 1~2문장으로 보완 설명해주세요.`;
+        학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징을 1~2문장으로 보완 설명해주세요.`;
 
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
@@ -401,7 +420,6 @@
         const date = document.getElementById('obs-date').value;
         const loc = document.getElementById('obs-location').value;
         const log = { target, logText, date, loc };
-        
         let logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
         logs.unshift(log);
         localStorage.setItem('eaim_observatory_logs', JSON.stringify(logs));
@@ -418,8 +436,73 @@
             </div>
         `).join('');
     }
-
     renderLogs();
+
+    // --- 2. 실제 크기 비교 모달 로직 ---
+    const scaleData = {
+        moon: { name: "달", scale: 0.27, img: textures.moon },
+        mercury: { name: "수성", scale: 0.38, img: textures.mercury },
+        mars: { name: "화성", scale: 0.53, img: textures.mars },
+        venus: { name: "금성", scale: 0.95, img: textures.venus },
+        earth: { name: "지구", scale: 1, img: textures.earth }, // 지구 기준점 (1)
+        saturn: { name: "토성", scale: 9.4, img: textures.saturn },
+        jupiter: { name: "목성", scale: 11.2, img: textures.jupiter },
+        sun: { name: "태양", scale: 109, img: "" } // 태양은 거대한 CSS 효과로 대체
+    };
+
+    function openSizeModal() {
+        document.getElementById('size-modal').style.display = 'flex';
+        const container = document.getElementById('size-container');
+        container.innerHTML = ''; 
+
+        // 기준이 되는 지구의 크기를 30px로 설정 (그래야 태양이 화면을 가득 채울 만큼 거대해짐)
+        const baseEarthSize = 30; 
+
+        Object.keys(scaleData).forEach(key => {
+            const p = scaleData[key];
+            const realSize = p.scale * baseEarthSize;
+            
+            // 각 행성을 감싸는 래퍼 (가운데 정렬 유지용)
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.gap = '20px';
+
+            // 행성 구슬
+            const planetDiv = document.createElement('div');
+            planetDiv.style.width = realSize + 'px';
+            planetDiv.style.height = realSize + 'px';
+            planetDiv.style.borderRadius = '50%';
+            planetDiv.style.flexShrink = '0';
+            
+            if(key === 'sun') {
+                planetDiv.style.background = 'radial-gradient(circle, #ffaa00, #ff4400)';
+                planetDiv.style.boxShadow = '0 0 80px #ffaa00, inset -50px -50px 100px rgba(0,0,0,0.6)';
+            } else {
+                planetDiv.style.backgroundImage = `url(${p.img})`;
+                planetDiv.style.backgroundSize = 'cover';
+                planetDiv.style.backgroundPosition = 'center';
+                planetDiv.style.boxShadow = 'inset -10px -10px 20px rgba(0,0,0,0.8)'; // 입체감 그림자
+            }
+
+            // 행성 이름 및 배율 텍스트
+            const label = document.createElement('div');
+            label.style.color = 'white';
+            label.style.textAlign = 'center';
+            label.style.fontWeight = 'bold';
+            label.style.fontSize = '1.1em';
+            label.innerHTML = `${p.name}<br><span style="color:var(--accent); font-size:0.8em;">지구의 ${p.scale}배</span>`;
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(planetDiv);
+            container.appendChild(wrapper);
+        });
+    }
+
+    function closeSizeModal() {
+        document.getElementById('size-modal').style.display = 'none';
+    }
 </script>
 </body>
 </html>

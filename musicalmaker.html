@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAIM 뮤지컬 메이커 v2.5</title>
+    <title>EAIM 뮤지컬 메이커 v2.6</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -17,7 +17,7 @@
         .ticket-input:focus { border-color: #FCD34D; background: rgba(255, 255, 255, 0.12); }
         .magic-btn { background: linear-gradient(45deg, #FCD34D, #F59E0B); color: #000; border-radius: 0.75rem; font-weight: 800; padding: 1rem; border: none; width: 100%; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(252, 211, 77, 0.3); }
         .ai-help-btn { background: rgba(252, 211, 77, 0.15); color: #FCD34D; border: 1px solid #FCD34D; border-radius: 0.5rem; font-size: 0.75rem; padding: 0.4rem 0.8rem; cursor: pointer; }
-        .edit-area { background: rgba(0,0,0,0.4); color: #FDE68A; font-family: 'Gowun Batang', serif; line-height: 1.8; width: 100%; min-height: 600px; padding: 1.5rem; border: 1px dashed rgba(252, 211, 77, 0.3); border-radius: 0.5rem; outline: none; font-size: 1.1rem; }
+        .edit-area { background: rgba(0,0,0,0.4); color: #FDE68A; font-family: 'Gowun Batang', serif; line-height: 1.8; width: 100%; min-height: 500px; padding: 1.5rem; border: 1px dashed rgba(252, 211, 77, 0.3); border-radius: 0.5rem; outline: none; font-size: 1.1rem; }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -26,30 +26,28 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState } = React;
 
         const App = () => {
             const [step, setStep] = useState(0); 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v25') || '');
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key_v26') || '');
             const [loading, setLoading] = useState(false);
             
             const [place, setPlace] = useState('');
             const [plots, setPlots] = useState({ ki: '', seung: '', jeon: '', gyeol: '' });
             const [title, setTitle] = useState('');
-            const [castList, setCastList] = useState([{ name: '', trait: '' }]); // 캐릭터 분리 저장
+            const [castList, setCastList] = useState([{ name: '', trait: '' }]);
             const [results, setResults] = useState('');
 
-            // 캐릭터 칸 추가
             const addCastMember = () => setCastList([...castList, { name: '', trait: '' }]);
-            // 캐릭터 칸 삭제
             const removeCastMember = (index) => {
                 const newList = castList.filter((_, i) => i !== index);
                 setCastList(newList.length ? newList : [{ name: '', trait: '' }]);
             };
 
-            const callGeminiV25 = async (prompt) => {
+            const callGeminiV26 = async (prompt) => {
                 if (!apiKey) { alert("API 키를 입력해주세요."); return null; }
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
@@ -71,7 +69,7 @@
                 1줄: 제목
                 그다음줄부터 캐릭터이름:성격 형식으로 한줄씩 나열해줘.`;
                 
-                const res = await callGeminiV25(prompt);
+                const res = await callGeminiV26(prompt);
                 if (res) {
                     const lines = res.split('\n').filter(l => l.trim() !== "");
                     setTitle(lines[0].replace(/제목:|#/g, "").trim());
@@ -98,42 +96,57 @@
                 위 내용을 바탕으로 초중등 학생용 뮤지컬 대본을 써줘. 
                 [작성 가이드]
                 1. 신(Scene)별로 시작할 때 '배경 이미지 프롬프트(영문)'를 반드시 작성해줘.
-                2. 넘버(노래)는 아이들이 부르기 쉽게 Verse - Chorus 형식으로 짧고 간결하게 구성해줘. (Bridge 생략)
-                3. 넘버가 끝날 때마다 해당 노래에 어울리는 'Suno AI 음악 생성 프롬프트(영문)'를 작성해줘. (장르, 분위기 포함)
+                2. 넘버(노래)는 Verse - Chorus 형식으로 짧고 간결하게 구성해줘.
+                3. 넘버 끝에 'Suno AI 음악 생성 프롬프트(영문)'를 포함해줘.
                 `;
 
-                const res = await callGeminiV25(prompt);
+                const res = await callGeminiV26(prompt);
                 if (res) { setResults(res); setStep(1); }
                 setLoading(false);
+            };
+
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText(results);
+                alert('대본이 클립보드에 복사되었습니다!');
+            };
+
+            const downloadFile = () => {
+                const blob = new Blob([results], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${title || '뮤지컬대본'}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
             };
 
             return (
                 <div className="min-h-screen pb-10">
                     <div className="stage-curtain p-4 text-center">
-                        <h1 className="text-2xl text-yellow-300 font-bold tracking-widest uppercase">EAIM Musical Maker v2.5</h1>
+                        <h1 className="text-2xl text-yellow-300 font-bold tracking-widest uppercase font-black">EAIM Musical Maker v2.6</h1>
                     </div>
 
                     <div className="max-w-2xl mx-auto p-4 space-y-6">
                         {step === 0 ? (
                             <div className="space-y-6 animate-fadeIn">
                                 <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                    <label className="text-xs text-yellow-500 block mb-2 font-bold uppercase">v2.5 API Key</label>
-                                    <input type="password" value={apiKey} onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v25', e.target.value);}} className="ticket-input text-center" placeholder="API 키를 입력하세요" />
+                                    <label className="text-xs text-yellow-500 block mb-2 font-bold uppercase">v2.6 API Key</label>
+                                    <input type="password" value={apiKey} onChange={(e) => {setApiKey(e.target.value); localStorage.setItem('gemini_api_key_v26', e.target.value);}} className="ticket-input text-center" placeholder="API 키를 입력하세요" />
                                 </div>
 
                                 <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
                                     <h2 className="text-yellow-400 font-bold"><i className="fas fa-scroll mr-2"></i>1. 스토리 기승전결</h2>
-                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-1" placeholder="공연 배경 (예: 학교 교실)" />
-                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 발단" />
-                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 전개" />
-                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 위기" />
-                                    <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 결말" />
+                                    <input value={place} onChange={e => setPlace(e.target.value)} className="ticket-input mb-1" placeholder="공연 배경 (예: 2050년 미래의 학교)" />
+                                    <textarea value={plots.ki} onChange={e => setPlots({...plots, ki: e.target.value})} className="ticket-input h-14" placeholder="기: 이야기의 시작" />
+                                    <textarea value={plots.seung} onChange={e => setPlots({...plots, seung: e.target.value})} className="ticket-input h-14" placeholder="승: 사건의 전개" />
+                                    <textarea value={plots.jeon} onChange={e => setPlots({...plots, jeon: e.target.value})} className="ticket-input h-14" placeholder="전: 위기와 갈등" />
+                                    <textarea value={plots.gyeol} onChange={e => setPlots({...plots, gyeol: e.target.value})} className="ticket-input h-14" placeholder="결: 해결 및 교훈" />
                                 </div>
 
                                 <div className="space-y-4 bg-white/5 p-4 rounded-xl border border-yellow-500/20 shadow-inner">
                                     <div className="flex justify-between items-center">
-                                        <h2 className="text-yellow-400 font-bold"><i className="fas fa-users mr-2"></i>2. 제목 및 캐릭터 설정</h2>
-                                        <button onClick={getAIHelp} disabled={loading} className="ai-help-btn">AI 추천받기</button>
+                                        <h2 className="text-yellow-400 font-bold"><i className="fas fa-users mr-2"></i>2. 캐릭터 및 제목</h2>
+                                        <button onClick={getAIHelp} disabled={loading} className="ai-help-btn">AI 추천</button>
                                     </div>
                                     <input value={title} onChange={e => setTitle(e.target.value)} className="ticket-input font-bold text-yellow-200" placeholder="뮤지컬 제목" />
                                     
@@ -144,32 +157,51 @@
                                                     const newList = [...castList];
                                                     newList[index].name = e.target.value;
                                                     setCastList(newList);
-                                                }} className="ticket-input w-1/3" placeholder="이름" />
+                                                }} className="ticket-input w-1/3" placeholder="배역" />
                                                 <input value={member.trait} onChange={e => {
                                                     const newList = [...castList];
                                                     newList[index].trait = e.target.value;
                                                     setCastList(newList);
-                                                }} className="ticket-input flex-1" placeholder="특징 및 성격" />
+                                                }} className="ticket-input flex-1" placeholder="성격/특징" />
                                                 <button onClick={() => removeCastMember(index)} className="px-3 text-red-400">×</button>
                                             </div>
                                         ))}
-                                        <button onClick={addCastMember} className="w-full py-2 text-xs border border-dashed border-white/20 rounded-lg text-gray-400">+ 인물 추가</button>
+                                        <button onClick={addCastMember} className="w-full py-2 text-xs border border-dashed border-white/20 rounded-lg text-gray-400">+ 배역 추가</button>
                                     </div>
                                 </div>
 
                                 <button onClick={generateFinal} disabled={loading} className="magic-btn text-lg">
-                                    {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-wand-magic-sparkles mr-2"></i>}
-                                    {loading ? "v2.5 대본 집필 중..." : "v2.5 전문 대본 생성"}
+                                    {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-pen-nib mr-2"></i>}
+                                    {loading ? "대본 작성 중..." : "뮤지컬 대본 생성"}
                                 </button>
                             </div>
                         ) : (
                             <div className="animate-fadeIn space-y-4">
-                                <h2 className="text-yellow-400 font-bold flex justify-between">
-                                    <span>완성된 v2.5 대본 (이미지/음악 가이드 포함)</span>
-                                    <button onClick={() => setStep(0)} className="text-xs text-gray-400">수정하기</button>
-                                </h2>
-                                <textarea className="edit-area shadow-2xl" value={results} onChange={e => setResults(e.target.value)} />
-                                <button onClick={() => alert('대본이 복사되었습니다.')} className="w-full py-4 bg-yellow-600 text-white rounded-lg font-bold shadow-lg">저장 및 복사</button>
+                                <div className="flex justify-between items-end px-1">
+                                    <h2 className="text-yellow-400 font-bold"><i className="fas fa-file-alt mr-2"></i>완성된 대본</h2>
+                                    <button onClick={() => setStep(0)} className="text-xs bg-white/10 px-3 py-1 rounded-full text-gray-300 hover:bg-white/20 transition">
+                                        <i className="fas fa-edit mr-1"></i>내용 수정하기
+                                    </button>
+                                </div>
+                                
+                                <textarea 
+                                    className="edit-area shadow-2xl" 
+                                    value={results} 
+                                    onChange={e => setResults(e.target.value)} 
+                                    placeholder="생성된 대본을 자유롭게 수정하세요..."
+                                />
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={copyToClipboard} className="py-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition flex flex-col items-center gap-1">
+                                        <i className="fas fa-copy"></i>
+                                        <span className="text-sm">클립보드 복사</span>
+                                    </button>
+                                    <button onClick={downloadFile} className="py-4 bg-yellow-600 hover:bg-yellow-500 text-white rounded-xl font-bold transition shadow-lg flex flex-col items-center gap-1">
+                                        <i className="fas fa-download"></i>
+                                        <span className="text-sm">파일로 저장</span>
+                                    </button>
+                                </div>
+                                <p className="text-center text-[10px] text-gray-500">수정 후 반드시 '파일로 저장'을 눌러 안전하게 보관하세요.</p>
                             </div>
                         )}
                     </div>

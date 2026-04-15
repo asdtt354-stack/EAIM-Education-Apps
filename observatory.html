@@ -15,7 +15,6 @@
 
         #log-section { flex: 4; min-width: 400px; max-width: 500px; background: rgba(15, 15, 20, 0.95); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 200; overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
         
-        /* 헤더 영역을 가로로 정렬하여 설정 버튼 배치 */
         .header-container { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
         h1 { color: var(--main-color); margin: 0; font-size: 2em; }
         .btn-settings { background: transparent; border: 1px solid #555; color: #aaa; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8em; transition: 0.2s; }
@@ -55,7 +54,6 @@
             h1 { font-size: 1.5em; }
         }
 
-        /* ★ 모달 공통 스타일 ★ */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 99999; flex-direction: column; }
         .modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; background: #0a0a0a; }
         .btn-close { padding: 10px 25px; background: #e74c3c; border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer; }
@@ -155,6 +153,7 @@
         <label>📝 관찰 일지 작성</label>
         <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면 특징을 상세히 기록하세요. 달은 위상 원리를, 태양은 흑점·홍염의 위치를 기록하세요."></textarea>
         <button class="btn-submit" onclick="submitLog()">AI 가이드 피드백 받기</button>
+        <p style="font-size: 0.7em; color: #888; margin-top: 5px; text-align: center;">※ 우측 상단의 [⚙️ AI 설정] 버튼을 눌러 API 키를 등록하세요.</p>
         <div id="ai-response"></div>
     </div>
 
@@ -167,7 +166,6 @@
 </div>
 
 <script>
-    // ★ 브라우저에서 저장된 키를 불러옵니다. 코드를 직접 수정할 필요 없습니다! ★
     let API_KEY = localStorage.getItem('eaim_api_key') || "";
 
     function openSettings() {
@@ -188,7 +186,6 @@
         alert("✅ API 키가 안전하게 저장되었습니다!");
     }
 
-    // --- 3D 관측소 시스템 로직 ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -212,6 +209,7 @@
     let prominenceSprites = []; 
     let flareSprite = null; 
 
+    // ★ 여기서부터 핵심입니다! 대표님이 주신 "완벽하게 나오던" 위키미디어 고화질 링크로 100% 롤백 완료! ★
     const textures = {
         earth: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Solarsystemscope_texture_8k_earth_daymap.jpg/1024px-Solarsystemscope_texture_8k_earth_daymap.jpg",
         moon: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Moonmap_from_clementine_data.png/1024px-Moonmap_from_clementine_data.png",
@@ -445,7 +443,6 @@
         const respDiv = document.getElementById('ai-response');
         if(!logText) return alert("관찰 내용을 먼저 기록해 주세요!");
         
-        // ★ API 키 설정 유무 검사 ★
         if(!API_KEY || API_KEY.trim() === "") {
             alert("상단의 [⚙️ AI 설정] 버튼을 눌러 API 키를 먼저 입력해주세요.");
             openSettings();

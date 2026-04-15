@@ -24,6 +24,7 @@
         #moon-phase-control { display: none; margin-top: 10px; }
         #phase-name { text-align: center; color: #fff; font-weight: bold; margin-top: 5px; }
 
+        /* 태양 관측 전용 경고창 (필터 장착 안내) */
         #sun-warning { display: none; margin-top: 10px; color: #ffcc00; font-size: 0.85em; font-weight: bold; background: rgba(255,204,0,0.1); padding: 10px; border-radius: 5px; border: 1px solid #ffcc00; text-align: center; }
 
         textarea { width: 100%; height: 120px; background: #1a1a24; color: white; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 1em; box-sizing: border-box; resize: none; }
@@ -42,7 +43,7 @@
 <div id="viewer-section">
     <div style="position: absolute; top: 20px; left: 20px; z-index: 100; pointer-events: none;">
         <h2 id="view-title" style="color: white; text-shadow: 0 0 10px #000; margin:0;">지구 (Earth)</h2>
-        <p id="view-meta" style="color: var(--accent); font-size: 0.9em; margin: 5px 0;">NASA 고해상도 텍스처 연결됨</p>
+        <p id="view-meta" style="color: var(--accent); font-size: 0.9em; margin: 5px 0;">NASA 고해상도 텍스처 (데이터 동기화 완료)</p>
     </div>
     <div id="canvas-container"></div>
 </div>
@@ -81,12 +82,12 @@
             <div id="phase-name">신월 (New Moon)</div>
         </div>
 
-        <div id="sun-warning">⚠️ 망원경 태양 특수 필터 장착 완료<br><small>(맨눈으로 관측하면 실명 위험이 있습니다)</small></div>
+        <div id="sun-warning">⚠️ 망원경 태양 필터 장착 완료<br><small>(맨눈으로 태양을 보면 실명할 수 있습니다)</small></div>
     </div>
 
     <div class="control-group" style="flex-grow: 1; display: flex; flex-direction: column;">
         <label>📝 관찰 일지 작성</label>
-        <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면 특징을 기록하세요. 태양의 경우 흑점의 위치나 형태를 기록해 보세요."></textarea>
+        <textarea id="student-log" placeholder="3D 화면을 돌려보며 표면의 특징을 기록하세요. 태양의 경우 흑점의 위치와 크기 등을 적어보세요."></textarea>
         <button class="btn-submit" onclick="submitLog()">AI 가이드 피드백 받기</button>
         <div id="ai-response"></div>
     </div>
@@ -120,44 +121,43 @@
     let isMoon = false;
     let isSun = false;
 
-    // ★ 차단 당하지 않는 글로벌 전용 텍스처 CDN으로 전면 교체 ★
     const textures = {
-        earth: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/earthmap1k.jpg",
-        moon: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/moonmap1k.jpg",
-        mars: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/marsmap1k.jpg",
-        jupiter: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/jupitermap.jpg",
-        saturn: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/saturnmap.jpg",
-        venus: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/venusmap.jpg",
-        mercury: "https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/mercurymap.jpg"
+        earth: "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
+        moon: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Moonmap_from_clementine_data.png/1024px-Moonmap_from_clementine_data.png",
+        mars: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Mars_equirectangular_projection.jpg/1024px-Mars_equirectangular_projection.jpg",
+        jupiter: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1024px-Jupiter.jpg",
+        saturn: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Saturn_%28planet%29_large.jpg/1024px-Saturn_%28planet%29_large.jpg",
+        venus: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Venus_map_NASA_JPL_Magellan_Magellan_colorized.jpg/1024px-Venus_map_NASA_JPL_Magellan_Magellan_colorized.jpg",
+        mercury: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Mercury_in_color_-_Prockter07_centered.jpg/1024px-Mercury_in_color_-_Prockter07_centered.jpg"
     };
 
-    // 태양 흑점 생성 알고리즘
+    // ★ 태양 전용 흑점 생성 알고리즘 ★
     function createSunTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 1024; canvas.height = 512;
         const ctx = canvas.getContext('2d');
         
-        // 태양 표면(코로나)
+        // 1. 코로나(가스) 느낌의 기본 배경
         ctx.fillStyle = '#ffaa00';
         ctx.fillRect(0, 0, 1024, 512);
-        for(let i=0; i<3000; i++) {
-            ctx.fillStyle = `rgba(255, 220, 0, ${Math.random()*0.3})`;
+        for(let i=0; i<2000; i++) {
+            ctx.fillStyle = `rgba(255, 200, 0, ${Math.random()*0.3})`;
             ctx.fillRect(Math.random()*1024, Math.random()*512, Math.random()*15, Math.random()*15);
         }
 
-        // 흑점(Sunspots) 생성 - 적도 부근
-        for(let i=0; i<18; i++) {
+        // 2. 뚜렷한 흑점 (Sunspots) 생성
+        for(let i=0; i<15; i++) {
             const x = Math.random() * 1024;
-            const y = 150 + Math.random() * 212; // 적도 부근에 집중
+            const y = 100 + Math.random() * 312; // 주로 적도 부근
             const radius = Math.random() * 8 + 3;
             
-            // 반암부
+            // 반암부 (약간 어두운 테두리)
             ctx.beginPath();
             ctx.arc(x, y, radius * 2.5, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(200, 60, 0, 0.7)';
+            ctx.fillStyle = 'rgba(180, 50, 0, 0.6)';
             ctx.fill();
             
-            // 암부
+            // 암부 (가장 까만 중심)
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = '#220500';
@@ -174,6 +174,132 @@
         const geometry = new THREE.SphereGeometry(2, 64, 64);
         let material;
 
-        // 태양일 때는 우리가 만든 흑점 텍스처 + 자체 발광, 그 외는 CDN 이미지
+        // ★ 태양일 경우 스스로 빛나는 특수 재질 적용 ★
         if (isSun) {
-            material =
+            material = new THREE.MeshBasicMaterial({ 
+                map: createSunTexture() // 빛의 영향을 받지 않고 자체 발광
+            });
+        } else {
+            material = new THREE.MeshStandardMaterial({ 
+                map: loader.load(textures[target]),
+                roughness: target === 'earth' ? 0.5 : 0.8
+            });
+        }
+        
+        currentMesh = new THREE.Mesh(geometry, material);
+        scene.add(currentMesh);
+
+        // UI 업데이트
+        const select = document.getElementById('planet-select');
+        document.getElementById('view-title').innerText = select.options[select.selectedIndex].text;
+        
+        // 메뉴 토글링
+        document.getElementById('moon-phase-control').style.display = isMoon ? 'block' : 'none';
+        document.getElementById('sun-warning').style.display = isSun ? 'block' : 'none';
+        
+        if (isSun) {
+            document.getElementById('view-meta').innerHTML = "NASA SDO 위성 데이터 / 망원경 필터 적용";
+        } else {
+            document.getElementById('view-meta').innerHTML = "NASA 고해상도 텍스처 (데이터 동기화 완료)";
+        }
+        
+        directionalLight.position.set(5, 3, 5);
+        if(isMoon) document.getElementById('moon-slider').value = 0;
+    }
+
+    loadPlanet('earth'); // 초기화면은 지구
+    camera.position.z = 6;
+
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    container.addEventListener('mousedown', (e) => { isDragging = true; });
+    container.addEventListener('mouseup', () => { isDragging = false; });
+    container.addEventListener('mousemove', (e) => {
+        if (isDragging && currentMesh) {
+            const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
+            currentMesh.rotation.y += deltaMove.x * 0.01;
+            currentMesh.rotation.x += deltaMove.y * 0.01;
+        }
+        previousMousePosition = { x: e.offsetX, y: e.offsetY };
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (currentMesh && !isDragging) {
+            // 태양은 가스로 이루어져 있어 자전이 조금 다릅니다 (시각적 연출)
+            currentMesh.rotation.y += isSun ? 0.001 : 0.002; 
+        }
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    function changeTarget(target) {
+        loadPlanet(target);
+    }
+
+    function updateMoonPhase(val) {
+        directionalLight.position.set(Math.cos(val)*5, 0, Math.sin(val)*5);
+        const phases = ["신월", "초승달", "상현달", "보름달", "하현달", "그믐달"];
+        document.getElementById('phase-name').innerText = phases[Math.floor((val / 6.28) * 6) % 6];
+    }
+
+    async function submitLog() {
+        const logText = document.getElementById('student-log').value;
+        const targetName = document.getElementById('view-title').innerText;
+        const respDiv = document.getElementById('ai-response');
+        
+        if(!logText) return alert("관찰 내용을 먼저 기록해 주세요!");
+        
+        respDiv.style.display = 'block';
+        respDiv.innerHTML = "📡 제미나이 2.5 플래시 엔진이 기록을 분석 중입니다...";
+
+        // 태양 흑점에 특화된 프롬프트 추가
+        const prompt = `당신은 에임 천문대의 과학 교사입니다. 학생이 '${targetName}'을 관측하고 다음 일지를 썼습니다: "${logText}"
+        학생의 관찰력에 대해 따뜻하게 칭찬하고, 해당 천체의 과학적 특징(태양이라면 흑점의 원리, 온도의 차이 등)을 1~2문장으로 보완 설명해주세요.`;
+
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await res.json();
+            respDiv.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+            saveToStorage(targetName, logText);
+        } catch(e) {
+            respDiv.innerHTML = "❌ 분석 엔진과 연결할 수 없습니다. API 키를 확인하세요.";
+        }
+    }
+
+    function saveToStorage(target, logText) {
+        const date = document.getElementById('obs-date').value;
+        const loc = document.getElementById('obs-location').value;
+        const log = { target, logText, date, loc };
+        
+        let logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+        logs.unshift(log);
+        localStorage.setItem('eaim_observatory_logs', JSON.stringify(logs));
+        renderLogs();
+    }
+
+    function renderLogs() {
+        const logs = JSON.parse(localStorage.getItem('eaim_observatory_logs') || "[]");
+        const listDiv = document.getElementById('log-list');
+        listDiv.innerHTML = logs.map(l => `
+            <div class="log-item">
+                <div class="log-date">${l.date} | ${l.loc}</div>
+                <strong>${l.target}</strong>: ${l.logText.substring(0, 40)}...
+            </div>
+        `).join('');
+    }
+
+    renderLogs();
+</script>
+</body>
+</html>

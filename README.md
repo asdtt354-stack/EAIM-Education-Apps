@@ -18,5 +18,5 @@ AI 기술과 예술을 융합하여 학생들의 사회정서학습(SEL)을 돕�
 - **Design Methodology**: EAIM Framework (예술 융합 SEL 기반)
 
 ## ✉️ Contact
-- **Developer**: 박성애 (EAIM Studio 디렉터)
-- **Email**: asdtt354@gmail.com
+- **Developer**: ****
+- **Email**: ****

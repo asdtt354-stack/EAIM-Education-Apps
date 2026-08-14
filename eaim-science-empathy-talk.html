@@ -117,6 +117,11 @@
       <label style="font-size:.78rem;font-weight:700;color:#475569;display:block;margin-bottom:6px">🔑 Gemini API 키</label>
       <input type="text" id="apiKeyInput" class="eaim-input" placeholder="AIzaSy..." style="font-size:.85rem;padding:10px" oninput="saveApiKeyDash(this.value)">
     </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:.78rem;font-weight:700;color:#475569;display:block;margin-bottom:6px">🔬 오늘의 단원</label>
+      <input type="text" id="unitInput" class="eaim-input" placeholder="예: 소리의 전달, 식물의 구조" style="font-size:.9rem;padding:10px" oninput="saveUnitDash(this.value)">
+      <p style="font-size:.7rem;color:#94a3b8;margin-top:6px">여기 입력한 단원으로 학생들이 바로 탐험을 시작해요. 학생은 단원을 직접 입력하지 않아요.</p>
+    </div>
     <button style="width:100%;padding:12px;border-radius:12px;background:#f1f5f9;border:1.5px solid #e2e8f0;cursor:pointer;font-weight:700" onclick="teacherLogout()">로그아웃</button>
   </div>
 </div>
@@ -149,14 +154,14 @@
 
     let currentUser=null, teacherUid=null, isStudentMode=false;
     let stuName='', stuClass='';
-    let settings = { apiKey:'', classOn:false };
+    let settings = { apiKey:'', classOn:false, currentUnit:'' };
     let groups=[];
     let unsubSettings=null, unsubGroups=null;
 
     function subscribeSettings(uid, cb){
       if(unsubSettings) unsubSettings();
       unsubSettings = settingsDocRef(uid).onSnapshot(snap=>{
-        settings = snap.exists ? snap.data() : {apiKey:'', classOn:false};
+        settings = snap.exists ? snap.data() : {apiKey:'', classOn:false, currentUnit:''};
         window.settings = settings;
         cb && cb();
       }, err=>{ console.warn('설정 동기화 오류', err); cb && cb(); });
@@ -240,6 +245,7 @@
       document.getElementById('dashAvatar').src = currentUser?.photoURL||'';
       document.getElementById('dashProfile').textContent = (currentUser?.displayName||'')+' · '+(currentUser?.email||'');
       document.getElementById('apiKeyInput').value = settings.apiKey||'';
+      document.getElementById('unitInput').value = settings.currentUnit||'';
       renderClassToggle();
       const inviteUrl = `${location.origin}${location.pathname}?role=student&teacher=${teacherUid}`;
       document.getElementById('inviteUrlBox').textContent = inviteUrl;
@@ -255,6 +261,7 @@
     }
     function toggleClass(){ setSettings(teacherUid, {classOn: !settings.classOn}); renderClassToggle(); }
     function saveApiKeyDash(v){ setSettings(teacherUid, {apiKey:v}); }
+    function saveUnitDash(v){ setSettings(teacherUid, {currentUnit:v}); }
     function copyInvite(){
       const url = `${location.origin}${location.pathname}?role=student&teacher=${teacherUid}`;
       navigator.clipboard.writeText(url).then(()=>alert('✅ 초대 링크 복사됨!'));
@@ -348,7 +355,7 @@
         const [step, setStep] = useState(1);
         const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-        const [scienceUnit, setScienceUnit] = useState('');
+        const scienceUnit = (window.settings && window.settings.currentUnit) || '';
         const [dailyScenario, setDailyScenario] = useState('');
         const [quizAnswer, setQuizAnswer] = useState('');
         const [scienceReason, setScienceReason] = useState('');
@@ -372,7 +379,7 @@
         };
 
         const generateMission = async () => {
-            if (!scienceUnit) return alert('과학 단원을 입력해주세요!');
+            if (!scienceUnit) return alert('선생님이 아직 오늘의 단원을 설정하지 않았어요.');
             if (!(window.settings && window.settings.apiKey)) {
                 return alert('선생님이 아직 API 키를 설정하지 않았어요. 선생님께 문의해주세요.');
             }
@@ -432,11 +439,19 @@
                 {step === 1 && (
                     <div className="space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-hand text-slate-800">어떤 원리를 탐험할까요?</h2>
-                            <p className="text-xs text-slate-500 italic">교과서 단원명을 입력해 보세요.</p>
+                            <h2 className="text-2xl font-hand text-slate-800">오늘의 탐험 단원</h2>
+                            <p className="text-xs text-slate-500 italic">선생님이 정해주신 단원이에요.</p>
                         </div>
-                        <input type="text" value={scienceUnit} onChange={e => setScienceUnit(e.target.value)} className="eaim-input border-indigo-200" placeholder="예: 소리의 전달, 식물의 구조" />
-                        <button onClick={generateMission} disabled={isAnalyzing} className="eaim-btn-main">{isAnalyzing ? "마음의 문을 여는 중..." : "탐험 시작하기 ✨"}</button>
+                        {scienceUnit ? (
+                            <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-6 text-center">
+                                <span className="font-hand text-2xl text-indigo-700 font-bold">{scienceUnit}</span>
+                            </div>
+                        ) : (
+                            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center text-amber-700 text-sm">
+                                🔒 선생님이 아직 오늘의 단원을 설정하지 않았어요. 잠시만 기다려주세요.
+                            </div>
+                        )}
+                        <button onClick={generateMission} disabled={isAnalyzing || !scienceUnit} className="eaim-btn-main">{isAnalyzing ? "마음의 문을 여는 중..." : "탐험 시작하기 ✨"}</button>
                     </div>
                 )}
 
@@ -470,7 +485,7 @@
                 {step === 3 && (
                     <div className="space-y-6 animate-fadeIn">
                         <div className="bg-white p-8 rounded-[3rem] border-2 border-indigo-200 whitespace-pre-wrap font-hand text-2xl leading-relaxed shadow-xl border-t-[12px] border-t-indigo-500">{feedbackReport}</div>
-                        <button onClick={() => { setStep(1); setScienceUnit(''); setDailyScenario(''); setQuizAnswer(''); setScienceReason(''); setCharacterEmpathy(''); setFeedbackReport(''); }} className="eaim-btn-main bg-indigo-500">새로운 탐험 떠나기 🚀</button>
+                        <button onClick={() => { setStep(1); setDailyScenario(''); setQuizAnswer(''); setScienceReason(''); setCharacterEmpathy(''); setFeedbackReport(''); }} className="eaim-btn-main bg-indigo-500">새로운 탐험 떠나기 🚀</button>
                     </div>
                 )}
             </div>

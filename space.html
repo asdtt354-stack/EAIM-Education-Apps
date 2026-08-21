@@ -13,6 +13,7 @@
 :root { --main-color: #00d4ff; --bg-dark: #020205; --accent: #2ecc71; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
+#mainApp{ width:100%; height:100%; min-height:0; }
 
 #viewer-section { flex: 7; position: relative; min-height: 300px; }
 #canvas-container { width: 100%; height: 100%; cursor: grab; }
@@ -26,6 +27,7 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
   position: absolute; bottom: 24px; left: 24px;
   background: rgba(10, 10, 20, 0.85); border: 1px solid #333;
   padding: 18px; border-radius: 12px; width: 260px;
+  max-height: calc(100vh - 130px); overflow-y: auto;
   backdrop-filter: blur(10px); z-index: 10;
 }
 .slider-group { margin-bottom: 14px; }
@@ -37,6 +39,17 @@ input[type=range] { width: 100%; cursor: pointer; }
 .slider-speed { accent-color: var(--main-color); }
 .slider-size { accent-color: var(--accent); }
 .speed-labels { display: flex; justify-content: space-between; color: #888; font-size: 0.75em; margin-top: 4px; font-weight: bold; }
+.label-telescope { color: #f472b6; }
+.telescope-type-toggle { display: flex; gap: 6px; margin-bottom: 8px; }
+.tele-type-btn { flex: 1; background: #1a1a24; border: 1.5px solid #444; color: #ccc; border-radius: 8px; padding: 8px 4px; font-size: 0.72em; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.tele-type-btn.active { border-color: #f472b6; background: rgba(244,114,182,0.12); color: #f9a8d4; }
+.telescope-diagram { display: none; }
+.telescope-diagram.active { display: block; }
+.tele-caption { font-size: 0.68em; color: #999; line-height: 1.4; margin: 4px 0 10px; }
+#telescope-zoom-row label { color: #f472b6; }
+.tele-zoom-slider { accent-color: #f472b6; }
+#canvas-container canvas.ca-active { filter: url(#caFilter); }
+
 
 #mission-section {
   flex: 3; min-width: 300px; max-width: 380px;
@@ -229,6 +242,18 @@ textarea { width: 100%; height: 80px; background: #1a1a24; color: white; border:
   </div>
 </div>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="caFilter" x="-20%" y="-20%" width="140%" height="140%">
+    <feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rC"/>
+    <feOffset id="caROffset" in="rC" dx="0" dy="0" result="rOff"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gC"/>
+    <feOffset id="caGOffset" in="gC" dx="0" dy="0" result="gOff"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bC"/>
+    <feOffset id="caBOffset" in="bC" dx="0" dy="0" result="bOff"/>
+    <feBlend in="rOff" in2="gOff" mode="screen" result="rg"/>
+    <feBlend in="rg" in2="bOff" mode="screen"/>
+  </filter>
+</svg>
 <div id="mainApp" style="display:none">
 <div id="viewer-section">
   <div class="header">
@@ -246,6 +271,57 @@ textarea { width: 100%; height: 80px; background: #1a1a24; color: white; border:
       <label class="label-size">🔍 행성 돋보기 (크기 확대)</label>
       <input type="range" id="size-slider" class="slider-size" min="1" max="15" step="0.5" value="3">
       <div class="speed-labels"><span>실제 궤도 비율</span><span>최대 확대(15x)</span></div>
+    </div>
+    <div class="slider-group" id="telescope-group">
+      <label class="label-telescope">🔭 망원경 줌인 관측</label>
+      <select id="telescope-target"><option value="">관측 대상 선택</option></select>
+      <div class="telescope-type-toggle">
+        <button type="button" class="tele-type-btn active" data-type="reflector" onclick="setTelescopeType('reflector')">🪞 반사망원경</button>
+        <button type="button" class="tele-type-btn" data-type="refractor" onclick="setTelescopeType('refractor')">🔍 굴절망원경</button>
+      </div>
+
+      <div class="telescope-diagram active" data-type="reflector">
+        <svg viewBox="0 0 240 100" style="width:100%;height:auto">
+          <rect x="18" y="30" width="182" height="40" fill="none" stroke="#555" stroke-width="1.5"/>
+          <path d="M197,32 Q186,50 197,68" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+          <line x1="83" y1="41" x2="99" y2="59" stroke="#38bdf8" stroke-width="2.5"/>
+          <rect x="87" y="8" width="8" height="14" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+          <line x1="0" y1="42" x2="192" y2="42" stroke="#facc15" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="0" y1="50" x2="192" y2="50" stroke="#facc15" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="0" y1="58" x2="192" y2="58" stroke="#facc15" stroke-width="1" stroke-dasharray="3,2"/>
+          <path d="M192,42 Q140,50 91,47" fill="none" stroke="#facc15" stroke-width="1"/>
+          <path d="M192,58 Q140,50 91,53" fill="none" stroke="#facc15" stroke-width="1"/>
+          <line x1="91" y1="50" x2="91" y2="17" stroke="#facc15" stroke-width="1"/>
+          <text x="30" y="12" fill="#4ade80" font-size="9" font-weight="bold">주경(오목거울)</text>
+          <text x="103" y="12" fill="#38bdf8" font-size="9" font-weight="bold">접안렌즈</text>
+          <text x="60" y="90" fill="#7dd3fc" font-size="9">부경(평면거울)이 상을 옆으로 꺾어줘요</text>
+        </svg>
+        <p class="tele-caption">오목거울로 빛을 모아 상을 만들어요. 색번짐이 거의 없어서 큰 망원경에 많이 쓰여요.</p>
+      </div>
+
+      <div class="telescope-diagram" data-type="refractor">
+        <svg viewBox="0 0 240 100" style="width:100%;height:auto">
+          <rect x="18" y="38" width="182" height="24" fill="none" stroke="#555" stroke-width="1.5"/>
+          <ellipse cx="30" cy="50" rx="6" ry="16" fill="#38bdf8" fill-opacity="0.25" stroke="#38bdf8" stroke-width="2"/>
+          <ellipse cx="190" cy="50" rx="3" ry="9" fill="#38bdf8" fill-opacity="0.25" stroke="#38bdf8" stroke-width="2"/>
+          <line x1="0" y1="43" x2="24" y2="43" stroke="#facc15" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="0" y1="50" x2="24" y2="50" stroke="#facc15" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="0" y1="57" x2="24" y2="57" stroke="#facc15" stroke-width="1" stroke-dasharray="3,2"/>
+          <path d="M24,43 Q95,50 187,45" fill="none" stroke="#facc15" stroke-width="1"/>
+          <path d="M24,57 Q95,50 187,55" fill="none" stroke="#facc15" stroke-width="1"/>
+          <line x1="193" y1="50" x2="230" y2="50" stroke="#facc15" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="12" y="78" fill="#4ade80" font-size="9" font-weight="bold">대물렌즈(볼록)</text>
+          <text x="168" y="78" fill="#38bdf8" font-size="9" font-weight="bold">접안렌즈</text>
+          <text x="95" y="30" fill="#f9a8d4" font-size="9">초점</text>
+        </svg>
+        <p class="tele-caption">볼록렌즈로 빛을 굴절시켜 상을 만들어요. 배율이 높아지면 색깔마다 굴절 정도가 달라 상 가장자리에 색번짐(색수차)이 생길 수 있어요.</p>
+      </div>
+
+      <div id="telescope-zoom-row" style="display:none">
+        <label>🔎 배율: <span id="zoom-value">1×</span></label>
+        <input type="range" id="telescope-zoom" class="tele-zoom-slider" min="1" max="30" step="1" value="1">
+        <div class="speed-labels"><span>1×</span><span>30×</span></div>
+      </div>
     </div>
   </div>
 
@@ -279,6 +355,22 @@ textarea { width: 100%; height: 80px; background: #1a1a24; color: white; border:
   </div>
 
   <div class="feedback-box" id="feedback-box"></div>
+
+  <div class="mission-box" style="margin-top:18px;border-color:rgba(244,114,182,0.3)">
+    <label style="color:#f9a8d4">🔭 지금 망원경으로 관측한 내용 질문받기</label>
+    <p style="font-size:0.7em;color:#888;margin:-2px 0 10px">왼쪽 조작판에서 관측 대상·망원경 종류·배율을 먼저 정해보세요.</p>
+    <button class="btn-primary" style="background:#ec4899" onclick="generateTelescopeMission()" id="telescope-mission-btn">🔭 관측 질문 받기</button>
+  </div>
+
+  <div class="question-card" id="telescope-question-card" style="border-color:rgba(244,114,182,0.3);background:rgba(244,114,182,0.08)"></div>
+
+  <div id="telescope-answer-area" style="display:none">
+    <label style="display:block;color:#f9a8d4;font-weight:bold;margin-bottom:6px;font-size:0.82em">✏️ 내 생각 적기</label>
+    <textarea id="telescope-student-answer" placeholder="관찰한 내용을 근거로 적어보세요."></textarea>
+    <button class="btn-primary" style="background:#ec4899" onclick="submitTelescopeAnswer()">제출하고 피드백 받기</button>
+  </div>
+
+  <div class="feedback-box" id="telescope-feedback-box" style="border-color:rgba(244,114,182,0.3);background:rgba(244,114,182,0.08)"></div>
 
   <div style="margin-top:20px;border-top:1px solid #333;padding-top:14px">
     <h3 style="color:#aaa;margin:0 0 8px 0;font-size:0.9em">보관된 관측 기록</h3>
@@ -487,7 +579,7 @@ function renderGroupListDash(){
   el.innerHTML = groups.length ? groups.map(g=>`
     <div class="group-item"><span>${g.name}</span>
       <span style="display:flex;gap:12px;align-items:center">
-        <button class="group-qr-btn" onclick="showGroupQr(${JSON.stringify(g.name)})">QR/링크</button>
+        <button class="group-qr-btn" onclick="showGroupQr(decodeURIComponent('${encodeURIComponent(g.name)}'))">QR/링크</button>
         <button class="group-del" onclick="deleteGroupUI('${g.id}')">삭제</button>
       </span>
     </div>
@@ -674,6 +766,59 @@ Object.keys(planetsData).forEach(key=>{
 planetSelA.value = 'earth';
 planetSelB.value = 'jupiter';
 
+// ── 🔭 망원경 줌인 관측 상태 ──
+let telescopeType = 'reflector';
+let telescopeTarget = '';
+let telescopeZoom = 1;
+
+const teleTargetSel = document.getElementById('telescope-target');
+if(teleTargetSel){
+  const sunOpt = document.createElement('option'); sunOpt.value='sun'; sunOpt.textContent='태양';
+  teleTargetSel.appendChild(sunOpt);
+  Object.keys(planetsData).forEach(key=>{
+    const opt = document.createElement('option'); opt.value=key; opt.textContent=planetsData[key].name;
+    teleTargetSel.appendChild(opt);
+  });
+  teleTargetSel.addEventListener('change', ()=>{
+    telescopeTarget = teleTargetSel.value;
+    const zoomRow = document.getElementById('telescope-zoom-row');
+    if(zoomRow) zoomRow.style.display = telescopeTarget ? 'block' : 'none';
+    if(!telescopeTarget){
+      const zi = document.getElementById('telescope-zoom'); if(zi) zi.value = 1;
+      telescopeZoom = 1;
+      const zv = document.getElementById('zoom-value'); if(zv) zv.textContent = '1×';
+    }
+    updateChromaticAberration();
+  });
+}
+const teleZoomInput = document.getElementById('telescope-zoom');
+if(teleZoomInput){
+  teleZoomInput.addEventListener('input', ()=>{
+    telescopeZoom = parseFloat(teleZoomInput.value);
+    const zv = document.getElementById('zoom-value'); if(zv) zv.textContent = telescopeZoom + '×';
+    updateChromaticAberration();
+  });
+}
+function setTelescopeType(type){
+  telescopeType = type;
+  document.querySelectorAll('.tele-type-btn').forEach(b=>b.classList.toggle('active', b.dataset.type===type));
+  document.querySelectorAll('.telescope-diagram').forEach(d=>d.classList.toggle('active', d.dataset.type===type));
+  updateChromaticAberration();
+}
+function updateChromaticAberration(){
+  if(!renderer || !renderer.domElement) return;
+  const canvasEl = renderer.domElement;
+  if(telescopeType === 'refractor' && telescopeTarget && telescopeZoom > 6){
+    const strength = Math.min(1, (telescopeZoom - 6) / 24) * 3.2;
+    const rOff = document.getElementById('caROffset'), bOff = document.getElementById('caBOffset');
+    if(rOff){ rOff.setAttribute('dx', strength.toFixed(2)); rOff.setAttribute('dy', (strength*0.2).toFixed(2)); }
+    if(bOff){ bOff.setAttribute('dx', (-strength).toFixed(2)); bOff.setAttribute('dy', (-strength*0.2).toFixed(2)); }
+    canvasEl.classList.add('ca-active');
+  } else {
+    canvasEl.classList.remove('ca-active');
+  }
+}
+
 function initThreeScene(){
   THREE.ImageUtils.crossOrigin = '';
   const loader = new THREE.TextureLoader();
@@ -795,10 +940,24 @@ function initThreeScene(){
     sun.scale.set(sunScale, sunScale, sunScale);
     sunGlow.scale.set(sunScale, sunScale, sunScale);
 
-    camera.position.x = Math.cos(cameraAngle) * cameraRadius;
-    camera.position.z = Math.sin(cameraAngle) * cameraRadius;
-    camera.position.y = cameraHeight;
-    camera.lookAt(0, 0, 0);
+    if(telescopeTarget){
+      let targetPos = null, targetSize = 10;
+      if(telescopeTarget === 'sun'){ targetPos = sun.position; targetSize = 50 * sunScale; }
+      else if(meshes[telescopeTarget]){ targetPos = meshes[telescopeTarget].position; targetSize = planetsData[telescopeTarget].size * sizeMultiplier; }
+      if(targetPos){
+        const dist = Math.max(targetSize * (16 / telescopeZoom) + targetSize * 1.5, targetSize * 1.8);
+        const vertRatio = Math.max(0, Math.min(1, (cameraHeight - 100) / 1900));
+        camera.position.x = targetPos.x + Math.cos(cameraAngle) * dist;
+        camera.position.z = targetPos.z + Math.sin(cameraAngle) * dist;
+        camera.position.y = targetPos.y + dist * (0.12 + vertRatio * 0.45);
+        camera.lookAt(targetPos.x, targetPos.y, targetPos.z);
+      }
+    } else {
+      camera.position.x = Math.cos(cameraAngle) * cameraRadius;
+      camera.position.z = Math.sin(cameraAngle) * cameraRadius;
+      camera.position.y = cameraHeight;
+      camera.lookAt(0, 0, 0);
+    }
 
     renderer.render(scene, camera);
   }
@@ -931,6 +1090,108 @@ function renderLogs(){
       <div class="log-meta">${l.pair} · ${l.date}</div>
       ${l.answer.substring(0,50)}${l.answer.length>50?'...':''}
     </div>`).join('');
+}
+
+// ══════════════════════════
+// 🔭 망원경 관측 미션 (반사/굴절 원리 + 줌인 연동)
+// ══════════════════════════
+let currentTelescopeMission = null;
+
+async function generateTelescopeMission(){
+  if(!(settings.apiKey||'').trim()){
+    alert('선생님이 아직 API 키를 설정하지 않았어요. 선생님께 문의해주세요.');
+    return;
+  }
+  if(!telescopeTarget){
+    alert('먼저 왼쪽 조작판에서 관측 대상을 선택해주세요!');
+    return;
+  }
+  const targetName = telescopeTarget === 'sun' ? '태양' : planetsData[telescopeTarget].name;
+  const typeName = telescopeType === 'reflector' ? '반사망원경' : '굴절망원경';
+
+  const btn = document.getElementById('telescope-mission-btn');
+  btn.disabled = true; btn.textContent = '🤖 질문 만드는 중...';
+  document.getElementById('telescope-question-card').style.display = 'none';
+  document.getElementById('telescope-answer-area').style.display = 'none';
+  document.getElementById('telescope-feedback-box').style.display = 'none';
+
+  const opticsNote = telescopeType === 'refractor'
+    ? '굴절망원경은 볼록렌즈로 빛을 굴절시켜 상을 맺는데, 배율이 높아질수록 색깔마다 굴절되는 정도가 달라 상 가장자리에 색번짐(색수차)이 생길 수 있어.'
+    : '반사망원경은 오목거울로 빛을 반사시켜 상을 맺기 때문에 색수차가 거의 없고, 배율이 높아져도 상이 비교적 깨끗하게 유지돼.';
+
+  const prompt = `중학교 과학 교사로서, 학생이 ${typeName}(으)로 "${targetName}"을(를) ${telescopeZoom}배율로 확대 관측하고 있어.
+${opticsNote}
+이 원리를 학생이 스스로 떠올리도록 유도하는 관측 질문을 1개, 2문장 이내로 만들어줘.
+정답을 알려주지 말고, 학생이 직접 생각하게 만드는 질문으로 써줘.`;
+
+  try{
+    const q = await callGemini(prompt, 200);
+    currentTelescopeMission = { target: targetName, telescopeType: typeName, zoom: telescopeZoom, question: q };
+    const card = document.getElementById('telescope-question-card');
+    card.textContent = q;
+    card.style.display = 'block';
+    document.getElementById('telescope-answer-area').style.display = 'block';
+    document.getElementById('telescope-student-answer').value = '';
+  }catch(e){
+    alert('질문 생성에 실패했어요: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = '🔭 관측 질문 받기';
+}
+
+async function submitTelescopeAnswer(){
+  const answer = document.getElementById('telescope-student-answer').value.trim();
+  if(!answer){ alert('생각을 먼저 적어주세요!'); return; }
+  if(!currentTelescopeMission){ return; }
+
+  const fb = document.getElementById('telescope-feedback-box');
+  fb.style.display = 'block';
+  fb.textContent = '📡 AI 선생님이 답변을 읽는 중...';
+
+  const prompt = `중학교 과학 교사로서 학생의 망원경 관측 답변을 따뜻하게 첨삭해줘.
+관측 대상: ${currentTelescopeMission.target} (${currentTelescopeMission.telescopeType}, ${currentTelescopeMission.zoom}배율)
+질문: ${currentTelescopeMission.question}
+학생 답변: ${answer}
+
+반사망원경과 굴절망원경의 원리 차이(오목거울로 빛을 반사 vs 볼록렌즈로 빛을 굴절, 색수차 여부)를 참고해서
+과학적으로 맞는 부분은 칭찬하고, 부족한 부분은 힌트로 보완해줘. 3~4문장, 한국어로.`;
+
+  try{
+    const feedback = await callGemini(prompt, 400);
+    fb.textContent = feedback;
+    saveTelescopeLog(currentTelescopeMission, answer, feedback);
+  }catch(e){
+    fb.textContent = '❌ 피드백 생성 실패: ' + e.message;
+  }
+}
+
+function saveTelescopeLog(mission, answer, feedback){
+  const pairLabel = `🔭 ${mission.target} · ${mission.telescopeType} ${mission.zoom}×`;
+  const logs = JSON.parse(localStorage.getItem('eaim_odyssey_logs') || '[]');
+  logs.unshift({
+    pair: pairLabel,
+    question: mission.question,
+    answer, feedback,
+    date: new Date().toLocaleString('ko-KR')
+  });
+  localStorage.setItem('eaim_odyssey_logs', JSON.stringify(logs.slice(0, 20)));
+  renderLogs();
+
+  if(teacherUid && stuName){
+    odysseyLogsCol(teacherUid).add({
+      name: stuName, group: stuClass||'',
+      pair: pairLabel,
+      question: mission.question, answer, feedback,
+      telescopeType: mission.telescopeType, target: mission.target, zoom: mission.zoom,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(e=>console.warn('망원경 관측 기록 저장 실패', e));
+
+    studentsColRef(teacherUid).doc(stuName.trim()).set({
+      name: stuName, group: stuClass||'',
+      lastPair: pairLabel,
+      missionCount: firebase.firestore.FieldValue.increment(1),
+      updatedAt: new Date().toLocaleString('ko-KR')
+    }, {merge:true}).catch(e=>console.warn('학생 현황 기록 실패', e));
+  }
 }
 
 // ══════════════════════════

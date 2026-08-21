@@ -373,7 +373,7 @@
       el.innerHTML = groups.length ? groups.map(g=>`
         <div class="group-item"><span>${g.name}</span>
           <span style="display:flex;gap:12px;align-items:center">
-            <button class="group-qr-btn" onclick="showGroupQr(${JSON.stringify(g.name)})">QR/링크</button>
+            <button class="group-qr-btn" onclick="showGroupQr(decodeURIComponent('${encodeURIComponent(g.name)}'))">QR/링크</button>
             <button class="group-del" onclick="deleteGroupUI('${g.id}')">삭제</button>
           </span>
         </div>

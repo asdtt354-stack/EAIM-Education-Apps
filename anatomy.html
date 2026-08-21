@@ -226,6 +226,17 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
   </div>
 </div>
 
+<div id="referenceAtlasOverlay" class="ov" style="display:none;z-index:370" onclick="if(event.target===this) closeReferenceAtlas()">
+  <div class="mb" style="max-width:820px;padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-weight:900;font-size:1.05rem;color:var(--main-color)">📖 참고 인체 해부도</div>
+      <button onclick="closeReferenceAtlas()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:rgba(255,255,255,.5)">✖</button>
+    </div>
+    <p style="font-size:.72rem;color:rgba(255,255,255,.45);margin:0 0 10px;line-height:1.5">AI로 만든 참고용 그림이에요. 실제 정답 정보는 왼쪽 인터랙티브 화면의 설명을 기준으로 해주세요.</p>
+    <img src="anatomy-reference.jpg" alt="참고 인체 해부도" style="width:100%;border-radius:12px;display:block">
+  </div>
+</div>
+
 <div id="mutoMoodOverlay" class="ov" style="display:none;z-index:350">
   <div class="mb" style="max-width:380px">
     <img id="mutoImg" src="" alt="뮤토" style="width:120px;height:auto;margin:0 auto 12px;display:block">
@@ -263,6 +274,7 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
 
     <button type="button" class="action-btn" id="explode-btn" onclick="toggleExplode()">🧩 분리해서 보기</button>
     <button type="button" class="action-btn energy" id="energy-btn" onclick="toggleEnergyMode()">🔥 세포호흡·에너지 흐름 보기</button>
+    <button type="button" class="action-btn" style="border-color:#38bdf8;background:rgba(56,189,248,0.1);color:#7dd3fc" onclick="openReferenceAtlas()">📖 실제 도감처럼 보기</button>
 
     <div id="organ-info-box">
       <div id="organ-info-name"></div>
@@ -803,6 +815,8 @@ function toggleEnergyMode(){
   syncSystemVisibility();
   updateMissionState();
 }
+function openReferenceAtlas(){ document.getElementById('referenceAtlasOverlay').style.display='flex'; }
+function closeReferenceAtlas(){ document.getElementById('referenceAtlasOverlay').style.display='none'; }
 
 // ══════════════════════════
 // 🔬 AI 탐구 미션

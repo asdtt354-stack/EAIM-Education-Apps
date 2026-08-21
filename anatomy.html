@@ -227,13 +227,21 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
 </div>
 
 <div id="referenceAtlasOverlay" class="ov" style="display:none;z-index:370" onclick="if(event.target===this) closeReferenceAtlas()">
-  <div class="mb" style="max-width:820px;padding:16px">
+  <div class="mb" style="max-width:860px;padding:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div style="font-weight:900;font-size:1.05rem;color:var(--main-color)">📖 참고 인체 해부도</div>
       <button onclick="closeReferenceAtlas()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:rgba(255,255,255,.5)">✖</button>
     </div>
-    <p style="font-size:.72rem;color:rgba(255,255,255,.45);margin:0 0 10px;line-height:1.5">AI로 만든 참고용 그림이에요. 실제 정답 정보는 왼쪽 인터랙티브 화면의 설명을 기준으로 해주세요.</p>
-    <img src="anatomy-reference.jpg" alt="참고 인체 해부도" style="width:100%;border-radius:12px;display:block">
+    <p style="font-size:.72rem;color:rgba(255,255,255,.45);margin:0 0 10px;line-height:1.5">AI로 만든 참고용 그림이에요. 실제 정답 정보는 왼쪽 인터랙티브 화면의 설명을 기준으로 해주세요. 그림을 클릭하면 확대돼요.</p>
+    <div id="atlas-zoom-wrap" style="overflow:auto;max-height:68vh;border-radius:12px;cursor:zoom-in;border:1px solid #2a2a2c">
+      <img id="atlas-img" src="anatomy-reference.jpg" alt="참고 인체 해부도" style="width:100%;display:block;transition:width 0.25s" onclick="atlasZoomClick(event)">
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px">
+      <button type="button" class="zoom-btn" onclick="atlasZoom(-1)">−</button>
+      <div style="min-width:52px;text-align:center;font-weight:800;font-size:.85em" id="atlas-zoom-label">100%</div>
+      <button type="button" class="zoom-btn" onclick="atlasZoom(1)">+</button>
+      <button type="button" onclick="atlasZoomReset()" style="padding:8px 14px;border-radius:8px;border:1.5px solid #444;background:#1a1a1c;color:#ccc;font-size:.78em;font-weight:700;cursor:pointer">원래 크기</button>
+    </div>
   </div>
 </div>
 
@@ -815,7 +823,42 @@ function toggleEnergyMode(){
   syncSystemVisibility();
   updateMissionState();
 }
-function openReferenceAtlas(){ document.getElementById('referenceAtlasOverlay').style.display='flex'; }
+const ATLAS_ZOOM_STEPS = [100, 150, 220, 320, 450];
+let atlasZoomIndex = 0;
+function applyAtlasZoom(){
+  const img = document.getElementById('atlas-img');
+  img.style.width = ATLAS_ZOOM_STEPS[atlasZoomIndex] + '%';
+  document.getElementById('atlas-zoom-label').textContent = ATLAS_ZOOM_STEPS[atlasZoomIndex] + '%';
+}
+function atlasZoom(delta){
+  const next = atlasZoomIndex + delta;
+  if(next < 0 || next >= ATLAS_ZOOM_STEPS.length) return;
+  atlasZoomIndex = next;
+  applyAtlasZoom();
+}
+function atlasZoomReset(){
+  atlasZoomIndex = 0;
+  applyAtlasZoom();
+  const wrap = document.getElementById('atlas-zoom-wrap');
+  if(wrap){ wrap.scrollLeft = 0; wrap.scrollTop = 0; }
+}
+function atlasZoomClick(e){
+  const wrap = document.getElementById('atlas-zoom-wrap');
+  if(atlasZoomIndex >= ATLAS_ZOOM_STEPS.length - 1){ atlasZoomReset(); return; }
+  const rect = wrap.getBoundingClientRect();
+  const xRatio = (e.clientX - rect.left + wrap.scrollLeft) / wrap.scrollWidth;
+  const yRatio = (e.clientY - rect.top + wrap.scrollTop) / wrap.scrollHeight;
+  atlasZoomIndex++;
+  applyAtlasZoom();
+  requestAnimationFrame(()=>{
+    wrap.scrollLeft = xRatio * wrap.scrollWidth - rect.width / 2;
+    wrap.scrollTop = yRatio * wrap.scrollHeight - rect.height / 2;
+  });
+}
+function openReferenceAtlas(){
+  document.getElementById('referenceAtlasOverlay').style.display='flex';
+  atlasZoomReset();
+}
 function closeReferenceAtlas(){ document.getElementById('referenceAtlasOverlay').style.display='none'; }
 
 // ══════════════════════════

@@ -42,15 +42,21 @@ input[type=range] { width: 100%; cursor: pointer; }
 .label-telescope { color: #f472b6; }
 #telescope-eyepiece {
   display: none; position: absolute; inset: 0; z-index: 15; pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, transparent 0, transparent 32vmin, rgba(0,0,0,0.94) 50vmin);
+  background: radial-gradient(circle at 50% 50%, transparent 0, transparent 30vmin, rgba(0,0,0,0.6) 31vmin, #000 62vmin);
 }
-#telescope-eyepiece::before, #telescope-eyepiece::after {
-  content: ''; position: absolute; top: 50%; left: 50%; background: rgba(255,255,255,0.14); transform: translate(-50%,-50%);
+.tele-frame {
+  position: absolute; top: 50%; left: 50%; width: 60vmin; height: 60vmin;
+  border: 3px solid rgba(244,114,182,0.75); border-radius: 50%;
+  box-shadow: 0 0 26px rgba(244,114,182,0.35), inset 0 0 40px rgba(0,0,0,0.75);
+  transform: translate(-50%,-50%);
 }
-#telescope-eyepiece::before { width: 1px; height: 64vmin; }
-#telescope-eyepiece::after { width: 64vmin; height: 1px; }
+.tele-crosshair-v, .tele-crosshair-h {
+  position: absolute; top: 50%; left: 50%; background: rgba(255,255,255,0.3); transform: translate(-50%,-50%);
+}
+.tele-crosshair-v { width: 1.5px; height: 58vmin; }
+.tele-crosshair-h { width: 58vmin; height: 1.5px; }
 .tele-ring {
-  position: absolute; top: 50%; left: 50%; border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
+  position: absolute; top: 50%; left: 50%; border: 1px solid rgba(255,255,255,0.28); border-radius: 50%;
   transform: translate(-50%,-50%);
 }
 #telescope-eyepiece-label {
@@ -353,8 +359,11 @@ textarea { width: 100%; height: 80px; background: #1a1a24; color: white; border:
   </div>
 
   <div id="telescope-eyepiece">
-    <div class="tele-ring" style="width:60vmin;height:60vmin"></div>
-    <div class="tele-ring" style="width:36vmin;height:36vmin"></div>
+    <div class="tele-frame"></div>
+    <div class="tele-crosshair-v"></div>
+    <div class="tele-crosshair-h"></div>
+    <div class="tele-ring" style="width:50vmin;height:50vmin"></div>
+    <div class="tele-ring" style="width:30vmin;height:30vmin"></div>
     <div id="telescope-eyepiece-label"></div>
   </div>
 
@@ -1158,7 +1167,7 @@ function initThreeScene(){
 // ══════════════════════════
 let currentMission = null;
 
-async function callGemini(prompt, maxTokens=500){
+async function callGemini(prompt, maxTokens=1024){
   const key = (settings.apiKey||'').trim();
   if(!key) throw new Error('NO_KEY');
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
@@ -1166,7 +1175,7 @@ async function callGemini(prompt, maxTokens=500){
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens }
+      generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens, thinkingConfig: { thinkingBudget: 0 } }
     })
   });
   const data = await res.json();
@@ -1198,7 +1207,7 @@ ${a.name}의 실제 공전 속도 비례값은 ${a.speed}, ${b.name}은 ${b.spee
 정답을 알려주지 말고, 학생이 직접 이유를 생각하게 만드는 질문으로 써줘.`;
 
   try{
-    const q = await callGemini(prompt, 200);
+    const q = await callGemini(prompt, 400);
     currentMission = { a: a.name, b: b.name, question: q, speedMultiplier, sizeMultiplier };
     const card = document.getElementById('question-card');
     card.textContent = q;
@@ -1228,7 +1237,7 @@ async function submitAnswer(){
 과학적으로 맞는 부분은 칭찬하고, 부족한 부분은 힌트로 보완해줘. 3~4문장, 한국어로.`;
 
   try{
-    const feedback = await callGemini(prompt, 400);
+    const feedback = await callGemini(prompt, 600);
     fb.textContent = feedback;
     saveLog(currentMission, answer, feedback);
   }catch(e){
@@ -1308,7 +1317,7 @@ ${opticsNote}
 정답을 알려주지 말고, 학생이 직접 생각하게 만드는 질문으로 써줘.`;
 
   try{
-    const q = await callGemini(prompt, 200);
+    const q = await callGemini(prompt, 400);
     currentTelescopeMission = { target: targetName, telescopeType: typeName, zoom: telescopeZoom, question: q };
     const card = document.getElementById('telescope-question-card');
     card.textContent = q;
@@ -1339,7 +1348,7 @@ async function submitTelescopeAnswer(){
 과학적으로 맞는 부분은 칭찬하고, 부족한 부분은 힌트로 보완해줘. 3~4문장, 한국어로.`;
 
   try{
-    const feedback = await callGemini(prompt, 400);
+    const feedback = await callGemini(prompt, 600);
     fb.textContent = feedback;
     saveTelescopeLog(currentTelescopeMission, answer, feedback);
   }catch(e){

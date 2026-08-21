@@ -40,10 +40,40 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
   max-height: calc(100vh - 130px); overflow-y: auto;
   backdrop-filter: blur(10px); z-index: 25;
 }
-.mode-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
-.mode-btn { flex: 1; background: #1a1a1c; border: 1.5px solid #444; color: #ccc; border-radius: 8px; padding: 10px 4px; font-size: 0.78em; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.mode-toggle { display: flex; gap: 4px; margin-bottom: 12px; }
+.mode-btn { flex: 1; background: #1a1a1c; border: 1.5px solid #444; color: #ccc; border-radius: 8px; padding: 9px 2px; font-size: 0.66em; font-weight: bold; cursor: pointer; transition: 0.2s; }
 .mode-btn.active.soil { border-color: #b45309; background: rgba(180,83,9,0.18); color: #fbbf24; }
 .mode-btn.active.ocean { border-color: #0ea5e9; background: rgba(14,165,233,0.18); color: #7dd3fc; }
+.mode-btn.active.volcano { border-color: #f87171; background: rgba(248,113,113,0.18); color: #fca5a5; }
+
+#zoom-box { background:#141416; border:1px solid #2a2a2c; border-radius:10px; padding:12px; margin-bottom:12px; }
+#zoom-box label { display:block; color: var(--accent); font-weight:700; font-size:.78em; margin-bottom:8px; }
+.zoom-btn { width:34px; height:34px; border-radius:8px; border:1.5px solid #444; background:#1e1e20; color:#fff; font-weight:900; font-size:1em; cursor:pointer; }
+.zoom-btn:disabled { opacity:0.35; cursor:not-allowed; }
+#zoom-note { font-size:.72em; color:#bbb; line-height:1.5; margin:8px 0 0; }
+
+#event-box { margin-bottom: 12px; }
+#event-box label { display:block; color:#f87171; font-weight:700; font-size:.78em; margin-bottom:6px; }
+.event-btn { flex:1; padding:9px 4px; border-radius:8px; font-weight:700; font-size:.72em; cursor:pointer; }
+.event-btn.quake { border:1.5px solid #f87171; background:rgba(248,113,113,0.12); color:#fca5a5; }
+.event-btn.eruption { border:1.5px solid #fb923c; background:rgba(251,146,60,0.12); color:#fdba74; }
+
+#event-fx-layer { position:absolute; inset:0; z-index:18; pointer-events:none; overflow:hidden; }
+@keyframes earth-shake {
+  0%,100% { transform: translate(0,0); }
+  10% { transform: translate(-6px,3px); } 20% { transform: translate(5px,-4px); }
+  30% { transform: translate(-4px,5px); } 40% { transform: translate(6px,-3px); }
+  50% { transform: translate(-5px,2px); } 60% { transform: translate(4px,-5px); }
+  70% { transform: translate(-3px,4px); } 80% { transform: translate(5px,-2px); }
+  90% { transform: translate(-4px,3px); }
+}
+#viewer-section.shake-effect { animation: earth-shake 0.12s linear 7; }
+.seismic-ring { position:absolute; top:50%; left:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border:3px solid rgba(248,113,113,0.8); border-radius:50%; animation: seismic-expand 1.5s ease-out forwards; }
+@keyframes seismic-expand { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1400px;height:1400px;margin:-700px 0 0 -700px; opacity:0;} }
+.lava-rise { position:absolute; left:0; right:0; bottom:-20%; height:60%; background: linear-gradient(180deg, rgba(255,200,80,0) 0%, rgba(255,140,40,0.85) 35%, rgba(220,40,10,0.95) 100%); filter: blur(1px); animation: lava-rise-anim 3.2s ease-in-out forwards; }
+@keyframes lava-rise-anim { 0%{ transform:translateY(100%); opacity:0;} 15%{ opacity:1;} 55%{ transform:translateY(0%);} 100%{ transform:translateY(-8%); opacity:0;} }
+#event-toast { position:absolute; top:70px; left:50%; transform:translateX(-50%) translateY(-10px); background:rgba(0,0,0,0.75); border:1.5px solid rgba(248,113,113,0.5); color:#fff; padding:10px 18px; border-radius:99px; font-size:0.82em; font-weight:700; z-index:26; opacity:0; transition: opacity 0.3s, transform 0.3s; white-space:nowrap; pointer-events:none; }
+#event-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 #layer-info-box { background: #141416; border: 1px solid #2a2a2c; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
 #layer-info-name { font-weight: 800; font-size: 0.95em; margin-bottom: 4px; color: var(--main-color); }
@@ -252,6 +282,8 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
   <div id="cross-section-viewport">
     <div id="cross-section-track"></div>
   </div>
+  <div id="event-fx-layer"></div>
+  <div id="event-toast"></div>
   <div id="depth-marker-line"></div>
   <div id="depth-marker">
     <svg id="depth-marker-icon" width="52" height="52" viewBox="0 0 52 52"></svg>
@@ -259,12 +291,31 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
 
   <div class="control-panel">
     <div class="mode-toggle">
-      <button type="button" class="mode-btn soil active" data-mode="soil" onclick="setMode('soil')">🪨 토양층 파기</button>
-      <button type="button" class="mode-btn ocean" data-mode="ocean" onclick="setMode('ocean')">🌊 바다층 잠수</button>
+      <button type="button" class="mode-btn soil active" data-mode="soil" onclick="setMode('soil')">🪨 토양층</button>
+      <button type="button" class="mode-btn ocean" data-mode="ocean" onclick="setMode('ocean')">🌊 바다층</button>
+      <button type="button" class="mode-btn volcano" data-mode="volcano" onclick="setMode('volcano')">🌋 지진·화산</button>
     </div>
 
     <button type="button" id="overview-toggle-btn" onclick="toggleViewMode()">🗺️ 전체 단면 보기</button>
     <p id="overview-hint">원하는 층을 클릭하면 그 층으로 확대해서 탐사할 수 있어요.</p>
+
+    <div id="zoom-box">
+      <label>🔍 확대 관찰</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" class="zoom-btn" id="zoom-minus-btn" onclick="changeZoom(-1)">−</button>
+        <div style="flex:1;text-align:center;font-weight:800;font-size:.9em" id="zoom-level-label">1×</div>
+        <button type="button" class="zoom-btn" id="zoom-plus-btn" onclick="changeZoom(1)">+</button>
+      </div>
+      <p id="zoom-note"></p>
+    </div>
+
+    <div id="event-box" style="display:none">
+      <label>⚡ 지질 이벤트 일으키기</label>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="event-btn quake" onclick="triggerEarthquake()">🌍 지진 발생</button>
+        <button type="button" class="event-btn eruption" onclick="triggerEruption()">🌋 화산 분화</button>
+      </div>
+    </div>
 
     <div id="layer-info-box">
       <div id="layer-info-name"></div>
@@ -666,20 +717,27 @@ function mutoPcmToWavUrl(base64pcm){
 // 🪨🌊 지층/해양층 단면 데이터
 // ══════════════════════════
 const SOIL_LAYERS = [
-  { name:'낙엽층 (O층)', range:'깊이 0~5cm', color:'#3b2a1a', tex:'litter', desc:'낙엽과 죽은 생물이 쌓여 분해되고 있는 층이에요. 유기물이 많아 색이 진하고, 지렁이 같은 분해자들이 활발히 활동해요.' },
-  { name:'표토 (A층)', range:'깊이 5~30cm', color:'#5a3d24', tex:'topsoil', desc:'부식질(분해된 유기물)과 광물이 섞여 있는 짙은 갈색 층이에요. 식물 뿌리와 미생물이 가장 활발한, 농사에 가장 중요한 층이에요.' },
-  { name:'심토 (B층)', range:'깊이 30~80cm', color:'#8a5a2b', tex:'subsoil', desc:'표토에서 빗물에 씻겨 내려온 점토와 철 성분이 쌓이는 집적층이에요. 표토보다 밝은 붉은 갈색을 띠어요.' },
-  { name:'모재층 (C층)', range:'깊이 80~150cm', color:'#8f8577', tex:'parent', desc:'기반암이 풍화되어 부서진 돌 조각들로 이루어진 층이에요. 아직 완전한 흙이 되기 전 단계예요.' },
-  { name:'기반암 (R층)', range:'깊이 150cm~', color:'#555a5f', tex:'bedrock', desc:'풍화되지 않은 단단한 원래의 암석이에요. 토양이 만들어지는 가장 근본적인 재료가 되는 층이에요.' }
+  { name:'낙엽층 (O층)', range:'깊이 0~5cm', color:'#3b2a1a', tex:'litter', desc:'낙엽과 죽은 생물이 쌓여 분해되고 있는 층이에요. 유기물이 많아 색이 진하고, 지렁이 같은 분해자들이 활발히 활동해요.', zoomNote:'확대해보면 반쯤 분해된 나뭇잎 조각과 작은 벌레들의 흔적이 보여요.' },
+  { name:'표토 (A층)', range:'깊이 5~30cm', color:'#5a3d24', tex:'topsoil', desc:'부식질(분해된 유기물)과 광물이 섞여 있는 짙은 갈색 층이에요. 식물 뿌리와 미생물이 가장 활발한, 농사에 가장 중요한 층이에요.', zoomNote:'검은 부식질 알갱이 사이로 가는 식물 뿌리들이 얽혀 있는 게 보여요.' },
+  { name:'심토 (B층)', range:'깊이 30~80cm', color:'#8a5a2b', tex:'subsoil', desc:'표토에서 빗물에 씻겨 내려온 점토와 철 성분이 쌓이는 집적층이에요. 표토보다 밝은 붉은 갈색을 띠어요.', zoomNote:'표토보다 알갱이가 더 붉고 매끈해요. 점토와 철 성분이 뭉쳐 있는 게 보여요.' },
+  { name:'모재층 (C층)', range:'깊이 80~150cm', color:'#8f8577', tex:'parent', desc:'기반암이 풍화되어 부서진 돌 조각들로 이루어진 층이에요. 아직 완전한 흙이 되기 전 단계예요.', zoomNote:'아직 흙이 되지 못한 뾰족한 돌 조각들이 그대로 보여요.' },
+  { name:'기반암 (R층)', range:'깊이 150cm~', color:'#555a5f', tex:'bedrock', desc:'풍화되지 않은 단단한 원래의 암석이에요. 토양이 만들어지는 가장 근본적인 재료가 되는 층이에요.', zoomNote:'표면에 가늘게 갈라진 균열이 보여요. 이 틈으로 물이 스며들어 풍화가 시작돼요.' }
 ];
 const OCEAN_LAYERS = [
-  { name:'표층', range:'수심 0~200m', color:'#1f7dc9', tex:'epipelagic', desc:'햇빛이 충분히 들어와 광합성이 가능해요. 대부분의 해양 생물이 여기서 살고, 파도와 바람의 영향을 많이 받아요.' },
-  { name:'중층 (수온약층)', range:'수심 200~1,000m', color:'#125089', tex:'mesopelagic', desc:'빛이 급격히 약해지고 수온이 빠르게 낮아지는 구간(수온약층)이에요. 이 구간을 넘으면 빛이 거의 사라져요.' },
-  { name:'심해층', range:'수심 1,000~4,000m', color:'#0a2c52', tex:'bathypelagic', desc:'빛이 전혀 없는 완전한 어둠의 세계예요. 수온은 매우 낮고 일정하며, 스스로 빛을 내는 발광 생물들이 살아요.' },
-  { name:'초심해층', range:'수심 4,000~6,000m', color:'#051a33', tex:'abyssalpelagic', desc:'넓은 심해 평원이 펼쳐진 구간이에요. 수압이 극도로 높고, 먹이가 부족해 독특하게 적응한 생물들이 살아요.' },
-  { name:'해구층', range:'수심 6,000m~', color:'#020c1a', tex:'hadalpelagic', desc:'가장 깊은 해구 지역이에요. 지구에서 가장 수압이 높은 극한 환경으로, 마리아나 해구가 대표적이에요.' }
+  { name:'표층', range:'수심 0~200m', color:'#1f7dc9', tex:'epipelagic', desc:'햇빛이 충분히 들어와 광합성이 가능해요. 대부분의 해양 생물이 여기서 살고, 파도와 바람의 영향을 많이 받아요.', zoomNote:'빛줄기 사이로 작은 기포와 플랑크톤이 떠다니는 게 보여요.' },
+  { name:'중층 (수온약층)', range:'수심 200~1,000m', color:'#125089', tex:'mesopelagic', desc:'빛이 급격히 약해지고 수온이 빠르게 낮아지는 구간(수온약층)이에요. 이 구간을 넘으면 빛이 거의 사라져요.', zoomNote:'빛이 희미해지는 경계에서 기포가 점점 줄어드는 게 보여요.' },
+  { name:'심해층', range:'수심 1,000~4,000m', color:'#0a2c52', tex:'bathypelagic', desc:'빛이 전혀 없는 완전한 어둠의 세계예요. 수온은 매우 낮고 일정하며, 스스로 빛을 내는 발광 생물들이 살아요.', zoomNote:'칠흑같은 어둠 속에서 작은 발광 생물들의 빛만 반짝여요.' },
+  { name:'초심해층', range:'수심 4,000~6,000m', color:'#051a33', tex:'abyssalpelagic', desc:'넓은 심해 평원이 펼쳐진 구간이에요. 수압이 극도로 높고, 먹이가 부족해 독특하게 적응한 생물들이 살아요.', zoomNote:'발광하는 점들이 드문드문 보이는, 고요하고 차가운 심해 평원이에요.' },
+  { name:'해구층', range:'수심 6,000m~', color:'#020c1a', tex:'hadalpelagic', desc:'가장 깊은 해구 지역이에요. 지구에서 가장 수압이 높은 극한 환경으로, 마리아나 해구가 대표적이에요.', zoomNote:'가장 깊은 곳이라 빛이 거의 없고, 극도로 높은 수압만 느껴지는 듯해요.' }
 ];
-const LAYER_SETS = { soil: SOIL_LAYERS, ocean: OCEAN_LAYERS };
+const VOLCANO_LAYERS = [
+  { name:'지각', range:'깊이 0~35km', color:'#6b6560', tex:'crust', desc:'우리가 발을 딛고 사는 단단한 겉층이에요. 판과 판이 만나는 경계에서 지진이 자주 발생해요.', zoomNote:'표면에 가느다란 균열이 보여요. 이 틈을 따라 지진이 일어나기도 해요.' },
+  { name:'상부 맨틀', range:'깊이 35~660km', color:'#8a3a1e', tex:'uppermantle', desc:'뜨거운 열로 인해 고체 암석이 아주 천천히 흐르는 층이에요. 여기서 마그마가 만들어지기 시작해요.', zoomNote:'암석 사이로 붉은 빛이 새어 나오는 게 보여요. 부분적으로 녹아있다는 신호예요.' },
+  { name:'마그마방', range:'화산 하부, 지표 근처', color:'#e8590c', tex:'magma', desc:'화산 아래에 마그마가 모여있는 공간이에요. 압력이 쌓이면 지표를 뚫고 화산이 분화해요.', zoomNote:'부글부글 끓어오르는 마그마 표면에서 가스 방울이 터지는 게 보여요.' },
+  { name:'하부 맨틀', range:'깊이 660~2,900km', color:'#5c2412', tex:'lowermantle', desc:'상부 맨틀보다 압력이 훨씬 높아 더 단단한 고체 상태예요. 지구 부피의 대부분을 차지해요.', zoomNote:'결정처럼 촘촘하게 압축된 암석 무늬가 보여요.' },
+  { name:'핵', range:'깊이 2,900~6,371km', color:'#facc15', tex:'core', desc:'철과 니켈로 이루어진 뜨거운 금속 층이에요. 이 층이 움직이면서 지구 자기장을 만들어내요.', zoomNote:'소용돌이치는 액체 금속의 흐름이 보이는 듯해요.' }
+];
+const LAYER_SETS = { soil: SOIL_LAYERS, ocean: OCEAN_LAYERS, volcano: VOLCANO_LAYERS };
 const TEXTURE_CACHE = {};
 
 function hexToRgb(hex){
@@ -802,10 +860,98 @@ function generateOceanTexture(hex, kind){
   }
   return c.toDataURL();
 }
+function generateVolcanoTexture(hex, kind){
+  const w=640,h=360;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  const rgb=hexToRgb(hex);
+  ctx.fillStyle=hex; ctx.fillRect(0,0,w,h);
+
+  for(let i=0;i<2000;i++){
+    ctx.globalAlpha = 0.35+Math.random()*0.35;
+    ctx.fillStyle = shadeRgb(rgb, (Math.random()-0.5)*55);
+    const s=1+Math.random()*3;
+    ctx.fillRect(Math.random()*w, Math.random()*h, s, s);
+  }
+  ctx.globalAlpha=1;
+
+  if(kind==='crust'){
+    ctx.lineWidth=1.3; ctx.globalAlpha=0.5;
+    for(let i=0;i<40;i++){
+      ctx.strokeStyle = Math.random()<0.3 ? 'rgba(239,68,68,0.5)' : shadeRgb(rgb,-50);
+      let x=Math.random()*w, y=Math.random()*h;
+      ctx.beginPath(); ctx.moveTo(x,y);
+      for(let s=0;s<4;s++){ x+=(Math.random()-0.5)*65; y+=(Math.random()-0.5)*65; ctx.lineTo(x,y); }
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  } else if(kind==='uppermantle'){
+    ctx.globalAlpha=0.35;
+    for(let i=0;i<16;i++){
+      ctx.strokeStyle='rgba(255,140,60,0.5)';
+      ctx.lineWidth=2+Math.random()*3;
+      let x=0, y=Math.random()*h;
+      ctx.beginPath(); ctx.moveTo(x,y);
+      for(let s=0;s<6;s++){ x+=w/6; y+=(Math.random()-0.5)*40; ctx.lineTo(x,y); }
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  } else if(kind==='magma'){
+    for(let i=0;i<26;i++){
+      const gx=Math.random()*w, gy=Math.random()*h, r=14+Math.random()*30;
+      const glow = ctx.createRadialGradient(gx,gy,0,gx,gy,r);
+      glow.addColorStop(0,'rgba(255,220,120,0.9)');
+      glow.addColorStop(0.5,'rgba(255,120,30,0.6)');
+      glow.addColorStop(1,'rgba(255,120,30,0)');
+      ctx.fillStyle=glow;
+      ctx.beginPath(); ctx.arc(gx,gy,r,0,Math.PI*2); ctx.fill();
+    }
+    for(let i=0;i<18;i++){
+      ctx.fillStyle='rgba(30,10,5,0.4)';
+      ctx.beginPath();
+      ctx.ellipse(Math.random()*w, Math.random()*h, 8+Math.random()*14, 5+Math.random()*8, Math.random()*Math.PI, 0, Math.PI*2);
+      ctx.fill();
+    }
+  } else if(kind==='lowermantle'){
+    ctx.globalAlpha=0.3;
+    for(let i=0;i<60;i++){
+      ctx.fillStyle = shadeRgb(rgb, (Math.random()-0.5)*35);
+      ctx.save();
+      ctx.translate(Math.random()*w, Math.random()*h);
+      ctx.rotate(Math.PI/4);
+      const s=5+Math.random()*8;
+      ctx.fillRect(-s/2,-s/2,s,s);
+      ctx.restore();
+    }
+    ctx.globalAlpha=1;
+  } else if(kind==='core'){
+    for(let i=0;i<8;i++){
+      ctx.strokeStyle='rgba(255,255,220,0.55)';
+      ctx.lineWidth=3+Math.random()*3;
+      ctx.beginPath();
+      const cx=Math.random()*w, cy=Math.random()*h, r=30+Math.random()*60;
+      ctx.arc(cx,cy,r, Math.random()*Math.PI, Math.random()*Math.PI+Math.PI);
+      ctx.stroke();
+    }
+    for(let i=0;i<40;i++){
+      ctx.fillStyle='rgba(255,255,255,'+(0.2+Math.random()*0.4).toFixed(2)+')';
+      ctx.beginPath();
+      ctx.arc(Math.random()*w, Math.random()*h, 1+Math.random()*2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  const vg = ctx.createLinearGradient(0,0,0,h);
+  vg.addColorStop(0,'rgba(0,0,0,0.14)'); vg.addColorStop(0.5,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.3)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+  return c.toDataURL();
+}
 function getLayerTexture(mode, layer){
   const key = mode+'-'+layer.tex;
   if(!TEXTURE_CACHE[key]){
-    TEXTURE_CACHE[key] = mode==='soil' ? generateSoilTexture(layer.color, layer.tex) : generateOceanTexture(layer.color, layer.tex);
+    if(mode==='soil') TEXTURE_CACHE[key] = generateSoilTexture(layer.color, layer.tex);
+    else if(mode==='ocean') TEXTURE_CACHE[key] = generateOceanTexture(layer.color, layer.tex);
+    else TEXTURE_CACHE[key] = generateVolcanoTexture(layer.color, layer.tex);
   }
   return TEXTURE_CACHE[key];
 }
@@ -822,7 +968,9 @@ function setMode(mode){
   currentMode = mode;
   currentLayerIndex = 0;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
-  document.getElementById('mission-box-label').textContent = mode==='soil' ? '🪨 지금 층 질문받기' : '🌊 지금 층 질문받기';
+  const labelMap = { soil:'🪨 지금 층 질문받기', ocean:'🌊 지금 층 질문받기', volcano:'🌋 지금 층 질문받기' };
+  document.getElementById('mission-box-label').textContent = labelMap[mode];
+  document.getElementById('event-box').style.display = mode === 'volcano' ? 'block' : 'none';
   buildCrossSection();
   setViewMode('drill');
 }
@@ -868,6 +1016,7 @@ function setViewMode(mode){
   document.getElementById('depth-nav-row').style.display = mode === 'drill' ? 'flex' : 'none';
   document.getElementById('progress-dots').style.display = mode === 'drill' ? 'flex' : 'none';
   document.getElementById('layer-info-box').style.display = mode === 'drill' ? 'block' : 'none';
+  document.getElementById('zoom-box').style.display = mode === 'drill' ? 'block' : 'none';
   document.getElementById('overview-hint').style.display = mode === 'overview' ? 'block' : 'none';
   document.getElementById('overview-toggle-btn').textContent = mode === 'drill' ? '🗺️ 전체 단면 보기' : '🔍 탐사 모드로 돌아가기';
   layoutCrossSection();
@@ -900,7 +1049,9 @@ function updateLayerInfo(){
   document.getElementById('layer-info-desc').textContent = l.desc;
   document.getElementById('depth-up-btn').disabled = currentLayerIndex === 0;
   document.getElementById('depth-down-btn').disabled = currentLayerIndex === layers.length - 1;
-  document.getElementById('depth-down-btn').textContent = currentMode==='soil' ? '더 파기 ⬇' : '더 잠수 ⬇';
+  const downLabel = currentMode==='soil' ? '더 파기 ⬇' : currentMode==='ocean' ? '더 잠수 ⬇' : '더 내려가기 ⬇';
+  document.getElementById('depth-down-btn').textContent = downLabel;
+  resetZoom();
 }
 function renderProgressDots(){
   const layers = LAYER_SETS[currentMode];
@@ -915,14 +1066,101 @@ function drawDepthMarkerIcon(){
       <polygon points="26,30 18,44 34,44" fill="#fbbf24"/>
       <rect x="14" y="0" width="24" height="8" rx="2" fill="#78350f"/>
     `;
-  } else {
+  } else if(currentMode === 'ocean'){
     svg.innerHTML = `
       <ellipse cx="26" cy="24" rx="22" ry="11" fill="#0ea5e9" stroke="#7dd3fc" stroke-width="2"/>
       <circle cx="32" cy="22" r="4" fill="#e0f2fe" stroke="#0369a1" stroke-width="1.5"/>
       <rect x="20" y="9" width="10" height="8" rx="2" fill="#0ea5e9" stroke="#7dd3fc" stroke-width="1.5"/>
       <line x1="6" y1="24" x2="0" y2="24" stroke="#7dd3fc" stroke-width="2"/>
     `;
+  } else {
+    svg.innerHTML = `
+      <line x1="26" y1="2" x2="26" y2="32" stroke="#fca5a5" stroke-width="4"/>
+      <circle cx="26" cy="39" r="9" fill="#ef4444" stroke="#fca5a5" stroke-width="2"/>
+      <circle cx="26" cy="39" r="3.5" fill="#fee2e2"/>
+    `;
   }
+}
+
+// ══════════════════════════
+// 🔍 층 확대 관찰 (줌인)
+// ══════════════════════════
+const ZOOM_STEPS = [
+  { label:'1×', size:'cover' },
+  { label:'2×', size:'170%' },
+  { label:'3×', size:'260%' },
+  { label:'4×', size:'360%' }
+];
+let zoomIndex = 0;
+function resetZoom(){
+  zoomIndex = 0;
+  applyZoom();
+}
+function changeZoom(delta){
+  const next = zoomIndex + delta;
+  if(next < 0 || next >= ZOOM_STEPS.length) return;
+  zoomIndex = next;
+  applyZoom();
+}
+function applyZoom(){
+  const track = document.getElementById('cross-section-track');
+  const band = track ? track.children[currentLayerIndex] : null;
+  if(band) band.style.backgroundSize = ZOOM_STEPS[zoomIndex].size;
+  const lbl = document.getElementById('zoom-level-label'); if(lbl) lbl.textContent = ZOOM_STEPS[zoomIndex].label;
+  const minus = document.getElementById('zoom-minus-btn'); if(minus) minus.disabled = zoomIndex === 0;
+  const plus = document.getElementById('zoom-plus-btn'); if(plus) plus.disabled = zoomIndex === ZOOM_STEPS.length - 1;
+  const layers = LAYER_SETS[currentMode];
+  const l = layers[currentLayerIndex];
+  const note = document.getElementById('zoom-note');
+  if(note) note.textContent = zoomIndex > 0 ? (l.zoomNote || '') : '＋ 버튼을 눌러 이 층을 더 가까이 관찰해보세요.';
+}
+
+// ══════════════════════════
+// ⚡ 지진 · 화산 이벤트
+// ══════════════════════════
+let eventContextForMission = '';
+function showEventToast(text){
+  const toast = document.getElementById('event-toast');
+  if(!toast) return;
+  toast.textContent = text;
+  toast.classList.remove('show');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> toast.classList.remove('show'), 3200);
+}
+function triggerEarthquake(){
+  eventContextForMission = '방금 진도 5.0 규모의 지진이 발생해서 지각이 흔들렸어.';
+  const viewer = document.getElementById('viewer-section');
+  viewer.classList.remove('shake-effect'); void viewer.offsetWidth; viewer.classList.add('shake-effect');
+  showEventToast('🌍 진도 5.0 지진 발생! 지각이 흔들리고 있어요');
+  spawnSeismicRings();
+  setTimeout(()=> viewer.classList.remove('shake-effect'), 900);
+}
+function triggerEruption(){
+  eventContextForMission = '방금 화산이 분화해서 마그마가 지표를 뚫고 용암으로 분출했어.';
+  showEventToast('🌋 마그마가 지표를 뚫고 용암으로 분출하고 있어요!');
+  spawnLavaRise();
+}
+function spawnSeismicRings(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  [0, 250].forEach(delay=>{
+    setTimeout(()=>{
+      const ring = document.createElement('div');
+      ring.className = 'seismic-ring';
+      layer.appendChild(ring);
+      setTimeout(()=> ring.remove(), 1500);
+    }, delay);
+  });
+}
+function spawnLavaRise(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const lava = document.createElement('div');
+  lava.className = 'lava-rise';
+  layer.appendChild(lava);
+  setTimeout(()=> lava.remove(), 3200);
 }
 
 // ══════════════════════════
@@ -953,7 +1191,8 @@ async function generateEarthMission(){
   }
   const layers = LAYER_SETS[currentMode];
   const l = layers[currentLayerIndex];
-  const modeName = currentMode === 'soil' ? '토양층(지층)' : '바다층(해양)';
+  const modeNameMap = { soil:'토양층(지층)', ocean:'바다층(해양)', volcano:'지구 내부 구조(지진·화산)' };
+  const modeName = modeNameMap[currentMode];
 
   const btn = document.getElementById('earth-mission-btn');
   btn.disabled = true; btn.textContent = '🤖 질문 만드는 중...';
@@ -961,7 +1200,10 @@ async function generateEarthMission(){
   document.getElementById('earth-answer-area').style.display = 'none';
   document.getElementById('earth-feedback-box').style.display = 'none';
 
-  const prompt = `중학교 과학 교사로서, 학생이 ${modeName} 단면도를 드릴/잠수정으로 파고 내려가며 "${l.name}"(${l.range})에 도달했어.
+  const eventNote = eventContextForMission ? `\n${eventContextForMission}` : '';
+  eventContextForMission = '';
+
+  const prompt = `중학교 과학 교사로서, 학생이 ${modeName} 단면도를 드릴/잠수정으로 파고 내려가며 "${l.name}"(${l.range})에 도달했어.${eventNote}
 이 층의 특징: ${l.desc}
 이 층의 특징을 학생이 스스로 떠올리거나 추론하도록 유도하는 관측 질문을 1개, 2문장 이내로 만들어줘.
 정답을 알려주지 말고, 학생이 직접 생각하게 만드는 질문으로 써줘.`;
@@ -1006,7 +1248,8 @@ async function submitEarthAnswer(){
 }
 
 function saveEarthLog(mission, answer, feedback){
-  const modeIcon = mission.mode === 'soil' ? '🪨' : '🌊';
+  const modeIconMap = { soil:'🪨', ocean:'🌊', volcano:'🌋' };
+  const modeIcon = modeIconMap[mission.mode] || '🔬';
   const pairLabel = `${modeIcon} ${mission.layerName} (${mission.range})`;
   const logs = JSON.parse(localStorage.getItem('eaim_earth_logs') || '[]');
   logs.unshift({

@@ -17,14 +17,13 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #viewer-section { flex: 6; position: relative; min-height: 300px; overflow: hidden; background: #0c0d0e; }
 #cross-section-viewport { position: absolute; inset: 0; overflow: hidden; }
 #cross-section-track { position: absolute; left: 0; top: 0; width: 100%; transition: transform 0.85s cubic-bezier(0.65,0,0.35,1); }
-.cs-band { width: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: height 0.6s cubic-bezier(0.65,0,0.35,1); }
-.cs-band-label { font-size: 1.5em; font-weight: 900; color: rgba(255,255,255,0.85); text-shadow: 0 2px 10px rgba(0,0,0,0.6); letter-spacing: 0.02em; z-index: 2; text-align:center; padding: 0 20px; transition: font-size 0.4s; }
-.cs-band-range { display:block; font-size: 0.5em; font-weight: 500; color: rgba(255,255,255,0.6); margin-top: 4px; font-family: monospace; }
-.cs-band::before { content:''; position:absolute; inset:0; background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 22px 22px; opacity:0.5; }
+.cs-band { width: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: height 0.6s cubic-bezier(0.65,0,0.35,1); background-size: cover; background-position: center; background-repeat: no-repeat; }
+.cs-band-label { font-size: 1.3em; font-weight: 900; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.7); letter-spacing: 0.02em; z-index: 2; text-align:center; padding: 10px 22px; background: rgba(0,0,0,0.4); border-radius: 12px; backdrop-filter: blur(2px); transition: font-size 0.4s, padding 0.4s; }
+.cs-band-range { display:block; font-size: 0.5em; font-weight: 500; color: rgba(255,255,255,0.75); margin-top: 4px; font-family: monospace; }
 #cross-section-track.overview .cs-band { cursor: pointer; border-top: 1px solid rgba(255,255,255,0.18); }
 #cross-section-track.overview .cs-band:hover { filter: brightness(1.2); }
 #cross-section-track.overview .cs-band:first-child { border-top: none; }
-#cross-section-track.overview .cs-band-label { font-size: 0.85em; }
+#cross-section-track.overview .cs-band-label { font-size: 0.85em; padding: 6px 14px; }
 #overview-hint { display:none; font-size: 0.72em; color: #aaa; text-align:center; padding: 8px 4px; line-height: 1.5; }
 
 #depth-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 30; pointer-events: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
@@ -667,20 +666,149 @@ function mutoPcmToWavUrl(base64pcm){
 // 🪨🌊 지층/해양층 단면 데이터
 // ══════════════════════════
 const SOIL_LAYERS = [
-  { name:'낙엽층 (O층)', range:'깊이 0~5cm', color:'#3b2a1a', desc:'낙엽과 죽은 생물이 쌓여 분해되고 있는 층이에요. 유기물이 많아 색이 진하고, 지렁이 같은 분해자들이 활발히 활동해요.' },
-  { name:'표토 (A층)', range:'깊이 5~30cm', color:'#5a3d24', desc:'부식질(분해된 유기물)과 광물이 섞여 있는 짙은 갈색 층이에요. 식물 뿌리와 미생물이 가장 활발한, 농사에 가장 중요한 층이에요.' },
-  { name:'심토 (B층)', range:'깊이 30~80cm', color:'#8a5a2b', desc:'표토에서 빗물에 씻겨 내려온 점토와 철 성분이 쌓이는 집적층이에요. 표토보다 밝은 붉은 갈색을 띠어요.' },
-  { name:'모재층 (C층)', range:'깊이 80~150cm', color:'#8f8577', desc:'기반암이 풍화되어 부서진 돌 조각들로 이루어진 층이에요. 아직 완전한 흙이 되기 전 단계예요.' },
-  { name:'기반암 (R층)', range:'깊이 150cm~', color:'#555a5f', desc:'풍화되지 않은 단단한 원래의 암석이에요. 토양이 만들어지는 가장 근본적인 재료가 되는 층이에요.' }
+  { name:'낙엽층 (O층)', range:'깊이 0~5cm', color:'#3b2a1a', tex:'litter', desc:'낙엽과 죽은 생물이 쌓여 분해되고 있는 층이에요. 유기물이 많아 색이 진하고, 지렁이 같은 분해자들이 활발히 활동해요.' },
+  { name:'표토 (A층)', range:'깊이 5~30cm', color:'#5a3d24', tex:'topsoil', desc:'부식질(분해된 유기물)과 광물이 섞여 있는 짙은 갈색 층이에요. 식물 뿌리와 미생물이 가장 활발한, 농사에 가장 중요한 층이에요.' },
+  { name:'심토 (B층)', range:'깊이 30~80cm', color:'#8a5a2b', tex:'subsoil', desc:'표토에서 빗물에 씻겨 내려온 점토와 철 성분이 쌓이는 집적층이에요. 표토보다 밝은 붉은 갈색을 띠어요.' },
+  { name:'모재층 (C층)', range:'깊이 80~150cm', color:'#8f8577', tex:'parent', desc:'기반암이 풍화되어 부서진 돌 조각들로 이루어진 층이에요. 아직 완전한 흙이 되기 전 단계예요.' },
+  { name:'기반암 (R층)', range:'깊이 150cm~', color:'#555a5f', tex:'bedrock', desc:'풍화되지 않은 단단한 원래의 암석이에요. 토양이 만들어지는 가장 근본적인 재료가 되는 층이에요.' }
 ];
 const OCEAN_LAYERS = [
-  { name:'표층', range:'수심 0~200m', color:'#1f7dc9', desc:'햇빛이 충분히 들어와 광합성이 가능해요. 대부분의 해양 생물이 여기서 살고, 파도와 바람의 영향을 많이 받아요.' },
-  { name:'중층 (수온약층)', range:'수심 200~1,000m', color:'#125089', desc:'빛이 급격히 약해지고 수온이 빠르게 낮아지는 구간(수온약층)이에요. 이 구간을 넘으면 빛이 거의 사라져요.' },
-  { name:'심해층', range:'수심 1,000~4,000m', color:'#0a2c52', desc:'빛이 전혀 없는 완전한 어둠의 세계예요. 수온은 매우 낮고 일정하며, 스스로 빛을 내는 발광 생물들이 살아요.' },
-  { name:'초심해층', range:'수심 4,000~6,000m', color:'#051a33', desc:'넓은 심해 평원이 펼쳐진 구간이에요. 수압이 극도로 높고, 먹이가 부족해 독특하게 적응한 생물들이 살아요.' },
-  { name:'해구층', range:'수심 6,000m~', color:'#020c1a', desc:'가장 깊은 해구 지역이에요. 지구에서 가장 수압이 높은 극한 환경으로, 마리아나 해구가 대표적이에요.' }
+  { name:'표층', range:'수심 0~200m', color:'#1f7dc9', tex:'epipelagic', desc:'햇빛이 충분히 들어와 광합성이 가능해요. 대부분의 해양 생물이 여기서 살고, 파도와 바람의 영향을 많이 받아요.' },
+  { name:'중층 (수온약층)', range:'수심 200~1,000m', color:'#125089', tex:'mesopelagic', desc:'빛이 급격히 약해지고 수온이 빠르게 낮아지는 구간(수온약층)이에요. 이 구간을 넘으면 빛이 거의 사라져요.' },
+  { name:'심해층', range:'수심 1,000~4,000m', color:'#0a2c52', tex:'bathypelagic', desc:'빛이 전혀 없는 완전한 어둠의 세계예요. 수온은 매우 낮고 일정하며, 스스로 빛을 내는 발광 생물들이 살아요.' },
+  { name:'초심해층', range:'수심 4,000~6,000m', color:'#051a33', tex:'abyssalpelagic', desc:'넓은 심해 평원이 펼쳐진 구간이에요. 수압이 극도로 높고, 먹이가 부족해 독특하게 적응한 생물들이 살아요.' },
+  { name:'해구층', range:'수심 6,000m~', color:'#020c1a', tex:'hadalpelagic', desc:'가장 깊은 해구 지역이에요. 지구에서 가장 수압이 높은 극한 환경으로, 마리아나 해구가 대표적이에요.' }
 ];
 const LAYER_SETS = { soil: SOIL_LAYERS, ocean: OCEAN_LAYERS };
+const TEXTURE_CACHE = {};
+
+function hexToRgb(hex){
+  hex = hex.replace('#','');
+  const num = parseInt(hex,16);
+  return { r:(num>>16)&255, g:(num>>8)&255, b:num&255 };
+}
+function shadeRgb(rgb, amt){
+  const cl = v=>Math.max(0,Math.min(255,Math.round(v)));
+  return `rgb(${cl(rgb.r+amt)},${cl(rgb.g+amt)},${cl(rgb.b+amt)})`;
+}
+function generateSoilTexture(hex, kind){
+  const w=640,h=360;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  const rgb=hexToRgb(hex);
+  ctx.fillStyle=hex; ctx.fillRect(0,0,w,h);
+
+  for(let i=0;i<2400;i++){
+    ctx.globalAlpha = 0.4+Math.random()*0.4;
+    ctx.fillStyle = shadeRgb(rgb, (Math.random()-0.5)*70);
+    const s=1+Math.random()*3;
+    ctx.fillRect(Math.random()*w, Math.random()*h, s, s);
+  }
+  ctx.globalAlpha=1;
+
+  if(kind==='litter'){
+    for(let i=0;i<44;i++){
+      ctx.save();
+      ctx.translate(Math.random()*w, Math.random()*h);
+      ctx.rotate(Math.random()*Math.PI);
+      ctx.fillStyle = shadeRgb(rgb, -50 - Math.random()*40);
+      ctx.beginPath();
+      ctx.ellipse(0,0, 7+Math.random()*9, 3+Math.random()*4, 0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  } else if(kind==='topsoil' || kind==='subsoil'){
+    ctx.strokeStyle = shadeRgb(rgb, kind==='topsoil' ? -35 : 45);
+    ctx.globalAlpha=0.4;
+    for(let i=0;i<24;i++){
+      let x=Math.random()*w, y=Math.random()*h*0.25;
+      ctx.beginPath(); ctx.moveTo(x,y);
+      for(let s=0;s<5;s++){ x+=(Math.random()-0.5)*45; y+=18+Math.random()*22; ctx.lineTo(x,y); }
+      ctx.lineWidth=1+Math.random();
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  } else if(kind==='parent'){
+    for(let i=0;i<64;i++){
+      ctx.save();
+      ctx.translate(Math.random()*w, Math.random()*h);
+      ctx.rotate(Math.random()*Math.PI);
+      ctx.fillStyle = shadeRgb(rgb, (Math.random()-0.5)*55);
+      const s=6+Math.random()*14;
+      ctx.beginPath();
+      ctx.moveTo(-s,-s*0.6); ctx.lineTo(s*0.7,-s); ctx.lineTo(s,s*0.5); ctx.lineTo(-s*0.4,s);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  } else if(kind==='bedrock'){
+    ctx.strokeStyle = shadeRgb(rgb,-55);
+    ctx.lineWidth=1.3; ctx.globalAlpha=0.45;
+    for(let i=0;i<46;i++){
+      let x=Math.random()*w, y=Math.random()*h;
+      ctx.beginPath(); ctx.moveTo(x,y);
+      for(let s=0;s<4;s++){ x+=(Math.random()-0.5)*70; y+=(Math.random()-0.5)*70; ctx.lineTo(x,y); }
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  const vg = ctx.createLinearGradient(0,0,0,h);
+  vg.addColorStop(0,'rgba(0,0,0,0.16)'); vg.addColorStop(0.5,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.28)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+  return c.toDataURL();
+}
+function generateOceanTexture(hex, kind){
+  const w=640,h=360;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  const rgb=hexToRgb(hex);
+  const g = ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0, shadeRgb(rgb,28)); g.addColorStop(1, shadeRgb(rgb,-38));
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+
+  if(kind==='epipelagic'){
+    ctx.strokeStyle='rgba(255,255,255,0.16)';
+    for(let i=0;i<9;i++){
+      const x=Math.random()*w;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x-40+Math.random()*80,h);
+      ctx.lineWidth=8+Math.random()*14; ctx.stroke();
+    }
+  } else if(kind==='mesopelagic'){
+    ctx.strokeStyle='rgba(255,255,255,0.08)';
+    for(let i=0;i<5;i++){
+      const x=Math.random()*w;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h*0.4);
+      ctx.lineWidth=6; ctx.stroke();
+    }
+  }
+
+  const bubbleCount = kind==='epipelagic'?55 : kind==='mesopelagic'?28 : 10;
+  for(let i=0;i<bubbleCount;i++){
+    ctx.beginPath();
+    ctx.fillStyle='rgba(255,255,255,'+(0.08+Math.random()*0.15).toFixed(2)+')';
+    ctx.arc(Math.random()*w, Math.random()*h, 1+Math.random()*3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  if(kind==='bathypelagic' || kind==='abyssalpelagic' || kind==='hadalpelagic'){
+    for(let i=0;i<20;i++){
+      const gx=Math.random()*w, gy=Math.random()*h;
+      const glow = ctx.createRadialGradient(gx,gy,0,gx,gy,7);
+      glow.addColorStop(0,'rgba(150,255,220,0.9)');
+      glow.addColorStop(1,'rgba(150,255,220,0)');
+      ctx.fillStyle=glow;
+      ctx.beginPath(); ctx.arc(gx,gy,7,0,Math.PI*2); ctx.fill();
+    }
+  }
+  return c.toDataURL();
+}
+function getLayerTexture(mode, layer){
+  const key = mode+'-'+layer.tex;
+  if(!TEXTURE_CACHE[key]){
+    TEXTURE_CACHE[key] = mode==='soil' ? generateSoilTexture(layer.color, layer.tex) : generateOceanTexture(layer.color, layer.tex);
+  }
+  return TEXTURE_CACHE[key];
+}
 
 let currentMode = 'soil';
 let currentLayerIndex = 0;
@@ -702,7 +830,7 @@ function buildCrossSection(){
   const track = document.getElementById('cross-section-track');
   const layers = LAYER_SETS[currentMode];
   track.innerHTML = layers.map((l,i) => `
-    <div class="cs-band" style="background:linear-gradient(180deg, ${l.color}cc, ${l.color})" onclick="bandClicked(${i})">
+    <div class="cs-band" style="background-image:url(${getLayerTexture(currentMode, l)})" onclick="bandClicked(${i})">
       <span class="cs-band-label">${l.name}<span class="cs-band-range">${l.range}</span></span>
     </div>
   `).join('');

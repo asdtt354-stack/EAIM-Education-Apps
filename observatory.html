@@ -15,8 +15,10 @@
         body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
 #mainApp{ width:100%; height:100%; min-height:0; }
 
-        #viewer-section { flex: 6; position: relative; background: radial-gradient(circle, #0a1020 0%, #000 100%); min-height: 300px; }
-        #canvas-container { width: 100%; height: 100%; cursor: grab; }
+        #viewer-section { flex: 6; position: relative; background: radial-gradient(circle, #0a1020 0%, #000 100%); min-height: 300px; transition: background 0.8s ease; }
+        #obs-starfield { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+        .obs-star { position: absolute; background: #fff; border-radius: 50%; pointer-events: none; }
+        #canvas-container { width: 100%; height: 100%; cursor: grab; position: relative; z-index: 2; }
         #canvas-container:active { cursor: grabbing; }
 
         #log-section { flex: 4; min-width: 400px; max-width: 500px; background: rgba(15, 15, 20, 0.95); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 200; overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
@@ -220,6 +222,7 @@
 
 <div id="mainApp" style="display:none">
 <div id="viewer-section">
+    <div id="obs-starfield"></div>
     <div style="position: absolute; top: 15px; left: 15px; z-index: 100; pointer-events: none;">
         <h2 id="view-title" style="color: white; text-shadow: 0 0 10px #000; margin:0; font-size: 1.5em;">지구 (Earth)</h2>
         <p id="view-meta" style="color: var(--accent); font-size: 0.8em; margin: 5px 0;">NASA 고해상도 텍스처 연결됨</p>
@@ -262,6 +265,7 @@
             <option>라 실라 천문대 (칠레)</option>
             <option>그리니치 천문대 (영국)</option>
         </select>
+        <div id="obs-location-info" style="font-size:0.74em;color:#9ab;line-height:1.5;margin:-4px 0 4px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(255,255,255,0.08)"></div>
 
         <div id="moon-phase-control">
             <label style="margin-top: 15px;">🌗 달 위상 시뮬레이션</label>
@@ -1055,6 +1059,73 @@
     function closeSizeModal() {
         document.getElementById('size-modal').style.display = 'none';
     }
+
+    // ══════════════════════════
+    // 📍 관측소 위치별 밤하늘 · 정보
+    // ══════════════════════════
+    const OBSERVATORIES = {
+        '보현산 천문대 (대한민국)': {
+            alt: 1124, darkness: 0.55,
+            desc: '국내 최대 1.8m 광학망원경이 있어요. 해발 1,124m 산 정상이라 접근성이 좋지만, 도시 불빛의 영향이 약간 있는 편이에요.',
+            tint: 'radial-gradient(circle, #10182c 0%, #04060a 75%)'
+        },
+        '마우나케아 천문대 (하와이)': {
+            alt: 4207, darkness: 0.97,
+            desc: '세계 최고의 관측지로 꼽혀요. 해발 4,207m로 대기 영향이 적고 빛공해가 거의 없어서 별이 가장 또렷하게 보여요.',
+            tint: 'radial-gradient(circle, #050a16 0%, #000 75%)'
+        },
+        '라 실라 천문대 (칠레)': {
+            alt: 2400, darkness: 0.93,
+            desc: '칠레 아타카마 사막 지역, 해발 2,400m. 세계에서 가장 건조하고 맑은 밤하늘 중 하나로 꼽혀요.',
+            tint: 'radial-gradient(circle, #070b18 0%, #000 75%)'
+        },
+        '그리니치 천문대 (영국)': {
+            alt: 46, darkness: 0.12,
+            desc: '본초자오선(경도 0°) 기준점으로 유명한 역사적 천문대예요. 런던 도심에 있어 빛공해가 심해서, 지금은 실제 관측보다 상징적 의미가 큰 곳이에요.',
+            tint: 'radial-gradient(circle, #2a2015 0%, #0a0704 75%)'
+        }
+    };
+
+    function renderObservatoryStars(darkness){
+        const layer = document.getElementById('obs-starfield');
+        if(!layer) return;
+        layer.innerHTML = '';
+        const count = Math.round(25 + darkness * 200);
+        const frag = document.createDocumentFragment();
+        for(let i=0; i<count; i++){
+            const s = document.createElement('div');
+            s.className = 'obs-star';
+            const size = Math.random() < 0.15 ? 2 : 1;
+            s.style.width = size + 'px';
+            s.style.height = size + 'px';
+            s.style.left = (Math.random()*100).toFixed(2) + '%';
+            s.style.top = (Math.random()*100).toFixed(2) + '%';
+            s.style.opacity = (0.2 + Math.random() * (0.35 + darkness*0.5)).toFixed(2);
+            frag.appendChild(s);
+        }
+        layer.appendChild(frag);
+    }
+
+    function updateObservatoryView(){
+        const sel = document.getElementById('obs-location');
+        const infoBox = document.getElementById('obs-location-info');
+        if(!sel) return;
+        const info = OBSERVATORIES[sel.value];
+        const viewer = document.getElementById('viewer-section');
+        if(!info){
+            if(viewer) viewer.style.background = '';
+            if(infoBox) infoBox.textContent = '';
+            renderObservatoryStars(0.5);
+            return;
+        }
+        if(viewer) viewer.style.background = info.tint;
+        if(infoBox) infoBox.innerHTML = `<b>고도 ${info.alt.toLocaleString()}m</b> · ${info.desc}`;
+        renderObservatoryStars(info.darkness);
+    }
+
+    const obsLocationSel = document.getElementById('obs-location');
+    if(obsLocationSel) obsLocationSel.addEventListener('change', updateObservatoryView);
+    updateObservatoryView();
 
     // ══════════════════════════
     // 진입점

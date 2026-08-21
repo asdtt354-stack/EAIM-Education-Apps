@@ -17,9 +17,15 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #viewer-section { flex: 6; position: relative; min-height: 300px; overflow: hidden; background: #0c0d0e; }
 #cross-section-viewport { position: absolute; inset: 0; overflow: hidden; }
 #cross-section-track { position: absolute; left: 0; top: 0; width: 100%; transition: transform 0.85s cubic-bezier(0.65,0,0.35,1); }
-.cs-band { width: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-.cs-band-label { font-size: 1.5em; font-weight: 900; color: rgba(255,255,255,0.85); text-shadow: 0 2px 10px rgba(0,0,0,0.6); letter-spacing: 0.02em; z-index: 2; text-align:center; padding: 0 20px; }
+.cs-band { width: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: height 0.6s cubic-bezier(0.65,0,0.35,1); }
+.cs-band-label { font-size: 1.5em; font-weight: 900; color: rgba(255,255,255,0.85); text-shadow: 0 2px 10px rgba(0,0,0,0.6); letter-spacing: 0.02em; z-index: 2; text-align:center; padding: 0 20px; transition: font-size 0.4s; }
+.cs-band-range { display:block; font-size: 0.5em; font-weight: 500; color: rgba(255,255,255,0.6); margin-top: 4px; font-family: monospace; }
 .cs-band::before { content:''; position:absolute; inset:0; background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 22px 22px; opacity:0.5; }
+#cross-section-track.overview .cs-band { cursor: pointer; border-top: 1px solid rgba(255,255,255,0.18); }
+#cross-section-track.overview .cs-band:hover { filter: brightness(1.2); }
+#cross-section-track.overview .cs-band:first-child { border-top: none; }
+#cross-section-track.overview .cs-band-label { font-size: 0.85em; }
+#overview-hint { display:none; font-size: 0.72em; color: #aaa; text-align:center; padding: 8px 4px; line-height: 1.5; }
 
 #depth-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 30; pointer-events: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
 #depth-marker-line { position: absolute; top: 50%; left: 0; width: 100vw; height: 2px; background: repeating-linear-gradient(90deg, rgba(250,204,21,0.55) 0 10px, transparent 10px 20px); transform: translateY(-50%); z-index: 29; pointer-events: none; }
@@ -48,6 +54,7 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 .depth-nav { display: flex; gap: 6px; margin-bottom: 12px; }
 .depth-nav button { flex: 1; padding: 10px 4px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 0.82em; background: var(--main-color); color: #000; }
 .depth-nav button:disabled { background: #333; color: #777; cursor: not-allowed; }
+#overview-toggle-btn { width:100%; padding: 10px 4px; border-radius: 8px; border: 1.5px solid var(--accent); background: rgba(56,189,248,0.1); color: var(--accent); font-weight: bold; cursor: pointer; font-size: 0.82em; margin-bottom: 12px; }
 
 .progress-dots { display: flex; justify-content: space-between; gap: 4px; }
 .progress-dot { flex: 1; height: 6px; border-radius: 4px; background: #333; cursor: pointer; border: none; padding: 0; }
@@ -257,13 +264,16 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
       <button type="button" class="mode-btn ocean" data-mode="ocean" onclick="setMode('ocean')">🌊 바다층 잠수</button>
     </div>
 
+    <button type="button" id="overview-toggle-btn" onclick="toggleViewMode()">🗺️ 전체 단면 보기</button>
+    <p id="overview-hint">원하는 층을 클릭하면 그 층으로 확대해서 탐사할 수 있어요.</p>
+
     <div id="layer-info-box">
       <div id="layer-info-name"></div>
       <div id="layer-info-range"></div>
       <div id="layer-info-desc"></div>
     </div>
 
-    <div class="depth-nav">
+    <div class="depth-nav" id="depth-nav-row">
       <button type="button" id="depth-up-btn" onclick="stepDepth(-1)">⬆ 위로</button>
       <button type="button" id="depth-down-btn" onclick="stepDepth(1)">더 내려가기 ⬇</button>
     </div>
@@ -674,6 +684,7 @@ const LAYER_SETS = { soil: SOIL_LAYERS, ocean: OCEAN_LAYERS };
 
 let currentMode = 'soil';
 let currentLayerIndex = 0;
+let viewMode = 'drill'; // 'drill' | 'overview'
 
 function initCrossSection(){
   buildCrossSection();
@@ -685,13 +696,14 @@ function setMode(mode){
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
   document.getElementById('mission-box-label').textContent = mode==='soil' ? '🪨 지금 층 질문받기' : '🌊 지금 층 질문받기';
   buildCrossSection();
+  setViewMode('drill');
 }
 function buildCrossSection(){
   const track = document.getElementById('cross-section-track');
   const layers = LAYER_SETS[currentMode];
-  track.innerHTML = layers.map(l => `
-    <div class="cs-band" style="background:linear-gradient(180deg, ${l.color}cc, ${l.color})">
-      <span class="cs-band-label">${l.name}</span>
+  track.innerHTML = layers.map((l,i) => `
+    <div class="cs-band" style="background:linear-gradient(180deg, ${l.color}cc, ${l.color})" onclick="bandClicked(${i})">
+      <span class="cs-band-label">${l.name}<span class="cs-band-range">${l.range}</span></span>
     </div>
   `).join('');
   drawDepthMarkerIcon();
@@ -703,10 +715,39 @@ function layoutCrossSection(){
   const viewport = document.getElementById('cross-section-viewport');
   const track = document.getElementById('cross-section-track');
   if(!viewport || !track || !track.children.length) return;
-  const h = viewport.clientHeight;
-  track.style.height = (h * track.children.length) + 'px';
-  Array.from(track.children).forEach(b => b.style.height = h + 'px');
-  track.style.transform = `translateY(${-currentLayerIndex * h}px)`;
+  const vh = viewport.clientHeight;
+  const n = track.children.length;
+  if(viewMode === 'overview'){
+    const bandH = vh / n;
+    track.style.height = vh + 'px';
+    Array.from(track.children).forEach(b => b.style.height = bandH + 'px');
+    track.style.transform = 'translateY(0px)';
+  } else {
+    track.style.height = (vh * n) + 'px';
+    Array.from(track.children).forEach(b => b.style.height = vh + 'px');
+    track.style.transform = `translateY(${-currentLayerIndex * vh}px)`;
+  }
+}
+function toggleViewMode(){
+  setViewMode(viewMode === 'drill' ? 'overview' : 'drill');
+}
+function setViewMode(mode){
+  viewMode = mode;
+  const track = document.getElementById('cross-section-track');
+  track.classList.toggle('overview', mode === 'overview');
+  document.getElementById('depth-marker').style.display = mode === 'drill' ? 'block' : 'none';
+  document.getElementById('depth-marker-line').style.display = mode === 'drill' ? 'block' : 'none';
+  document.getElementById('depth-nav-row').style.display = mode === 'drill' ? 'flex' : 'none';
+  document.getElementById('progress-dots').style.display = mode === 'drill' ? 'flex' : 'none';
+  document.getElementById('layer-info-box').style.display = mode === 'drill' ? 'block' : 'none';
+  document.getElementById('overview-hint').style.display = mode === 'overview' ? 'block' : 'none';
+  document.getElementById('overview-toggle-btn').textContent = mode === 'drill' ? '🗺️ 전체 단면 보기' : '🔍 탐사 모드로 돌아가기';
+  layoutCrossSection();
+}
+function bandClicked(i){
+  if(viewMode !== 'overview') return;
+  jumpToLayer(i);
+  setViewMode('drill');
 }
 function stepDepth(delta){
   const layers = LAYER_SETS[currentMode];

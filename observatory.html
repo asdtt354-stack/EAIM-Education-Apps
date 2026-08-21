@@ -85,9 +85,11 @@
         .no-teacher-wrap, .loading-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: rgba(255,255,255,0.5); }
         .group-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.82rem; color: rgba(255,255,255,0.75); text-align: left; }
         .group-del { background: none; border: none; color: #FF8080; cursor: pointer; font-size: 0.75rem; }
+        .group-qr-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.75rem; font-weight: 700; }
         .bg2 { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: 1.5px solid rgba(255,255,255,0.1); }
         .bfl { width: 100%; }
         .bsm { padding: 7px 14px; font-size: 0.78rem; border-radius: 9px; }
+        .class-locked-chip { display:none; font-size:.95rem; font-weight:700; color:var(--accent); background:rgba(0,212,255,0.08); border:1.5px solid rgba(0,212,255,0.3); border-radius:12px; padding:13px; margin-bottom:14px; }
     </style>
 </head>
 <body>
@@ -127,6 +129,7 @@
     <div style="font-size:.82rem;color:rgba(255,255,255,.45);margin-bottom:18px">NASA 데이터로 태양계를 관측해봐요!</div>
     <div class="locked-notice" id="lockedNotice" style="display:none">🔒 선생님이 아직 수업을 열지 않았어요</div>
     <input type="text" id="sni" placeholder="이름 입력" class="mi" onkeydown="if(event.key==='Enter')sN()">
+    <div id="classLockedChip" class="class-locked-chip"></div>
     <select id="sclass" class="mi" style="text-align:left">
       <option value="">반/모둠 선택</option>
     </select>
@@ -149,14 +152,15 @@
       </div>
     </div>
     <div style="margin-bottom:16px">
-      <label style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.7);display:block;margin-bottom:6px">학생 초대 링크</label>
+      <label style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.7);display:block;margin-bottom:6px">학생 초대 링크 (전체 반/모둠 공용)</label>
       <div class="invite-box" id="inviteUrlBox"></div>
       <button class="btn-primary bg2 bsm" style="margin-top:8px" onclick="copyInvite()">🔗 링크 복사</button>
       <div style="text-align:center"><div class="invite-qr-box" id="inviteQr"></div>
-        <div class="invite-qr-caption">📱 학생들이 이 QR을 스캔하면 바로 접속돼요</div></div>
+        <div class="invite-qr-caption">📱 학생들이 이 QR을 스캔하면 반/모둠을 직접 선택해서 접속돼요</div></div>
     </div>
     <div style="margin-bottom:16px">
       <label style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.7);display:block;margin-bottom:6px">🏷️ 반/모둠 이름 관리</label>
+      <p style="font-size:.7rem;color:rgba(255,255,255,.4);margin:0 0 8px">각 반/모둠 옆의 'QR/링크' 버튼을 누르면 그 반 전용 QR·링크가 나와요. 그걸로 접속한 학생은 반/모둠을 따로 고르지 않고 바로 들어가요.</p>
       <div style="display:flex;gap:6px;margin-bottom:8px">
         <input type="text" id="newGroupName" class="mi" placeholder="예: 3반 천문반" style="margin-bottom:0;flex:1;font-size:.85rem">
         <button class="btn-primary bsm" style="width:auto" onclick="addGroupUI()">추가</button>
@@ -168,6 +172,18 @@
       <input type="text" id="apiKeyInput" class="mi" placeholder="AIzaSy..." style="font-size:.85rem" oninput="saveApiKeyDash(this.value)">
     </div>
     <button class="btn-primary bg2 bfl" onclick="teacherLogout()">로그아웃</button>
+  </div>
+</div>
+
+<!-- 반/모둠별 QR -->
+<div id="groupQrOverlay" class="ov" style="display:none;z-index:400" onclick="if(event.target===this) closeGroupQr()">
+  <div class="mb" style="max-width:380px">
+    <div style="font-weight:700;font-size:1.15rem;margin-bottom:4px;color:var(--accent)" id="groupQrTitle"></div>
+    <div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-bottom:14px">이 QR/링크로 들어오면 반/모둠이 자동으로 선택돼요</div>
+    <div class="invite-box" id="groupQrUrlBox"></div>
+    <button class="btn-primary bg2 bsm" style="margin-top:8px" onclick="copyGroupInvite()">🔗 링크 복사</button>
+    <div style="text-align:center"><div class="invite-qr-box" id="groupQrBox"></div></div>
+    <button class="btn-primary bfl" style="margin-top:14px" onclick="closeGroupQr()">닫기</button>
   </div>
 </div>
 
@@ -295,6 +311,7 @@
     let settings = { apiKey:'', classOn:false };
     let groups=[];
     let unsubSettings=null, unsubGroups=null;
+    let currentGroupQrUrl='';
 
     function subscribeSettings(uid, cb){
       if(unsubSettings) unsubSettings();
@@ -319,7 +336,7 @@
       if(unsubGroups) unsubGroups();
       unsubGroups = groupsColRef(uid).orderBy('createdAt','asc').onSnapshot(snap=>{
         groups = snap.docs.map(d=>({id:d.id, name:d.data().name}));
-        if(isStudentMode) populateClassSelect();
+        if(isStudentMode){ populateClassSelect(); }
         else renderGroupListDash();
       }, err=>console.warn('그룹 동기화 오류', err));
     }
@@ -332,11 +349,17 @@
       } else {
         groups.forEach(g=>{ const opt=document.createElement('option'); opt.value=g.name; opt.textContent=g.name; sel.appendChild(opt); });
       }
+      applyGroupLock();
     }
     function renderGroupListDash(){
       const el=document.getElementById('groupList'); if(!el) return;
       el.innerHTML = groups.length ? groups.map(g=>`
-        <div class="group-item"><span>${g.name}</span><button class="group-del" onclick="deleteGroupUI('${g.id}')">삭제</button></div>
+        <div class="group-item"><span>${g.name}</span>
+          <span style="display:flex;gap:12px;align-items:center">
+            <button class="group-qr-btn" onclick="showGroupQr(${JSON.stringify(g.name)})">QR/링크</button>
+            <button class="group-del" onclick="deleteGroupUI('${g.id}')">삭제</button>
+          </span>
+        </div>
       `).join('') : '<p style="font-size:.8rem;color:rgba(255,255,255,.4)">아직 만든 반/모둠이 없어요</p>';
     }
     async function addGroupUI(){
@@ -348,6 +371,45 @@
     async function deleteGroupUI(id){
       if(!confirm('이 반/모둠을 삭제할까요?')) return;
       await deleteGroupFn(id);
+    }
+
+    // ── 반/모둠별 QR·링크 ──
+    function groupInviteUrl(name){
+      return `${location.origin}${location.pathname}?role=student&teacher=${teacherUid}&group=${encodeURIComponent(name)}`;
+    }
+    function showGroupQr(name){
+      currentGroupQrUrl = groupInviteUrl(name);
+      document.getElementById('groupQrTitle').textContent = name;
+      document.getElementById('groupQrUrlBox').textContent = currentGroupQrUrl;
+      const box = document.getElementById('groupQrBox');
+      box.innerHTML='';
+      if(typeof QRCode==='undefined'){ box.textContent='QR 로딩 실패'; }
+      else{ new QRCode(box, { text: currentGroupQrUrl, width:150, height:150, colorDark:'#050508', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M }); }
+      document.getElementById('groupQrOverlay').style.display='flex';
+    }
+    function closeGroupQr(){ document.getElementById('groupQrOverlay').style.display='none'; }
+    function copyGroupInvite(){
+      navigator.clipboard.writeText(currentGroupQrUrl).then(()=>alert('✅ 링크 복사됨!'));
+    }
+
+    // ── 학생 화면: URL의 group 파라미터로 반/모둠 자동 지정 ──
+    function applyGroupLock(){
+      const gp = window.EAIM_GROUP_PARAM;
+      const sel = document.getElementById('sclass');
+      const chip = document.getElementById('classLockedChip');
+      if(!sel || !chip) return;
+      if(!gp){ sel.style.display=''; chip.style.display='none'; return; }
+      const match = groups.find(g=>g.name===gp);
+      if(match){
+        sel.value = match.name;
+        stuClass = match.name;
+        sel.style.display='none';
+        chip.style.display='block';
+        chip.textContent = '🏷️ 반/모둠: '+match.name;
+      } else {
+        sel.style.display='';
+        chip.style.display='none';
+      }
     }
 
     function hideAllOverlays(){
@@ -832,6 +894,7 @@
         const params=new URLSearchParams(window.location.search);
         const role=params.get('role');
         const teacherParam=params.get('teacher');
+        const groupParam=params.get('group');
 
         if(!firebaseReady){
             document.getElementById('loadingOverlay').textContent='⚠️ Firebase 설정이 필요해요';
@@ -842,6 +905,7 @@
             isStudentMode=true;
             if(!teacherParam){ renderNoTeacherLink(); return; }
             teacherUid=teacherParam;
+            window.EAIM_GROUP_PARAM = groupParam || '';
             subscribeSettings(teacherUid, ()=>{ renderStudentLoginGate(); });
             subscribeGroups(teacherUid);
             return;

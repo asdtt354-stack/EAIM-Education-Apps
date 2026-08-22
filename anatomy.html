@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>EAIM 인체 탐험대 - 기관계 지도</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -15,18 +16,9 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #mainApp{ width:100%; height:100%; min-height:0; }
 
 #viewer-section { flex: 6; position: relative; min-height: 300px; overflow: hidden; background: radial-gradient(circle, #150d10 0%, #050304 75%); }
-#body-svg-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 70px 20px 20px; }
-#body-svg { height: 100%; max-width: 100%; }
-.organ-shape { cursor: pointer; transition: filter 0.2s, opacity 0.2s; stroke: rgba(255,255,255,0.55); stroke-width: 1.2; }
-.organ-shape:hover { filter: brightness(1.35); }
-.organ-shape.selected { stroke: #fff; stroke-width: 2.4; filter: brightness(1.4) drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
-.organ-group { transition: transform 0.7s cubic-bezier(0.65,0,0.35,1); }
-.organ-leader { stroke: rgba(255,255,255,0.35); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
-.organ-group.exploded .organ-leader { opacity: 1; }
-.organ-label { font-size: 7.5px; fill: rgba(255,255,255,0.85); text-anchor: middle; pointer-events: none; font-weight: 700; paint-order: stroke; stroke: rgba(0,0,0,0.6); stroke-width: 2px; }
-.system-hidden .organ-shape, .system-hidden .organ-label { display: none; }
-.system-dim .organ-shape { opacity: 0.15; }
-.body-outline { fill: rgba(255,255,255,0.05); stroke: rgba(255,255,255,0.18); stroke-width: 2; }
+#canvas-container { position: absolute; inset: 0; cursor: grab; }
+#canvas-container:active { cursor: grabbing; }
+#energy-explain-result { display:none; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); border-radius: 10px; padding: 12px; font-size: 0.78em; line-height: 1.6; color: #fed7aa; margin-top: 12px; }
 
 .header { position: absolute; top: 20px; left: 0; width: 100%; text-align: center; pointer-events: none; z-index: 25; }
 .header h1 { color: var(--main-color); margin: 0; font-size: 1.85em; text-shadow: 0 0 20px rgba(244,63,94,0.4); letter-spacing: 1px; }
@@ -47,11 +39,12 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 .action-btn.energy { border-color: #fb923c; background: rgba(251,146,60,0.12); color: #fdba74; }
 .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.zoom-btn { width:34px; height:34px; border-radius:8px; border:1.5px solid #444; background:#1e1e20; color:#fff; font-weight:900; font-size:1em; cursor:pointer; flex-shrink:0; }
+.zoom-btn:disabled { opacity:0.35; cursor:not-allowed; }
 #organ-info-box { display:none; background: #141416; border: 1px solid #2a2a2c; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
 #organ-info-name { font-weight: 800; font-size: 0.95em; margin-bottom: 6px; color: var(--main-color); }
 #organ-info-func { font-size: 0.78em; line-height: 1.55; color: #ddd; margin-bottom: 10px; }
 #organ-explain-box { display:none; font-size: 0.76em; line-height: 1.55; color: #d8b4fe; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
-#explain-diff-btn { width: 100%; padding: 8px 4px; border-radius: 7px; border: 1px solid rgba(168,85,247,0.5); background: transparent; color: #d8b4fe; font-size: 0.72em; font-weight: 700; cursor: pointer; }
 
 #log-section {
   flex: 4; min-width: 300px; max-width: 380px;
@@ -259,37 +252,27 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
 <div id="viewer-section">
   <div class="header">
     <h1>🫀 에임 인체 탐험대</h1>
-    <p>기관을 클릭해서 이름과 기능을 확인하고, 계통을 켜고 꺼보며 관계를 살펴보세요</p>
+    <p>드래그로 회전, 휠로 확대 · 장기를 클릭하면 AI가 역할을 설명해줘요</p>
   </div>
 
-  <div id="body-svg-wrap">
-    <svg id="body-svg" viewBox="0 0 360 400" xmlns="http://www.w3.org/2000/svg">
-      <g class="body-outline">
-        <circle cx="180" cy="38" r="30"/>
-        <rect x="168" y="62" width="24" height="18" rx="6"/>
-        <rect x="118" y="78" width="124" height="175" rx="42"/>
-        <rect x="70" y="90" width="42" height="140" rx="20"/>
-        <rect x="248" y="90" width="42" height="140" rx="20"/>
-        <rect x="140" y="250" width="40" height="140" rx="18"/>
-        <rect x="180" y="250" width="40" height="140" rx="18"/>
-      </g>
-      <g id="organs-layer"></g>
-    </svg>
-  </div>
+  <div id="canvas-container"></div>
 
   <div class="control-panel">
     <div class="system-chips" id="system-chips"></div>
 
-    <button type="button" class="action-btn" id="explode-btn" onclick="toggleExplode()">🧩 분리해서 보기</button>
+    <button type="button" class="action-btn" id="explode-btn" onclick="cycleExplode()">🧩 분리해서 보기</button>
     <button type="button" class="action-btn energy" id="energy-btn" onclick="toggleEnergyMode()">🔥 세포호흡·에너지 흐름 보기</button>
+    <button type="button" class="action-btn" id="energy-explain-btn" style="display:none;border-color:#fb923c;background:rgba(251,146,60,0.1);color:#fdba74" onclick="explainEnergyIntegration()">🤖 통합 설명 듣기</button>
     <button type="button" class="action-btn" style="border-color:#38bdf8;background:rgba(56,189,248,0.1);color:#7dd3fc" onclick="openReferenceAtlas()">📖 실제 도감처럼 보기</button>
 
     <div id="organ-info-box">
       <div id="organ-info-name"></div>
       <div id="organ-info-func"></div>
       <div id="organ-explain-box"></div>
-      <button type="button" id="explain-diff-btn" onclick="explainDifferently()">🤖 다르게 설명해줘</button>
     </div>
+
+    <div id="energy-explain-result" style="display:none"></div>
+
   </div>
 </div>
 
@@ -678,46 +661,220 @@ function mutoPcmToWavUrl(base64pcm){
 // ══════════════════════════
 const ORGAN_SYSTEMS = {
   digestive: { label:'소화계', color:'#f97316', icon:'🍽️', organs: [
-    { id:'mouth', name:'입', x:180, y:62, r:12, func:'음식을 씹고 침과 섞어 소화를 시작해요.' },
-    { id:'esophagus', name:'식도', x:180, y:95, r:7, func:'입에서 삼킨 음식을 위까지 운반하는 통로예요.' },
-    { id:'stomach', name:'위', x:158, y:150, r:20, func:'강한 산과 소화 효소로 음식을 잘게 분해해요.' },
-    { id:'smallintestine', name:'소장', x:180, y:205, r:24, func:'분해된 영양분을 몸으로 흡수하는 가장 긴 소화 기관이에요.' },
-    { id:'largeintestine', name:'대장', x:195, y:245, r:18, func:'남은 찌꺼기에서 수분을 흡수하고 대변을 만들어요.' },
-    { id:'liver', name:'간', x:205, y:140, r:16, func:'영양분을 저장·가공하고 몸의 독소를 해독해요.' }
+    { id:'mouth', name:'입', x:180, y:62, z:16, r:12, func:'음식을 씹고 침과 섞어 소화를 시작해요.' },
+    { id:'esophagus', name:'식도', x:180, y:95, z:-4, r:7, func:'입에서 삼킨 음식을 위까지 운반하는 통로예요.' },
+    { id:'stomach', name:'위', x:158, y:150, z:8, r:20, func:'강한 산과 소화 효소로 음식을 잘게 분해해요.' },
+    { id:'smallintestine', name:'소장', x:180, y:205, z:10, r:24, func:'분해된 영양분을 몸으로 흡수하는 가장 긴 소화 기관이에요.' },
+    { id:'largeintestine', name:'대장', x:195, y:245, z:12, r:18, func:'남은 찌꺼기에서 수분을 흡수하고 대변을 만들어요.' },
+    { id:'liver', name:'간', x:205, y:140, z:12, r:16, func:'영양분을 저장·가공하고 몸의 독소를 해독해요.' }
   ]},
   circulatory: { label:'순환계', color:'#ef4444', icon:'❤️', organs: [
-    { id:'heart', name:'심장', x:168, y:118, r:15, func:'혈액을 온몸으로 펌프질해서 보내는 순환의 중심이에요.' },
-    { id:'vessels', name:'혈관', x:200, y:230, r:13, func:'심장에서 나온 혈액이 온몸의 세포까지 산소와 영양분을 운반하는 통로예요.' }
+    { id:'heart', name:'심장', x:168, y:118, z:6, r:15, func:'혈액을 온몸으로 펌프질해서 보내는 순환의 중심이에요.' },
+    { id:'vessels', name:'혈관', x:200, y:230, z:2, r:13, func:'심장에서 나온 혈액이 온몸의 세포까지 산소와 영양분을 운반하는 통로예요.' }
   ]},
   respiratory: { label:'호흡계', color:'#38bdf8', icon:'🌬️', organs: [
-    { id:'trachea', name:'기관', x:195, y:88, r:7, func:'코와 폐 사이에서 공기가 지나가는 통로예요.' },
-    { id:'lungs', name:'폐', x:150, y:118, r:22, func:'산소를 받아들이고 이산화탄소를 내보내는 가스 교환이 일어나요.' }
+    { id:'trachea', name:'기관', x:195, y:88, z:10, r:7, func:'코와 폐 사이에서 공기가 지나가는 통로예요.' },
+    { id:'lungs', name:'폐', x:150, y:118, z:4, r:22, func:'산소를 받아들이고 이산화탄소를 내보내는 가스 교환이 일어나요.' }
   ]},
   excretory: { label:'배설계', color:'#eab308', icon:'💧', organs: [
-    { id:'kidney', name:'콩팥(신장)', x:205, y:195, r:13, func:'혈액을 걸러 노폐물을 오줌으로 만들어요.' },
-    { id:'bladder', name:'방광', x:180, y:248, r:11, func:'콩팥에서 만들어진 오줌을 저장했다가 몸 밖으로 내보내요.' }
+    { id:'kidney', name:'콩팥(신장)', x:205, y:195, z:-10, r:13, func:'혈액을 걸러 노폐물을 오줌으로 만들어요.' },
+    { id:'bladder', name:'방광', x:180, y:248, z:8, r:11, func:'콩팥에서 만들어진 오줌을 저장했다가 몸 밖으로 내보내요.' }
   ]},
   nervous: { label:'신경계', color:'#a855f7', icon:'🧠', organs: [
-    { id:'brain', name:'뇌', x:180, y:36, r:18, func:'몸의 모든 명령을 내리고 정보를 처리하는 신경계의 중심이에요.' },
-    { id:'spinalcord', name:'척수', x:180, y:135, r:5, func:'뇌와 온몸의 신경을 연결하는 통로예요.' }
+    { id:'brain', name:'뇌', x:180, y:36, z:0, r:18, func:'몸의 모든 명령을 내리고 정보를 처리하는 신경계의 중심이에요.' },
+    { id:'spinalcord', name:'척수', x:180, y:135, z:-14, r:5, func:'뇌와 온몸의 신경을 연결하는 통로예요.' }
   ]},
   musculoskeletal: { label:'근육/골격계', color:'#78716c', icon:'🦴', organs: [
-    { id:'ribs', name:'갈비뼈', x:150, y:105, r:26, func:'심장과 폐 같은 중요한 장기를 감싸서 보호해요.' },
-    { id:'spine', name:'척추', x:180, y:175, r:9, func:'몸을 지탱하고 척수를 보호하는 뼈 기둥이에요.' },
-    { id:'limbmuscle', name:'팔다리 근육', x:91, y:160, r:15, func:'뼈에 붙어서 수축·이완하며 몸을 움직이게 해요.' }
+    { id:'ribs', name:'갈비뼈', x:150, y:105, z:0, r:26, func:'심장과 폐 같은 중요한 장기를 감싸서 보호해요.' },
+    { id:'spine', name:'척추', x:180, y:175, z:-16, r:9, func:'몸을 지탱하고 척수를 보호하는 뼈 기둥이에요.' },
+    { id:'limbmuscle', name:'팔다리 근육', x:91, y:160, z:8, r:15, func:'뼈에 붙어서 수축·이완하며 몸을 움직이게 해요.' }
   ]}
 };
-const BODY_CENTER = { x:180, y:180 };
+const BODY_CENTER = new THREE.Vector3(0, 20, 0);
 const SYSTEM_KEYS = Object.keys(ORGAN_SYSTEMS);
+const POS_SCALE = 0.55;
 
 let activeSystems = new Set();
 let selectedOrgan = null;
-let explodedView = false;
+let selectedMeshEntry = null;
+let explodeLevel = 0; // 0=조립, 1=부분분리, 2=완전해체
 let energyMode = false;
+
+// ══════════════════════════
+// 🫀 3D 인체 씬 (Three.js)
+// ══════════════════════════
+let threeInited = false;
+let scene, camera, renderer, raycaster;
+let cameraAngle = 0.6, cameraHeight = 20, cameraRadius = 250;
+let isDraggingCam = false, camDragMoved = false, camPrevX = 0, camPrevY = 0;
+let organMeshes = [];
+
+function toWorld(o){
+  return new THREE.Vector3((o.x - 180) * POS_SCALE, (200 - o.y) * POS_SCALE, (o.z||0) * POS_SCALE);
+}
+function makeLabelSprite(text){
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.font = '700 34px Pretendard, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+  ctx.strokeText(text, 128, 34);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, 128, 34);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(16, 4, 1);
+  return sprite;
+}
+function buildBodyOutline(){
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffe4c4, transparent: true, opacity: 0.1, roughness: 0.9, side: THREE.DoubleSide });
+  const group = new THREE.Group();
+  const head = new THREE.Mesh(new THREE.SphereGeometry(17, 24, 24), mat);
+  head.position.set(0, 96, 0); group.add(head);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(7, 8, 14, 16), mat);
+  neck.position.set(0, 78, 0); group.add(neck);
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(33, 62, 8, 16), mat);
+  torso.position.set(0, 32, 0); group.add(torso);
+  const armGeo = new THREE.CapsuleGeometry(7.5, 68, 6, 12);
+  const armL = new THREE.Mesh(armGeo, mat); armL.position.set(-46, 15, 0); armL.rotation.z = 0.12; group.add(armL);
+  const armR = new THREE.Mesh(armGeo, mat); armR.position.set(46, 15, 0); armR.rotation.z = -0.12; group.add(armR);
+  const legGeo = new THREE.CapsuleGeometry(11, 78, 6, 12);
+  const legL = new THREE.Mesh(legGeo, mat); legL.position.set(-16, -60, 0); group.add(legL);
+  const legR = new THREE.Mesh(legGeo, mat); legR.position.set(16, -60, 0); group.add(legR);
+  scene.add(group);
+}
+function buildOrganMeshes(){
+  organMeshes = [];
+  SYSTEM_KEYS.forEach(sysKey=>{
+    const sys = ORGAN_SYSTEMS[sysKey];
+    sys.organs.forEach(o=>{
+      const basePos = toWorld(o);
+      const dir = basePos.clone().sub(BODY_CENTER);
+      if(dir.lengthSq() < 0.01) dir.set(0,1,0); else dir.normalize();
+
+      const mat = new THREE.MeshStandardMaterial({ color: sys.color, emissive: sys.color, emissiveIntensity: 0.18, roughness: 0.55 });
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(2.5, o.r * 0.42), 20, 20), mat);
+      mesh.position.copy(basePos);
+      mesh.userData = { sysKey, organId: o.id };
+      scene.add(mesh);
+
+      const label = makeLabelSprite(o.name);
+      label.position.copy(basePos).add(new THREE.Vector3(0, o.r * 0.42 + 5, 0));
+      scene.add(label);
+
+      organMeshes.push({ mesh, label, sysKey, organId: o.id, basePos, dir, r: o.r, target: basePos.clone() });
+    });
+  });
+}
+function computeExplodeTarget(entry){
+  if(explodeLevel === 0) return entry.basePos.clone();
+  const dist = explodeLevel === 1 ? 34 : 92;
+  return entry.basePos.clone().add(entry.dir.clone().multiplyScalar(dist));
+}
+function setExplodeTargets(){
+  organMeshes.forEach(o=>{ o.target = computeExplodeTarget(o); });
+}
+function initThreeScene(){
+  const container = document.getElementById('canvas-container');
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 2000);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+  raycaster = new THREE.Raycaster();
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.1);
+  dl.position.set(60, 120, 90); scene.add(dl);
+
+  buildBodyOutline();
+  buildOrganMeshes();
+
+  container.addEventListener('mousedown', (e)=>{
+    isDraggingCam = true; camDragMoved = false;
+    camPrevX = e.clientX; camPrevY = e.clientY;
+  });
+  window.addEventListener('mousemove', (e)=>{
+    if(!isDraggingCam) return;
+    const dx = e.clientX - camPrevX, dy = e.clientY - camPrevY;
+    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) camDragMoved = true;
+    cameraAngle -= dx * 0.006;
+    cameraHeight = Math.max(-60, Math.min(140, cameraHeight + dy * 0.6));
+    camPrevX = e.clientX; camPrevY = e.clientY;
+  });
+  window.addEventListener('mouseup', (e)=>{
+    if(isDraggingCam && !camDragMoved) handleCanvasClick(e.clientX, e.clientY);
+    isDraggingCam = false;
+  });
+  container.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    cameraRadius = Math.max(90, Math.min(420, cameraRadius + (e.deltaY > 0 ? 18 : -18)));
+  }, { passive:false });
+
+  container.addEventListener('touchstart', (e)=>{
+    if(e.touches.length !== 1) return;
+    isDraggingCam = true; camDragMoved = false;
+    camPrevX = e.touches[0].clientX; camPrevY = e.touches[0].clientY;
+  }, { passive:true });
+  container.addEventListener('touchmove', (e)=>{
+    if(!isDraggingCam || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - camPrevX, dy = e.touches[0].clientY - camPrevY;
+    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) camDragMoved = true;
+    cameraAngle -= dx * 0.006;
+    cameraHeight = Math.max(-60, Math.min(140, cameraHeight + dy * 0.6));
+    camPrevX = e.touches[0].clientX; camPrevY = e.touches[0].clientY;
+  }, { passive:true });
+  container.addEventListener('touchend', (e)=>{
+    if(isDraggingCam && !camDragMoved && e.changedTouches[0]) handleCanvasClick(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    isDraggingCam = false;
+  });
+
+  window.addEventListener('resize', ()=>{
+    if(!renderer) return;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+
+  function animate(){
+    requestAnimationFrame(animate);
+    camera.position.x = Math.cos(cameraAngle) * cameraRadius;
+    camera.position.z = Math.sin(cameraAngle) * cameraRadius;
+    camera.position.y = cameraHeight;
+    camera.lookAt(0, 20, 0);
+
+    organMeshes.forEach(o=>{
+      o.mesh.position.lerp(o.target, 0.09);
+      o.label.position.copy(o.mesh.position).add(new THREE.Vector3(0, o.r * 0.42 + 5, 0));
+      o.label.visible = o.mesh.visible;
+      if(explodeLevel === 2){ o.mesh.rotation.y += 0.012; o.mesh.rotation.x += 0.007; }
+    });
+
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+function handleCanvasClick(clientX, clientY){
+  const container = document.getElementById('canvas-container');
+  const rect = container.getBoundingClientRect();
+  const mouse = new THREE.Vector2(
+    ((clientX - rect.left) / rect.width) * 2 - 1,
+    -((clientY - rect.top) / rect.height) * 2 + 1
+  );
+  raycaster.setFromCamera(mouse, camera);
+  const visibleMeshes = organMeshes.filter(o=>o.mesh.visible).map(o=>o.mesh);
+  const hits = raycaster.intersectObjects(visibleMeshes);
+  if(hits.length){
+    const found = organMeshes.find(o=>o.mesh === hits[0].object);
+    if(found) selectOrgan(found.sysKey, found.organId);
+  }
+}
 
 function initAnatomyApp(){
   renderSystemChips();
-  buildOrgans();
+  if(!threeInited){ initThreeScene(); threeInited = true; }
   SYSTEM_KEYS.forEach(k=>{ activeSystems.add(k); }); // 기본은 전체 표시
   syncSystemVisibility();
   updateMissionState();
@@ -729,47 +886,6 @@ function renderSystemChips(){
     return `<button type="button" class="system-chip on" id="chip-${k}" style="--c:${s.color}" onclick="toggleSystem('${k}')">${s.icon} ${s.label}</button>`;
   }).join('');
 }
-function buildOrgans(){
-  const layer = document.getElementById('organs-layer');
-  layer.innerHTML = '';
-  SYSTEM_KEYS.forEach(sysKey=>{
-    const sys = ORGAN_SYSTEMS[sysKey];
-    sys.organs.forEach(o=>{
-      const dx = o.x - BODY_CENTER.x, dy = o.y - BODY_CENTER.y;
-      const dist = Math.max(1, Math.sqrt(dx*dx+dy*dy));
-      const ux = dx/dist, uy = dy/dist;
-      const explodeOffset = 78 + Math.random()*20;
-      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-      g.setAttribute('class','organ-group');
-      g.setAttribute('data-system', sysKey);
-      g.setAttribute('data-organ', o.id);
-      g.dataset.ex = (ux*explodeOffset).toFixed(1);
-      g.dataset.ey = (uy*explodeOffset).toFixed(1);
-
-      const leader = document.createElementNS('http://www.w3.org/2000/svg','line');
-      leader.setAttribute('class','organ-leader');
-      leader.setAttribute('x1', o.x); leader.setAttribute('y1', o.y);
-      leader.setAttribute('x2', o.x); leader.setAttribute('y2', o.y);
-      g.appendChild(leader);
-
-      const shape = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      shape.setAttribute('class','organ-shape');
-      shape.setAttribute('cx', o.x); shape.setAttribute('cy', o.y); shape.setAttribute('r', o.r);
-      shape.setAttribute('fill', sys.color);
-      shape.setAttribute('id', 'organ-'+o.id);
-      shape.addEventListener('click', ()=> selectOrgan(sysKey, o.id));
-      g.appendChild(shape);
-
-      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-      label.setAttribute('class','organ-label');
-      label.setAttribute('x', o.x); label.setAttribute('y', o.y + o.r + 9);
-      label.textContent = o.name;
-      g.appendChild(label);
-
-      layer.appendChild(g);
-    });
-  });
-}
 function toggleSystem(key){
   if(activeSystems.has(key)) activeSystems.delete(key); else activeSystems.add(key);
   document.getElementById('chip-'+key).classList.toggle('on', activeSystems.has(key));
@@ -777,43 +893,55 @@ function toggleSystem(key){
   updateMissionState();
 }
 function syncSystemVisibility(){
-  SYSTEM_KEYS.forEach(k=>{
-    const groups = document.querySelectorAll(`.organ-group[data-system="${k}"]`);
-    groups.forEach(g=> g.classList.toggle('system-hidden', !activeSystems.has(k)));
+  organMeshes.forEach(o=>{
+    const visible = activeSystems.has(o.sysKey);
+    o.mesh.visible = visible;
+    o.label.visible = visible;
   });
 }
-function selectOrgan(sysKey, organId){
-  document.querySelectorAll('.organ-shape.selected').forEach(el=>el.classList.remove('selected'));
-  const shapeEl = document.getElementById('organ-'+organId);
-  if(shapeEl) shapeEl.classList.add('selected');
+async function selectOrgan(sysKey, organId){
   const sys = ORGAN_SYSTEMS[sysKey];
   const organ = sys.organs.find(o=>o.id===organId);
   selectedOrgan = { sysKey, organ, sysLabel: sys.label };
 
+  if(selectedMeshEntry) selectedMeshEntry.mesh.scale.set(1,1,1);
+  const entry = organMeshes.find(o=>o.sysKey===sysKey && o.organId===organId);
+  if(entry){ entry.mesh.scale.set(1.2,1.2,1.2); selectedMeshEntry = entry; }
+
   document.getElementById('organ-info-box').style.display='block';
   document.getElementById('organ-info-name').textContent = `${organ.name} (${sys.label})`;
   document.getElementById('organ-info-func').textContent = organ.func;
-  document.getElementById('organ-explain-box').style.display='none';
-  document.getElementById('organ-explain-box').textContent='';
+  const box = document.getElementById('organ-explain-box');
+  box.style.display='none'; box.textContent='';
   updateMissionState();
-}
-function toggleExplode(){
-  explodedView = !explodedView;
-  const btn = document.getElementById('explode-btn');
-  btn.textContent = explodedView ? '🧷 다시 조립하기' : '🧩 분리해서 보기';
-  document.querySelectorAll('.organ-group').forEach(g=>{
-    g.classList.toggle('exploded', explodedView);
-    if(explodedView){
-      g.style.transform = `translate(${g.dataset.ex}px, ${g.dataset.ey}px)`;
-    } else {
-      g.style.transform = 'translate(0px,0px)';
+
+  if((settings.apiKey||'').trim()){
+    box.style.display='block';
+    box.textContent = '🤖 AI가 역할을 생성하는 중...';
+    try{
+      const prompt = `중학교 과학 교사로서, 인체의 "${organ.name}"(${sys.label})의 역할과 기능을 중학생이 이해하기 쉽게 2~3문장으로 설명해줘.
+이미 알려진 정의: "${organ.func}" — 이 내용을 바탕으로 조금 더 풍부하게, 일상적인 비유를 곁들여 설명해줘.`;
+      const text = await callGemini(prompt, 300);
+      if(selectedOrgan && selectedOrgan.organ.id === organId){
+        box.textContent = '🤖 ' + text;
+      }
+    }catch(e){
+      box.style.display='none';
     }
-  });
+  }
+}
+function cycleExplode(){
+  explodeLevel = (explodeLevel + 1) % 3;
+  const btn = document.getElementById('explode-btn');
+  btn.textContent = explodeLevel === 0 ? '🧩 분리해서 보기' : explodeLevel === 1 ? '💥 완전 해체하기' : '🧷 다시 조립하기';
+  setExplodeTargets();
 }
 function toggleEnergyMode(){
   energyMode = !energyMode;
   const btn = document.getElementById('energy-btn');
   btn.textContent = energyMode ? '🔥 일반 모드로 돌아가기' : '🔥 세포호흡·에너지 흐름 보기';
+  document.getElementById('energy-explain-btn').style.display = energyMode ? 'block' : 'none';
+  if(!energyMode) document.getElementById('energy-explain-result').style.display = 'none';
   if(energyMode){
     activeSystems = new Set(['digestive','respiratory','circulatory']);
   } else {
@@ -822,6 +950,29 @@ function toggleEnergyMode(){
   SYSTEM_KEYS.forEach(k=> document.getElementById('chip-'+k).classList.toggle('on', activeSystems.has(k)));
   syncSystemVisibility();
   updateMissionState();
+}
+async function explainEnergyIntegration(){
+  if(!(settings.apiKey||'').trim()){
+    alert('선생님이 아직 API 키를 설정하지 않았어요. 선생님께 문의해주세요.');
+    return;
+  }
+  const btn = document.getElementById('energy-explain-btn');
+  const box = document.getElementById('energy-explain-result');
+  btn.disabled = true; btn.textContent = '🤖 생성하는 중...';
+  box.style.display = 'block';
+  box.textContent = '📡 AI가 통합 설명을 쓰고 있어요...';
+
+  const prompt = `중학교 과학 교사로서, 소화계·순환계·호흡계가 함께 작용해서 세포호흡과 에너지를 만드는 과정을
+"음식 속 영양분 소화 → 흡수 → 혈액 운반 → 호흡으로 얻은 산소와 만남 → 세포에서 에너지(ATP) 생성 → 이산화탄소 배출"
+의 흐름으로, 중학생이 이해하기 쉽게 4~6문장으로 통합적으로 설명해줘. 각 계통의 역할이 잘 드러나게 써줘.`;
+
+  try{
+    const text = await callGemini(prompt, 700);
+    box.textContent = '🔥 ' + text;
+  }catch(e){
+    box.textContent = '❌ 설명 생성 실패: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = '🤖 통합 설명 듣기';
 }
 const ATLAS_ZOOM_STEPS = [100, 150, 220, 320, 450];
 let atlasZoomIndex = 0;
@@ -904,30 +1055,6 @@ async function callGemini(prompt, maxTokens=600){
   const data = await res.json();
   if(data.error) throw new Error(data.error.message);
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-}
-
-async function explainDifferently(){
-  if(!selectedOrgan) return;
-  if(!(settings.apiKey||'').trim()){
-    alert('선생님이 아직 API 키를 설정하지 않았어요. 선생님께 문의해주세요.');
-    return;
-  }
-  const btn = document.getElementById('explain-diff-btn');
-  const box = document.getElementById('organ-explain-box');
-  btn.disabled = true; btn.textContent = '🤖 생각하는 중...';
-  box.style.display='block'; box.textContent = '📡 다른 방식으로 설명을 만들고 있어요...';
-
-  const { organ, sysLabel } = selectedOrgan;
-  const prompt = `중학교 과학 교사로서, "${organ.name}"(${sysLabel})의 기능을 이렇게 설명했어: "${organ.func}"
-이 내용을 중학생이 더 쉽게 이해할 수 있도록, 일상적인 비유를 들어 2~3문장으로 다르게 설명해줘. 같은 뜻이지만 표현은 완전히 새롭게 써줘.`;
-
-  try{
-    const text = await callGemini(prompt, 300);
-    box.textContent = text;
-  }catch(e){
-    box.textContent = '❌ 설명 생성 실패: ' + e.message;
-  }
-  btn.disabled = false; btn.textContent = '🤖 다르게 설명해줘';
 }
 
 async function generateAnatomyMission(){

@@ -220,14 +220,16 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
 </div>
 
 <div id="referenceAtlasOverlay" class="ov" style="display:none;z-index:370" onclick="if(event.target===this) closeReferenceAtlas()">
-  <div class="mb" style="max-width:860px;padding:16px">
+  <div class="mb" style="max-width:900px;padding:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div style="font-weight:900;font-size:1.05rem;color:var(--main-color)">📖 참고 인체 해부도</div>
       <button onclick="closeReferenceAtlas()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:rgba(255,255,255,.5)">✖</button>
     </div>
-    <p style="font-size:.72rem;color:rgba(255,255,255,.45);margin:0 0 10px;line-height:1.5">AI로 만든 참고용 그림이에요. 실제 정답 정보는 왼쪽 인터랙티브 화면의 설명을 기준으로 해주세요. 그림을 클릭하면 확대돼요.</p>
-    <div id="atlas-zoom-wrap" style="overflow:auto;max-height:68vh;border-radius:12px;cursor:zoom-in;border:1px solid #2a2a2c">
-      <img id="atlas-img" src="anatomy-reference.jpg" alt="참고 인체 해부도" style="width:100%;display:block;transition:width 0.25s" onclick="atlasZoomClick(event)">
+    <p style="font-size:.72rem;color:rgba(255,255,255,.45);margin:0 0 10px;line-height:1.5">실제 정답 정보는 왼쪽 인터랙티브 화면의 설명을 기준으로 해주세요. 아래 아이콘을 눌러 다른 기관 그림으로 바꿔볼 수 있고, 그림을 클릭하면 확대돼요.</p>
+    <div id="atlas-thumb-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;justify-content:center"></div>
+    <div id="atlas-title" style="font-weight:800;font-size:.9rem;color:#fff;margin-bottom:8px;text-align:center"></div>
+    <div id="atlas-zoom-wrap" style="overflow:auto;max-height:56vh;border-radius:12px;cursor:zoom-in;border:1px solid #2a2a2c;background:#fff">
+      <img id="atlas-img" src="" alt="참고 인체 해부도" style="width:100%;display:block;transition:width 0.25s" onclick="atlasZoomClick(event)">
     </div>
     <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px">
       <button type="button" class="zoom-btn" onclick="atlasZoom(-1)">−</button>
@@ -701,6 +703,75 @@ let explodeLevel = 0; // 0=조립, 1=부분분리, 2=완전해체
 let energyMode = false;
 
 // ══════════════════════════
+// 📖 참고 인체 해부도 (교사 업로드 이미지 8종)
+// ══════════════════════════
+const ATLAS_IMAGES = [
+  { id:'overview-full',        label:'🧍 전신 통합형',   file:'overview-full.png',        organs:[] },
+  { id:'overview-transparent', label:'🧍 전신 투시형',   file:'overview-transparent.png', organs:[] },
+  { id:'overview-split',       label:'🧍 반분할 비교형', file:'overview-split.png',       organs:[] },
+  { id:'skeleton',    label:'🦴 골격계',      file:'skeleton.png',    organs:['ribs','spine','limbmuscle'] },
+  { id:'brain',       label:'🧠 두개골과 뇌',  file:'brain.png',       organs:['brain','spinalcord'] },
+  { id:'stomach',     label:'🍽️ 식도와 위',   file:'stomach.png',     organs:['mouth','esophagus','stomach'] },
+  { id:'intestines',  label:'🍽️ 소장과 대장', file:'intestines.png',  organs:['smallintestine','largeintestine'] },
+  { id:'liver',       label:'🍽️ 간과 담낭',   file:'liver.png',       organs:['liver'] },
+  { id:'heart',       label:'❤️ 심장',        file:'heart.png',       organs:['heart','vessels'] },
+  { id:'respiratory', label:'🌬️ 기관과 폐',   file:'respiratory.png', organs:['trachea','lungs'] },
+  { id:'urinary',     label:'💧 신장과 방광',  file:'urinary.png',     organs:['kidney','bladder'] }
+];
+let currentAtlasId = 'overview-full';
+function renderAtlasThumbs(){
+  const row = document.getElementById('atlas-thumb-row');
+  if(!row) return;
+  row.innerHTML = ATLAS_IMAGES.map(a=>{
+    const on = a.id===currentAtlasId;
+    return `<button type="button" onclick="selectAtlasImage('${a.id}')" style="padding:7px 11px;border-radius:8px;border:1.5px solid ${on?'var(--main-color)':'#444'};background:${on?'rgba(244,63,94,0.15)':'#1a1a1c'};color:${on?'#fff':'#aaa'};font-size:.72em;font-weight:700;cursor:pointer;white-space:nowrap">${a.label}</button>`;
+  }).join('');
+}
+function selectAtlasImage(id){
+  const a = ATLAS_IMAGES.find(x=>x.id===id);
+  if(!a) return;
+  currentAtlasId = id;
+  document.getElementById('atlas-img').src = a.file;
+  document.getElementById('atlas-title').textContent = a.label;
+  renderAtlasThumbs();
+  atlasZoomReset();
+}
+function pickAtlasForOrgan(organId){
+  const found = ATLAS_IMAGES.find(a=>a.organs.includes(organId));
+  return found ? found.id : currentAtlasId;
+}
+
+// ══════════════════════════
+// 🖼️ 장기 컷아웃 이미지 (배경 투명 PNG, 3D 화면 빌보드용)
+// ══════════════════════════
+const ORGAN_TEXTURES = {
+  mouth:          { file:'organ_mouth.png',          aspect:1.044 },
+  esophagus:      { file:'organ_esophagus.png',      aspect:0.589 },
+  stomach:        { file:'organ_stomach.png',        aspect:0.927 },
+  smallintestine: { file:'organ_smallintestine.png', aspect:1.235 },
+  largeintestine: { file:'organ_largeintestine.png', aspect:0.915 },
+  liver:          { file:'organ_liver.png',          aspect:1.265 },
+  heart:          { file:'organ_heart.png',          aspect:0.599 },
+  vessels:        { file:'organ_vessels.png',        aspect:1.623 },
+  trachea:        { file:'organ_trachea.png',        aspect:0.405 },
+  lungs:          { file:'organ_lungs.png',          aspect:0.876 },
+  kidney:         { file:'organ_kidney.png',         aspect:1.736 },
+  bladder:        { file:'organ_bladder.png',        aspect:0.815 },
+  brain:          { file:'organ_brain.png',          aspect:1.329 },
+  spinalcord:     { file:'organ_spinalcord.png',     aspect:0.643 },
+  ribs:           { file:'organ_ribs.png',           aspect:1.176 },
+  spine:          { file:'organ_spine.png',          aspect:0.211 },
+  limbmuscle:     { file:'organ_limbmuscle.png',     aspect:0.332 }
+};
+const organTextureLoader = new THREE.TextureLoader();
+const organTextureCache = {};
+function getOrganTexture(organId){
+  if(!ORGAN_TEXTURES[organId]) return null;
+  if(!organTextureCache[organId]) organTextureCache[organId] = organTextureLoader.load(ORGAN_TEXTURES[organId].file);
+  return organTextureCache[organId];
+}
+
+// ══════════════════════════
 // 🫀 3D 인체 씬 (Three.js)
 // ══════════════════════════
 let threeInited = false;
@@ -754,10 +825,22 @@ function buildOrganMeshes(){
       const dir = basePos.clone().sub(BODY_CENTER);
       if(dir.lengthSq() < 0.01) dir.set(0,1,0); else dir.normalize();
 
-      const mat = new THREE.MeshStandardMaterial({ color: sys.color, emissive: sys.color, emissiveIntensity: 0.18, roughness: 0.55 });
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(2.5, o.r * 0.42), 20, 20), mat);
+      const texInfo = ORGAN_TEXTURES[o.id];
+      let mesh;
+      if(texInfo){
+        const tex = getOrganTexture(o.id);
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+        mesh = new THREE.Sprite(mat);
+        const h = Math.max(6, o.r * 1.15);
+        const w = h * texInfo.aspect;
+        mesh.scale.set(w, h, 1);
+        mesh.userData = { sysKey, organId: o.id, baseScale: new THREE.Vector3(w, h, 1) };
+      } else {
+        const mat = new THREE.MeshStandardMaterial({ color: sys.color, emissive: sys.color, emissiveIntensity: 0.18, roughness: 0.55 });
+        mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(2.5, o.r * 0.42), 20, 20), mat);
+        mesh.userData = { sysKey, organId: o.id, baseScale: new THREE.Vector3(1,1,1) };
+      }
       mesh.position.copy(basePos);
-      mesh.userData = { sysKey, organId: o.id };
       scene.add(mesh);
 
       const label = makeLabelSprite(o.name);
@@ -849,7 +932,10 @@ function initThreeScene(){
       o.mesh.position.lerp(o.target, 0.09);
       o.label.position.copy(o.mesh.position).add(new THREE.Vector3(0, o.r * 0.42 + 5, 0));
       o.label.visible = o.mesh.visible;
-      if(explodeLevel === 2){ o.mesh.rotation.y += 0.012; o.mesh.rotation.x += 0.007; }
+      if(explodeLevel === 2){
+        if(o.mesh.isSprite){ o.mesh.material.rotation += 0.02; }
+        else { o.mesh.rotation.y += 0.012; o.mesh.rotation.x += 0.007; }
+      }
     });
 
     renderer.render(scene, camera);
@@ -904,9 +990,16 @@ async function selectOrgan(sysKey, organId){
   const organ = sys.organs.find(o=>o.id===organId);
   selectedOrgan = { sysKey, organ, sysLabel: sys.label };
 
-  if(selectedMeshEntry) selectedMeshEntry.mesh.scale.set(1,1,1);
+  if(selectedMeshEntry){
+    const bs0 = selectedMeshEntry.mesh.userData.baseScale;
+    selectedMeshEntry.mesh.scale.set(bs0.x, bs0.y, bs0.z);
+  }
   const entry = organMeshes.find(o=>o.sysKey===sysKey && o.organId===organId);
-  if(entry){ entry.mesh.scale.set(1.2,1.2,1.2); selectedMeshEntry = entry; }
+  if(entry){
+    const bs = entry.mesh.userData.baseScale;
+    entry.mesh.scale.set(bs.x*1.25, bs.y*1.25, bs.z);
+    selectedMeshEntry = entry;
+  }
 
   document.getElementById('organ-info-box').style.display='block';
   document.getElementById('organ-info-name').textContent = `${organ.name} (${sys.label})`;
@@ -1007,8 +1100,9 @@ function atlasZoomClick(e){
   });
 }
 function openReferenceAtlas(){
+  const suggested = selectedOrgan ? pickAtlasForOrgan(selectedOrgan.organ.id) : currentAtlasId;
+  selectAtlasImage(suggested);
   document.getElementById('referenceAtlasOverlay').style.display='flex';
-  atlasZoomReset();
 }
 function closeReferenceAtlas(){ document.getElementById('referenceAtlasOverlay').style.display='none'; }
 

@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>EAIM 인체 탐험대 - 기관계 지도</title>
-<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -16,8 +15,18 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #mainApp{ width:100%; height:100%; min-height:0; }
 
 #viewer-section { flex: 6; position: relative; min-height: 300px; overflow: hidden; background: radial-gradient(circle, #150d10 0%, #050304 75%); }
-#canvas-container { position: absolute; inset: 0; cursor: grab; }
+#canvas-container { position: absolute; inset: 0; cursor: grab; overflow: hidden; display:flex; align-items:center; justify-content:center; touch-action:none; }
 #canvas-container:active { cursor: grabbing; }
+#zoom-layer { transition: transform 0.05s linear; }
+#body-stage { position: relative; width: 300px; height: 340px; }
+#body-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0.4; pointer-events:none; }
+.organ-marker { position:absolute; transform:translate(-50%,-50%); cursor:pointer; transition: transform 0.5s cubic-bezier(.4,0,.2,1); }
+.organ-marker-inner { transition: transform 0.25s ease, filter 0.25s ease; }
+.organ-marker.selected .organ-marker-inner { transform: scale(1.3); filter: drop-shadow(0 0 10px var(--main-color)); }
+.organ-marker img { display:block; width:100%; height:100%; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7)); pointer-events:none; }
+.organ-marker-label { position:absolute; bottom:-13px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:800; color:#fff; text-shadow:0 0 3px #000,0 0 3px #000,0 0 3px #000; white-space:nowrap; pointer-events:none; }
+.organ-marker.spin .organ-marker-inner { animation: organ-spin 2.4s linear infinite; }
+@keyframes organ-spin { from{ transform: scale(1.3) rotate(0deg);} to{ transform: scale(1.3) rotate(360deg);} }
 #energy-explain-result { display:none; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); border-radius: 10px; padding: 12px; font-size: 0.78em; line-height: 1.6; color: #fed7aa; margin-top: 12px; }
 
 .header { position: absolute; top: 20px; left: 0; width: 100%; text-align: center; pointer-events: none; z-index: 25; }
@@ -254,10 +263,16 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
 <div id="viewer-section">
   <div class="header">
     <h1>🫀 에임 인체 탐험대</h1>
-    <p>드래그로 회전, 휠로 확대 · 장기를 클릭하면 AI가 역할을 설명해줘요</p>
+    <p>드래그로 화면 이동, 휠로 확대 · 장기를 클릭하면 AI가 역할을 설명해줘요</p>
   </div>
 
-  <div id="canvas-container"></div>
+  <div id="canvas-container">
+    <div id="zoom-layer">
+      <div id="body-stage">
+        <img id="body-bg" src="overview-transparent.png" alt="">
+      </div>
+    </div>
+  </div>
 
   <div class="control-panel">
     <div class="system-chips" id="system-chips"></div>
@@ -692,13 +707,10 @@ const ORGAN_SYSTEMS = {
     { id:'limbmuscle', name:'팔다리 근육', x:91, y:160, z:8, r:15, func:'뼈에 붙어서 수축·이완하며 몸을 움직이게 해요.' }
   ]}
 };
-const BODY_CENTER = new THREE.Vector3(0, 20, 0);
 const SYSTEM_KEYS = Object.keys(ORGAN_SYSTEMS);
-const POS_SCALE = 0.55;
 
 let activeSystems = new Set();
 let selectedOrgan = null;
-let selectedMeshEntry = null;
 let explodeLevel = 0; // 0=조립, 1=부분분리, 2=완전해체
 let energyMode = false;
 
@@ -742,7 +754,7 @@ function pickAtlasForOrgan(organId){
 }
 
 // ══════════════════════════
-// 🖼️ 장기 컷아웃 이미지 (배경 투명 PNG, 3D 화면 빌보드용)
+// 🖼️ 장기 컷아웃 이미지 (배경 투명 PNG)
 // ══════════════════════════
 const ORGAN_TEXTURES = {
   mouth:          { file:'organ_mouth.png',          aspect:1.044 },
@@ -763,208 +775,135 @@ const ORGAN_TEXTURES = {
   spine:          { file:'organ_spine.png',          aspect:0.211 },
   limbmuscle:     { file:'organ_limbmuscle.png',     aspect:0.332 }
 };
-const organTextureLoader = new THREE.TextureLoader();
-const organTextureCache = {};
-function getOrganTexture(organId){
-  if(!ORGAN_TEXTURES[organId]) return null;
-  if(!organTextureCache[organId]) organTextureCache[organId] = organTextureLoader.load(ORGAN_TEXTURES[organId].file);
-  return organTextureCache[organId];
-}
 
 // ══════════════════════════
-// 🫀 3D 인체 씬 (Three.js)
+// 🫀 2D 인체 무대 (DOM 기반)
 // ══════════════════════════
-let threeInited = false;
-let scene, camera, renderer, raycaster;
-let cameraAngle = 0.6, cameraHeight = 20, cameraRadius = 250;
-let isDraggingCam = false, camDragMoved = false, camPrevX = 0, camPrevY = 0;
-let organMeshes = [];
+const STAGE_W = 300, STAGE_H = 340;
+const BODY_CENTER_2D = { x: 180, y: 155 };
+let organElements = {}; // key: `${sysKey}:${organId}` -> {el, innerEl, dir:{x,y}, r}
+let selectedMarkerEl = null;
+let zoomScale = 1, panX = 0, panY = 0;
+let isDraggingStage = false, stageDragMoved = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
 
-function toWorld(o){
-  return new THREE.Vector3((o.x - 180) * POS_SCALE, (200 - o.y) * POS_SCALE, (o.z||0) * POS_SCALE);
-}
-function makeLabelSprite(text){
-  const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 64;
-  const ctx = canvas.getContext('2d');
-  ctx.font = '700 34px Pretendard, sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
-  ctx.strokeText(text, 128, 34);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(text, 128, 34);
-  const tex = new THREE.CanvasTexture(canvas);
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
-  const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(16, 4, 1);
-  return sprite;
-}
-function buildBodyOutline(){
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffe4c4, transparent: true, opacity: 0.1, roughness: 0.9, side: THREE.DoubleSide, depthWrite: false });
-  const group = new THREE.Group();
-  group.renderOrder = 0;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(17, 24, 24), mat);
-  head.position.set(0, 96, 0); group.add(head);
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(7, 8, 14, 16), mat);
-  neck.position.set(0, 78, 0); group.add(neck);
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(33, 62, 8, 16), mat);
-  torso.position.set(0, 32, 0); group.add(torso);
-  const armGeo = new THREE.CapsuleGeometry(7.5, 68, 6, 12);
-  const armL = new THREE.Mesh(armGeo, mat); armL.position.set(-46, 15, 0); armL.rotation.z = 0.12; group.add(armL);
-  const armR = new THREE.Mesh(armGeo, mat); armR.position.set(46, 15, 0); armR.rotation.z = -0.12; group.add(armR);
-  const legGeo = new THREE.CapsuleGeometry(11, 78, 6, 12);
-  const legL = new THREE.Mesh(legGeo, mat); legL.position.set(-16, -60, 0); group.add(legL);
-  const legR = new THREE.Mesh(legGeo, mat); legR.position.set(16, -60, 0); group.add(legR);
-  group.children.forEach(m=>{ m.renderOrder = 0; });
-  scene.add(group);
-}
-function buildOrganMeshes(){
-  organMeshes = [];
+function keyFor(sysKey, organId){ return sysKey + ':' + organId; }
+
+function buildOrganMarkers(){
+  const stage = document.getElementById('body-stage');
+  organElements = {};
   SYSTEM_KEYS.forEach(sysKey=>{
     const sys = ORGAN_SYSTEMS[sysKey];
     sys.organs.forEach(o=>{
-      const basePos = toWorld(o);
-      const dir = basePos.clone().sub(BODY_CENTER);
-      if(dir.lengthSq() < 0.01) dir.set(0,1,0); else dir.normalize();
-
       const texInfo = ORGAN_TEXTURES[o.id];
-      let mesh;
+      const leftPct = (o.x / STAGE_W) * 100;
+      const topPct = (o.y / STAGE_H) * 100;
+
+      let dx = o.x - BODY_CENTER_2D.x, dy = o.y - BODY_CENTER_2D.y;
+      const len = Math.hypot(dx, dy);
+      if(len < 1){ dx = 0; dy = -1; } else { dx /= len; dy /= len; }
+
+      const h = Math.max(26, o.r * 2.1);
+      const w = texInfo ? h * texInfo.aspect : h;
+
+      const marker = document.createElement('div');
+      marker.className = 'organ-marker';
+      marker.style.left = leftPct + '%';
+      marker.style.top = topPct + '%';
+      marker.style.width = w + 'px';
+      marker.style.height = h + 'px';
+      marker.dataset.sys = sysKey;
+      marker.dataset.organ = o.id;
+
+      const inner = document.createElement('div');
+      inner.className = 'organ-marker-inner';
+      inner.style.width = '100%';
+      inner.style.height = '100%';
+      inner.style.position = 'relative';
+
       if(texInfo){
-        const tex = getOrganTexture(o.id);
-        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-        mesh = new THREE.Sprite(mat);
-        const h = Math.max(12, o.r * 1.9);
-        const w = h * texInfo.aspect;
-        mesh.scale.set(w, h, 1);
-        mesh.userData = { sysKey, organId: o.id, baseScale: new THREE.Vector3(w, h, 1) };
+        const img = document.createElement('img');
+        img.src = texInfo.file;
+        img.alt = o.name;
+        inner.appendChild(img);
       } else {
-        const mat = new THREE.MeshStandardMaterial({ color: sys.color, emissive: sys.color, emissiveIntensity: 0.18, roughness: 0.55, depthWrite: false, transparent: true });
-        mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(2.5, o.r * 0.42), 20, 20), mat);
-        mesh.userData = { sysKey, organId: o.id, baseScale: new THREE.Vector3(1,1,1) };
+        inner.style.borderRadius = '50%';
+        inner.style.background = sys.color;
+        inner.style.boxShadow = `0 0 10px ${sys.color}`;
       }
-      mesh.position.copy(basePos);
-      mesh.renderOrder = 1;
-      scene.add(mesh);
+      const label = document.createElement('div');
+      label.className = 'organ-marker-label';
+      label.textContent = o.name;
+      inner.appendChild(label);
 
-      const label = makeLabelSprite(o.name);
-      label.position.copy(basePos).add(new THREE.Vector3(0, o.r * 0.42 + 5, 0));
-      label.renderOrder = 2;
-      scene.add(label);
+      marker.appendChild(inner);
+      marker.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(stageDragMoved) return;
+        selectOrgan(sysKey, o.id);
+      });
+      stage.appendChild(marker);
 
-      organMeshes.push({ mesh, label, sysKey, organId: o.id, basePos, dir, r: o.r, target: basePos.clone() });
+      organElements[keyFor(sysKey, o.id)] = { el: marker, inner, dir: { x: dx, y: dy }, r: o.r };
     });
   });
 }
-function computeExplodeTarget(entry){
-  if(explodeLevel === 0) return entry.basePos.clone();
-  const dist = explodeLevel === 1 ? 34 : 92;
-  return entry.basePos.clone().add(entry.dir.clone().multiplyScalar(dist));
+
+function applyStageTransform(){
+  const layer = document.getElementById('zoom-layer');
+  layer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
 }
-function setExplodeTargets(){
-  organMeshes.forEach(o=>{ o.target = computeExplodeTarget(o); });
-}
-function initThreeScene(){
+
+function setupStageInteraction(){
   const container = document.getElementById('canvas-container');
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 2000);
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
-  raycaster = new THREE.Raycaster();
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const dl = new THREE.DirectionalLight(0xffffff, 1.1);
-  dl.position.set(60, 120, 90); scene.add(dl);
-
-  buildBodyOutline();
-  buildOrganMeshes();
-
   container.addEventListener('mousedown', (e)=>{
-    isDraggingCam = true; camDragMoved = false;
-    camPrevX = e.clientX; camPrevY = e.clientY;
+    isDraggingStage = true; stageDragMoved = false;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    panStartX = panX; panStartY = panY;
   });
   window.addEventListener('mousemove', (e)=>{
-    if(!isDraggingCam) return;
-    const dx = e.clientX - camPrevX, dy = e.clientY - camPrevY;
-    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) camDragMoved = true;
-    cameraAngle -= dx * 0.006;
-    cameraHeight = Math.max(-60, Math.min(140, cameraHeight + dy * 0.6));
-    camPrevX = e.clientX; camPrevY = e.clientY;
+    if(!isDraggingStage) return;
+    const dx = e.clientX - dragStartX, dy = e.clientY - dragStartY;
+    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) stageDragMoved = true;
+    panX = panStartX + dx; panY = panStartY + dy;
+    applyStageTransform();
   });
-  window.addEventListener('mouseup', (e)=>{
-    if(isDraggingCam && !camDragMoved) handleCanvasClick(e.clientX, e.clientY);
-    isDraggingCam = false;
-  });
+  window.addEventListener('mouseup', ()=>{ isDraggingStage = false; });
   container.addEventListener('wheel', (e)=>{
     e.preventDefault();
-    cameraRadius = Math.max(90, Math.min(420, cameraRadius + (e.deltaY > 0 ? 18 : -18)));
+    zoomScale = Math.max(0.6, Math.min(2.6, zoomScale + (e.deltaY > 0 ? -0.08 : 0.08)));
+    applyStageTransform();
   }, { passive:false });
 
   container.addEventListener('touchstart', (e)=>{
     if(e.touches.length !== 1) return;
-    isDraggingCam = true; camDragMoved = false;
-    camPrevX = e.touches[0].clientX; camPrevY = e.touches[0].clientY;
+    isDraggingStage = true; stageDragMoved = false;
+    dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
+    panStartX = panX; panStartY = panY;
   }, { passive:true });
   container.addEventListener('touchmove', (e)=>{
-    if(!isDraggingCam || e.touches.length !== 1) return;
-    const dx = e.touches[0].clientX - camPrevX, dy = e.touches[0].clientY - camPrevY;
-    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) camDragMoved = true;
-    cameraAngle -= dx * 0.006;
-    cameraHeight = Math.max(-60, Math.min(140, cameraHeight + dy * 0.6));
-    camPrevX = e.touches[0].clientX; camPrevY = e.touches[0].clientY;
+    if(!isDraggingStage || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - dragStartX, dy = e.touches[0].clientY - dragStartY;
+    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) stageDragMoved = true;
+    panX = panStartX + dx; panY = panStartY + dy;
+    applyStageTransform();
   }, { passive:true });
-  container.addEventListener('touchend', (e)=>{
-    if(isDraggingCam && !camDragMoved && e.changedTouches[0]) handleCanvasClick(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-    isDraggingCam = false;
-  });
-
-  window.addEventListener('resize', ()=>{
-    if(!renderer) return;
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-  });
-
-  function animate(){
-    requestAnimationFrame(animate);
-    camera.position.x = Math.cos(cameraAngle) * cameraRadius;
-    camera.position.z = Math.sin(cameraAngle) * cameraRadius;
-    camera.position.y = cameraHeight;
-    camera.lookAt(0, 20, 0);
-
-    organMeshes.forEach(o=>{
-      o.mesh.position.lerp(o.target, 0.09);
-      o.label.position.copy(o.mesh.position).add(new THREE.Vector3(0, o.r * 0.42 + 5, 0));
-      o.label.visible = o.mesh.visible;
-      if(explodeLevel === 2){
-        if(o.mesh.isSprite){ o.mesh.material.rotation += 0.02; }
-        else { o.mesh.rotation.y += 0.012; o.mesh.rotation.x += 0.007; }
-      }
-    });
-
-    renderer.render(scene, camera);
-  }
-  animate();
-}
-function handleCanvasClick(clientX, clientY){
-  const container = document.getElementById('canvas-container');
-  const rect = container.getBoundingClientRect();
-  const mouse = new THREE.Vector2(
-    ((clientX - rect.left) / rect.width) * 2 - 1,
-    -((clientY - rect.top) / rect.height) * 2 + 1
-  );
-  raycaster.setFromCamera(mouse, camera);
-  const visibleMeshes = organMeshes.filter(o=>o.mesh.visible).map(o=>o.mesh);
-  const hits = raycaster.intersectObjects(visibleMeshes);
-  if(hits.length){
-    const found = organMeshes.find(o=>o.mesh === hits[0].object);
-    if(found) selectOrgan(found.sysKey, found.organId);
-  }
+  container.addEventListener('touchend', ()=>{ isDraggingStage = false; });
 }
 
+function applyExplodeTransform(){
+  const dist = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 34 : 92;
+  Object.values(organElements).forEach(entry=>{
+    const ddx = entry.dir.x * dist, ddy = entry.dir.y * dist;
+    entry.el.style.transform = `translate(calc(-50% + ${ddx}px), calc(-50% + ${ddy}px))`;
+    entry.el.classList.toggle('spin', explodeLevel === 2);
+  });
+}
 function initAnatomyApp(){
   renderSystemChips();
-  if(!threeInited){ initThreeScene(); threeInited = true; }
+  if(!Object.keys(organElements).length){
+    buildOrganMarkers();
+    setupStageInteraction();
+  }
   SYSTEM_KEYS.forEach(k=>{ activeSystems.add(k); }); // 기본은 전체 표시
   syncSystemVisibility();
   updateMissionState();
@@ -983,10 +922,9 @@ function toggleSystem(key){
   updateMissionState();
 }
 function syncSystemVisibility(){
-  organMeshes.forEach(o=>{
-    const visible = activeSystems.has(o.sysKey);
-    o.mesh.visible = visible;
-    o.label.visible = visible;
+  Object.values(organElements).forEach(entry=>{
+    const visible = activeSystems.has(entry.el.dataset.sys);
+    entry.el.style.display = visible ? '' : 'none';
   });
 }
 async function selectOrgan(sysKey, organId){
@@ -994,16 +932,9 @@ async function selectOrgan(sysKey, organId){
   const organ = sys.organs.find(o=>o.id===organId);
   selectedOrgan = { sysKey, organ, sysLabel: sys.label };
 
-  if(selectedMeshEntry){
-    const bs0 = selectedMeshEntry.mesh.userData.baseScale;
-    selectedMeshEntry.mesh.scale.set(bs0.x, bs0.y, bs0.z);
-  }
-  const entry = organMeshes.find(o=>o.sysKey===sysKey && o.organId===organId);
-  if(entry){
-    const bs = entry.mesh.userData.baseScale;
-    entry.mesh.scale.set(bs.x*1.25, bs.y*1.25, bs.z);
-    selectedMeshEntry = entry;
-  }
+  if(selectedMarkerEl) selectedMarkerEl.classList.remove('selected');
+  const entry = organElements[keyFor(sysKey, organId)];
+  if(entry){ entry.el.classList.add('selected'); selectedMarkerEl = entry.el; }
 
   document.getElementById('organ-info-box').style.display='block';
   document.getElementById('organ-info-name').textContent = `${organ.name} (${sys.label})`;
@@ -1031,7 +962,7 @@ function cycleExplode(){
   explodeLevel = (explodeLevel + 1) % 3;
   const btn = document.getElementById('explode-btn');
   btn.textContent = explodeLevel === 0 ? '🧩 분리해서 보기' : explodeLevel === 1 ? '💥 완전 해체하기' : '🧷 다시 조립하기';
-  setExplodeTargets();
+  applyExplodeTransform();
 }
 function toggleEnergyMode(){
   energyMode = !energyMode;

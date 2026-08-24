@@ -831,7 +831,7 @@ function buildOrganMeshes(){
         const tex = getOrganTexture(o.id);
         const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
         mesh = new THREE.Sprite(mat);
-        const h = Math.max(6, o.r * 1.15);
+        const h = Math.max(14, o.r * 2.6);
         const w = h * texInfo.aspect;
         mesh.scale.set(w, h, 1);
         mesh.userData = { sysKey, organId: o.id, baseScale: new THREE.Vector3(w, h, 1) };

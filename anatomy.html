@@ -800,8 +800,9 @@ function makeLabelSprite(text){
   return sprite;
 }
 function buildBodyOutline(){
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffe4c4, transparent: true, opacity: 0.1, roughness: 0.9, side: THREE.DoubleSide });
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffe4c4, transparent: true, opacity: 0.1, roughness: 0.9, side: THREE.DoubleSide, depthWrite: false });
   const group = new THREE.Group();
+  group.renderOrder = 0;
   const head = new THREE.Mesh(new THREE.SphereGeometry(17, 24, 24), mat);
   head.position.set(0, 96, 0); group.add(head);
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(7, 8, 14, 16), mat);
@@ -814,6 +815,7 @@ function buildBodyOutline(){
   const legGeo = new THREE.CapsuleGeometry(11, 78, 6, 12);
   const legL = new THREE.Mesh(legGeo, mat); legL.position.set(-16, -60, 0); group.add(legL);
   const legR = new THREE.Mesh(legGeo, mat); legR.position.set(16, -60, 0); group.add(legR);
+  group.children.forEach(m=>{ m.renderOrder = 0; });
   scene.add(group);
 }
 function buildOrganMeshes(){
@@ -831,20 +833,22 @@ function buildOrganMeshes(){
         const tex = getOrganTexture(o.id);
         const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
         mesh = new THREE.Sprite(mat);
-        const h = Math.max(14, o.r * 2.6);
+        const h = Math.max(12, o.r * 1.9);
         const w = h * texInfo.aspect;
         mesh.scale.set(w, h, 1);
         mesh.userData = { sysKey, organId: o.id, baseScale: new THREE.Vector3(w, h, 1) };
       } else {
-        const mat = new THREE.MeshStandardMaterial({ color: sys.color, emissive: sys.color, emissiveIntensity: 0.18, roughness: 0.55 });
+        const mat = new THREE.MeshStandardMaterial({ color: sys.color, emissive: sys.color, emissiveIntensity: 0.18, roughness: 0.55, depthWrite: false, transparent: true });
         mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(2.5, o.r * 0.42), 20, 20), mat);
         mesh.userData = { sysKey, organId: o.id, baseScale: new THREE.Vector3(1,1,1) };
       }
       mesh.position.copy(basePos);
+      mesh.renderOrder = 1;
       scene.add(mesh);
 
       const label = makeLabelSprite(o.name);
       label.position.copy(basePos).add(new THREE.Vector3(0, o.r * 0.42 + 5, 0));
+      label.renderOrder = 2;
       scene.add(label);
 
       organMeshes.push({ mesh, label, sysKey, organId: o.id, basePos, dir, r: o.r, target: basePos.clone() });

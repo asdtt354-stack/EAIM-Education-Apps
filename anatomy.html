@@ -20,10 +20,10 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #zoom-layer { width:100%; height:100%; display:flex; align-items:center; justify-content:center; transition: transform 0.05s linear; }
 #body-stage { position: relative; height: min(90%, 90vh, 820px); aspect-ratio: 450 / 740; margin: auto; }
 #body-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
-.organ-marker { position:absolute; transform:translate(-50%,-50%); cursor:pointer; transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; opacity:0; }
-.organ-marker.revealed { opacity: 1; }
-.organ-marker-inner { transition: transform 0.25s ease, filter 0.25s ease; }
-.organ-marker.selected .organ-marker-inner { transform: scale(1.3); filter: drop-shadow(0 0 10px var(--main-color)); }
+.organ-marker { position:absolute; transform:translate(-50%,-50%); cursor:pointer; transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; opacity:1; }
+.organ-marker-inner { transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), filter 0.3s ease; }
+.organ-marker.sys-on .organ-marker-inner { transform: scale(1.22); filter: drop-shadow(0 0 8px rgba(255,255,255,0.35)); }
+.organ-marker.selected .organ-marker-inner { transform: scale(1.5); filter: drop-shadow(0 0 12px var(--main-color)); }
 .organ-marker img { display:block; width:100%; height:100%; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7)); pointer-events:none; }
 .organ-marker-label { position:absolute; bottom:-13px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:800; color:#fff; text-shadow:0 0 3px #000,0 0 3px #000,0 0 3px #000; white-space:nowrap; pointer-events:none; }
 .organ-marker.spin .organ-marker-inner { animation: organ-spin 2.4s linear infinite; }
@@ -912,13 +912,6 @@ function setupStageInteraction(){
   container.addEventListener('touchend', ()=>{ isDraggingStage = false; });
 }
 
-function updateRevealed(){
-  Object.values(organElements).forEach(entry=>{
-    const reveal = explodeLevel > 0 || entry.el === selectedMarkerEl;
-    entry.el.classList.toggle('revealed', reveal);
-  });
-}
-
 function applyExplodeTransform(){
   const distDesign = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 16 : 40;
   const stage = document.getElementById('body-stage');
@@ -929,7 +922,6 @@ function applyExplodeTransform(){
     entry.el.style.transform = `translate(calc(-50% + ${ddx}px), calc(-50% + ${ddy}px))`;
     entry.el.classList.toggle('spin', explodeLevel === 2);
   });
-  updateRevealed();
 }
 function initAnatomyApp(){
   renderSystemChips();
@@ -958,6 +950,7 @@ function syncSystemVisibility(){
   Object.values(organElements).forEach(entry=>{
     const visible = activeSystems.has(entry.el.dataset.sys);
     entry.el.style.display = visible ? '' : 'none';
+    entry.el.classList.toggle('sys-on', visible);
   });
 }
 async function selectOrgan(sysKey, organId){
@@ -968,7 +961,6 @@ async function selectOrgan(sysKey, organId){
   if(selectedMarkerEl) selectedMarkerEl.classList.remove('selected');
   const entry = organElements[keyFor(sysKey, organId)];
   if(entry){ entry.el.classList.add('selected'); selectedMarkerEl = entry.el; }
-  updateRevealed();
 
   document.getElementById('organ-info-box').style.display='block';
   document.getElementById('organ-info-name').textContent = `${organ.name} (${sys.label})`;

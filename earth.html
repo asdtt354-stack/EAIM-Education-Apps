@@ -13,7 +13,6 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
 #mainApp{ width:100%; height:100%; min-height:0; }
-
 #viewer-section { flex: 6; position: relative; min-height: 300px; overflow: hidden; background: #0c0d0e; }
 #cross-section-viewport { position: absolute; inset: 0; overflow: hidden; }
 #cross-section-track { position: absolute; left: 0; top: 0; width: 100%; transition: transform 0.85s cubic-bezier(0.65,0,0.35,1); }
@@ -25,14 +24,11 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #cross-section-track.overview .cs-band:first-child { border-top: none; }
 #cross-section-track.overview .cs-band-label { font-size: 0.85em; padding: 6px 14px; }
 #overview-hint { display:none; font-size: 0.72em; color: #aaa; text-align:center; padding: 8px 4px; line-height: 1.5; }
-
 #depth-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 30; pointer-events: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
 #depth-marker-line { position: absolute; top: 50%; left: 0; width: 100vw; height: 2px; background: repeating-linear-gradient(90deg, rgba(250,204,21,0.55) 0 10px, transparent 10px 20px); transform: translateY(-50%); z-index: 29; pointer-events: none; }
-
 .header { position: absolute; top: 20px; left: 0; width: 100%; text-align: center; pointer-events: none; z-index: 25; }
 .header h1 { color: var(--main-color); margin: 0; font-size: 1.9em; text-shadow: 0 0 20px rgba(250,204,21,0.4); letter-spacing: 1px; }
 .header p { color: #aaa; font-size: 0.9em; margin-top: 6px; font-weight: 300; }
-
 .control-panel {
   position: absolute; bottom: 24px; left: 24px;
   background: rgba(10, 10, 14, 0.88); border: 1px solid #333;
@@ -45,19 +41,16 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 .mode-btn.active.soil { border-color: #b45309; background: rgba(180,83,9,0.18); color: #fbbf24; }
 .mode-btn.active.ocean { border-color: #0ea5e9; background: rgba(14,165,233,0.18); color: #7dd3fc; }
 .mode-btn.active.volcano { border-color: #f87171; background: rgba(248,113,113,0.18); color: #fca5a5; }
-
 #zoom-box { background:#141416; border:1px solid #2a2a2c; border-radius:10px; padding:12px; margin-bottom:12px; }
 #zoom-box label { display:block; color: var(--accent); font-weight:700; font-size:.78em; margin-bottom:8px; }
 .zoom-btn { width:34px; height:34px; border-radius:8px; border:1.5px solid #444; background:#1e1e20; color:#fff; font-weight:900; font-size:1em; cursor:pointer; }
 .zoom-btn:disabled { opacity:0.35; cursor:not-allowed; }
 #zoom-note { font-size:.72em; color:#bbb; line-height:1.5; margin:8px 0 0; }
-
 #event-box { margin-bottom: 12px; }
 #event-box label { display:block; color:#f87171; font-weight:700; font-size:.78em; margin-bottom:6px; }
 .event-btn { flex:1; padding:9px 4px; border-radius:8px; font-weight:700; font-size:.72em; cursor:pointer; }
 .event-btn.quake { border:1.5px solid #f87171; background:rgba(248,113,113,0.12); color:#fca5a5; }
 .event-btn.eruption { border:1.5px solid #fb923c; background:rgba(251,146,60,0.12); color:#fdba74; }
-
 #event-fx-layer { position:absolute; inset:0; z-index:18; pointer-events:none; overflow:hidden; }
 @keyframes earth-shake {
   0%,100% { transform: translate(0,0); }
@@ -68,27 +61,43 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
   90% { transform: translate(-4px,3px); }
 }
 #viewer-section.shake-effect { animation: earth-shake 0.12s linear 7; }
-.seismic-ring { position:absolute; top:50%; left:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border:3px solid rgba(248,113,113,0.8); border-radius:50%; animation: seismic-expand 1.5s ease-out forwards; }
+.seismic-ring { position:absolute; top:50%; left:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border:3px solid rgba(248,113,113,0.8); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.seismic-ring.p-wave { border-color: rgba(56,189,248,0.9); border-width: 3px; animation: seismic-expand-p 1.1s ease-out forwards; }
+.seismic-ring.s-wave { border-color: rgba(248,113,113,0.9); border-width: 5px; animation: seismic-expand-s 2s ease-out forwards; }
+.seismic-ring-label { font-weight:900; font-size:15px; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+.seismic-ring-label.p { color:#7dd3fc; }
+.seismic-ring-label.s { color:#fca5a5; }
 @keyframes seismic-expand { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1400px;height:1400px;margin:-700px 0 0 -700px; opacity:0;} }
+@keyframes seismic-expand-p { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:900px;height:900px;margin:-450px 0 0 -450px; opacity:0;} }
+@keyframes seismic-expand-s { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1500px;height:1500px;margin:-750px 0 0 -750px; opacity:0;} }
 .lava-rise { position:absolute; left:0; right:0; bottom:-20%; height:60%; background: linear-gradient(180deg, rgba(255,200,80,0) 0%, rgba(255,140,40,0.85) 35%, rgba(220,40,10,0.95) 100%); filter: blur(1px); animation: lava-rise-anim 3.2s ease-in-out forwards; }
 @keyframes lava-rise-anim { 0%{ transform:translateY(100%); opacity:0;} 15%{ opacity:1;} 55%{ transform:translateY(0%);} 100%{ transform:translateY(-8%); opacity:0;} }
 #event-toast { position:absolute; top:70px; left:50%; transform:translateX(-50%) translateY(-10px); background:rgba(0,0,0,0.75); border:1.5px solid rgba(248,113,113,0.5); color:#fff; padding:10px 18px; border-radius:99px; font-size:0.82em; font-weight:700; z-index:26; opacity:0; transition: opacity 0.3s, transform 0.3s; white-space:nowrap; pointer-events:none; }
 #event-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-
+#info-popup { position:absolute; top:70px; right:24px; width:280px; max-width:calc(100% - 48px); z-index:28; background:rgba(10,10,14,0.95); border:1.5px solid #3a3a3a; border-radius:14px; padding:16px; box-shadow:0 16px 34px rgba(0,0,0,0.55); opacity:0; transform:translateY(-10px); transition:opacity .3s, transform .3s; pointer-events:none; }
+#info-popup.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+.info-popup-close { position:absolute; top:8px; right:10px; background:none; border:none; color:#888; font-size:1rem; cursor:pointer; line-height:1; }
+.info-popup-close:hover { color:#fff; }
+#info-popup h4 { margin:0 0 10px; color:var(--main-color); font-size:.95em; padding-right:20px; }
+.wave-compare-row, .rock-compare-row { display:flex; gap:8px; margin-bottom:8px; }
+.wave-chip, .rock-chip { flex:1; border-radius:10px; padding:8px; font-size:.7em; line-height:1.55; }
+.wave-chip b, .rock-chip b { display:block; font-size:1.08em; margin-bottom:4px; }
+.wave-chip.p { background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.4); color:#7dd3fc; }
+.wave-chip.s { background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); color:#fca5a5; }
+.rock-chip.volcanic { background:rgba(251,146,60,0.12); border:1px solid rgba(251,146,60,0.4); color:#fdba74; }
+.rock-chip.plutonic { background:rgba(196,181,253,0.12); border:1px solid rgba(196,181,253,0.4); color:#ddd6fe; }
+#info-popup .info-note { font-size:.7em; color:#bbb; margin:6px 0 0; line-height:1.55; }
 #layer-info-box { background: #141416; border: 1px solid #2a2a2c; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
 #layer-info-name { font-weight: 800; font-size: 0.95em; margin-bottom: 4px; color: var(--main-color); }
 #layer-info-range { font-size: 0.7em; color: #999; margin-bottom: 8px; font-family: monospace; }
 #layer-info-desc { font-size: 0.78em; line-height: 1.55; color: #ddd; }
-
 .depth-nav { display: flex; gap: 6px; margin-bottom: 12px; }
 .depth-nav button { flex: 1; padding: 10px 4px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 0.82em; background: var(--main-color); color: #000; }
 .depth-nav button:disabled { background: #333; color: #777; cursor: not-allowed; }
 #overview-toggle-btn { width:100%; padding: 10px 4px; border-radius: 8px; border: 1.5px solid var(--accent); background: rgba(56,189,248,0.1); color: var(--accent); font-weight: bold; cursor: pointer; font-size: 0.82em; margin-bottom: 12px; }
-
 .progress-dots { display: flex; justify-content: space-between; gap: 4px; }
 .progress-dot { flex: 1; height: 6px; border-radius: 4px; background: #333; cursor: pointer; border: none; padding: 0; }
 .progress-dot.active { background: var(--main-color); }
-
 #log-section {
   flex: 4; min-width: 300px; max-width: 380px;
   background: rgba(15, 15, 16, 0.97); border-left: 1px solid #333;
@@ -101,31 +110,26 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 .hub-link { font-size: 0.68em; color: #888; text-decoration: none; padding: 4px 9px; border: 1px solid #444; border-radius: 7px; }
 #log-section h1 { color: var(--accent); margin: 0 0 4px 0; font-size: 1.3em; }
 .sub-text { color: #888; font-size: 0.82em; margin-bottom: 16px; }
-
 .mission-box { background: #111; border: 1px solid #222; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
 .mission-box label { display: block; color: var(--main-color); font-weight: bold; margin-bottom: 6px; font-size: 0.85em; }
 select { width: 100%; padding: 9px; background: #222; color: white; border: 1px solid #444; border-radius: 6px; margin-bottom: 8px; font-family: inherit; }
-
 .btn-primary { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--accent); color: #001018; font-size: 0.95em; }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-primary:disabled { background: #444; color: #888; cursor: not-allowed; }
-
 .question-card { background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 12px; font-size: 0.88em; line-height: 1.6; margin-bottom: 12px; display: none; }
 textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.88em; box-sizing: border-box; resize: none; font-family: inherit; }
 .feedback-box { margin-top: 12px; background: rgba(250, 204, 21, 0.08); padding: 12px; border-radius: 8px; font-size: 0.86em; line-height: 1.6; border: 1px solid rgba(250, 204, 21, 0.3); display: none; }
-
 #log-list { margin-top: 8px; }
 .log-item { background: #111; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--accent); font-size: 0.78em; line-height: 1.5; }
 .log-item .log-meta { color: #888; font-size: 0.85em; margin-bottom: 3px; }
-
 @media (max-width: 850px) {
   body { flex-direction: column; height: auto; overflow-y: auto; }
   #viewer-section { width: 100%; height: 58vh; flex: none; }
   .header h1 { font-size: 1.4em; }
   .control-panel { width: calc(100% - 48px); left: 24px; right: 24px; }
+  #info-popup { top: 62px; left: 12px; right: 12px; width: auto; }
   #log-section { width: 100%; max-width: 100%; min-width: 100%; height: auto; flex: none; border-left: none; border-top: 2px solid var(--accent); }
 }
-
 .ov { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 18px; }
 .mb { background: #161615; border-radius: 1.5rem; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 28px 56px rgba(0,0,0,0.5); border: 1.5px solid #333; text-align: center; max-height: 88vh; overflow-y: auto; }
 .mi { width: 100%; text-align: center; font-size: 1.05rem; font-family: inherit; font-weight: 700; border: 2px solid rgba(250,204,21,0.3); border-radius: 0.9rem; padding: 11px; outline: none; margin-bottom: 14px; background: rgba(255,255,255,0.07); color: #fff; }
@@ -156,9 +160,7 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
 </style>
 </head>
 <body>
-
 <div class="loading-wrap" id="loadingOverlay">✦ 불러오는 중...</div>
-
 <div class="no-teacher-wrap" id="noTeacherOverlay" style="display:none">
   <div>
     <div style="font-size:1.6rem;margin-bottom:10px">🔗</div>
@@ -166,7 +168,6 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <div style="font-size:.75rem;color:rgba(255,255,255,.4)">이 링크에는 우리 반 정보가 담겨 있어요</div>
   </div>
 </div>
-
 <div id="teacherGoogleOverlay" class="ov" style="display:none">
   <div class="mb">
     <div style="font-size:2.8rem;margin-bottom:10px">🪨</div>
@@ -180,7 +181,6 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <a href="index.html" style="display:block;margin-top:16px;font-size:.7rem;color:rgba(255,255,255,.3);text-decoration:none">← 허브로 돌아가기</a>
   </div>
 </div>
-
 <div id="studentLoginOverlay" class="ov" style="display:none">
   <div class="mb">
     <div style="font-size:2.8rem;margin-bottom:10px">🪨</div>
@@ -195,7 +195,6 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <button onclick="sN()" id="sNBtn" class="btn-primary" style="font-size:.95rem;padding:12px">🪨 탐험 시작!</button>
   </div>
 </div>
-
 <div id="teacherPanel" class="ov" style="display:none">
   <div class="mb" style="text-align:left">
     <div style="font-size:1.15rem;font-weight:900;margin-bottom:18px;text-align:center;color:var(--main-color)">🪨 교사 대시보드</div>
@@ -236,7 +235,6 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <button class="btn-primary bg2 bfl" onclick="teacherLogout()">로그아웃</button>
   </div>
 </div>
-
 <div id="studentStatusOverlay" class="ov" style="display:none;z-index:360" onclick="if(event.target===this) closeStudentStatus()">
   <div class="mb" style="text-align:left;max-width:480px;max-height:82vh;display:flex;flex-direction:column">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -250,7 +248,6 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <div id="studentStatusList" style="overflow-y:auto;flex:1"></div>
   </div>
 </div>
-
 <div id="groupQrOverlay" class="ov" style="display:none;z-index:400" onclick="if(event.target===this) closeGroupQr()">
   <div class="mb" style="max-width:380px">
     <div style="font-weight:700;font-size:1.15rem;margin-bottom:4px;color:var(--main-color)" id="groupQrTitle"></div>
@@ -261,7 +258,6 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <button class="btn-primary bfl" style="margin-top:14px" onclick="closeGroupQr()">닫기</button>
   </div>
 </div>
-
 <div id="mutoMoodOverlay" class="ov" style="display:none;z-index:350">
   <div class="mb" style="max-width:380px">
     <img id="mutoImg" src="" alt="뮤토" style="width:120px;height:auto;margin:0 auto 12px;display:block">
@@ -271,34 +267,34 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <button id="mutoContinueBtn" type="button" class="btn-primary" style="display:none;margin-top:16px" onclick="closeMutoMoodAndEnter()">시작하기 →</button>
   </div>
 </div>
-
 <div id="mainApp" style="display:none">
 <div id="viewer-section">
   <div class="header">
     <h1>🪨 에임 지구 탐험대</h1>
     <p>드릴과 잠수정을 타고 땅속과 바닷속을 층층이 파고 내려가요</p>
   </div>
-
   <div id="cross-section-viewport">
     <div id="cross-section-track"></div>
   </div>
   <div id="event-fx-layer"></div>
   <div id="event-toast"></div>
+  <div id="info-popup">
+    <button class="info-popup-close" onclick="closeInfoPopup()">✖</button>
+    <h4 id="info-popup-title"></h4>
+    <div id="info-popup-body"></div>
+  </div>
   <div id="depth-marker-line"></div>
   <div id="depth-marker">
     <svg id="depth-marker-icon" width="52" height="52" viewBox="0 0 52 52"></svg>
   </div>
-
   <div class="control-panel">
     <div class="mode-toggle">
       <button type="button" class="mode-btn soil active" data-mode="soil" onclick="setMode('soil')">🪨 토양층</button>
       <button type="button" class="mode-btn ocean" data-mode="ocean" onclick="setMode('ocean')">🌊 바다층</button>
       <button type="button" class="mode-btn volcano" data-mode="volcano" onclick="setMode('volcano')">🌋 지진·화산</button>
     </div>
-
     <button type="button" id="overview-toggle-btn" onclick="toggleViewMode()">🗺️ 전체 단면 보기</button>
     <p id="overview-hint">원하는 층을 클릭하면 그 층으로 확대해서 탐사할 수 있어요.</p>
-
     <div id="zoom-box">
       <label>🔍 확대 관찰</label>
       <div style="display:flex;gap:8px;align-items:center">
@@ -308,7 +304,6 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
       </div>
       <p id="zoom-note"></p>
     </div>
-
     <div id="event-box" style="display:none">
       <label>⚡ 지질 이벤트 일으키기</label>
       <div style="display:flex;gap:6px">
@@ -316,22 +311,18 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
         <button type="button" class="event-btn eruption" onclick="triggerEruption()">🌋 화산 분화</button>
       </div>
     </div>
-
     <div id="layer-info-box">
       <div id="layer-info-name"></div>
       <div id="layer-info-range"></div>
       <div id="layer-info-desc"></div>
     </div>
-
     <div class="depth-nav" id="depth-nav-row">
       <button type="button" id="depth-up-btn" onclick="stepDepth(-1)">⬆ 위로</button>
       <button type="button" id="depth-down-btn" onclick="stepDepth(1)">더 내려가기 ⬇</button>
     </div>
-
     <div class="progress-dots" id="progress-dots"></div>
   </div>
 </div>
-
 <div id="log-section">
   <div class="header-container">
     <div style="display:flex;align-items:center;gap:8px">
@@ -341,31 +332,25 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <button class="btn-settings" onclick="studentLogout()">나가기</button>
   </div>
   <p class="sub-text">지금 도달한 층을 바탕으로 AI가 질문을 만들어줘요.</p>
-
   <div class="mission-box">
     <label id="mission-box-label">🔬 지금 층 질문받기</label>
     <p style="font-size:0.7em;color:#888;margin:-2px 0 10px" id="mission-box-sub">왼쪽에서 드릴/잠수정으로 원하는 층까지 내려가보세요.</p>
     <button class="btn-primary" onclick="generateEarthMission()" id="earth-mission-btn">🔬 탐사 질문 받기</button>
     <p style="font-size:0.68em;color:#888;margin-top:6px;text-align:center">※ 선생님이 설정한 API 키로 작동해요. 오류 발생 시 선생님께 문의하세요.</p>
   </div>
-
   <div class="question-card" id="earth-question-card"></div>
-
   <div id="earth-answer-area" style="display:none">
     <label style="display:block;color:var(--accent);font-weight:bold;margin-bottom:6px;font-size:0.82em">✏️ 내 생각 적기</label>
     <textarea id="earth-student-answer" placeholder="관찰한 내용을 근거로 이유를 적어보세요."></textarea>
     <button class="btn-primary" onclick="submitEarthAnswer()">제출하고 피드백 받기</button>
   </div>
-
   <div class="feedback-box" id="earth-feedback-box"></div>
-
   <div style="margin-top:20px;border-top:1px solid #333;padding-top:14px">
     <h3 style="color:#aaa;margin:0 0 8px 0;font-size:0.9em">보관된 탐사 기록</h3>
     <div id="log-list"></div>
   </div>
 </div>
 </div><!-- /mainApp -->
-
 <script>
 // ══════════════════════════
 // 🔥 Firebase — teachers/{uid}/... 구조 (같은 프로젝트)
@@ -383,13 +368,11 @@ try{
   firebase.initializeApp(FIREBASE_CONFIG);
   db=firebase.firestore(); auth=firebase.auth(); firebaseReady=true;
 }catch(e){ console.error('Firebase 초기화 실패', e); firebaseReady=false; }
-
 const teacherDocRef  = (uid) => db.collection('teachers').doc(uid);
 const settingsDocRef = (uid) => teacherDocRef(uid).collection('meta').doc('settings');
 const groupsColRef   = (uid) => teacherDocRef(uid).collection('groups');
 const studentsColRef = (uid) => teacherDocRef(uid).collection('students');
 const earthLogsColRef = (uid) => teacherDocRef(uid).collection('earthMissions');
-
 let currentUser=null, teacherUid=null, isStudentMode=false;
 let stuName='', stuClass='';
 let settings = { apiKey:'', classOn:false };
@@ -398,7 +381,6 @@ let unsubSettings=null, unsubGroups=null, unsubStudents=null;
 let studentsList=[];
 let currentGroupQrUrl='';
 const MUTO_IMG = "data:image/webp;base64,data:image/webp;base64,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";
-
 function subscribeSettings(uid, cb){
   if(unsubSettings) unsubSettings();
   unsubSettings = settingsDocRef(uid).onSnapshot(snap=>{
@@ -458,7 +440,6 @@ async function deleteGroupUI(id){
   if(!confirm('이 반/모둠을 삭제할까요?')) return;
   await deleteGroupFn(id);
 }
-
 function groupInviteUrl(name){
   return `${location.origin}${location.pathname}?role=student&teacher=${teacherUid}&group=${encodeURIComponent(name)}`;
 }
@@ -476,7 +457,6 @@ function closeGroupQr(){ document.getElementById('groupQrOverlay').style.display
 function copyGroupInvite(){
   navigator.clipboard.writeText(currentGroupQrUrl).then(()=>alert('✅ 링크 복사됨!'));
 }
-
 function applyGroupLock(){
   const gp = window.EAIM_GROUP_PARAM;
   const sel = document.getElementById('sclass');
@@ -495,7 +475,6 @@ function applyGroupLock(){
     chip.style.display='none';
   }
 }
-
 function subscribeStudents(uid){
   if(unsubStudents) unsubStudents();
   unsubStudents = studentsColRef(uid).onSnapshot(snap=>{
@@ -542,7 +521,6 @@ function renderStudentStatus(){
     </div>
   `).join('');
 }
-
 function hideAllOverlays(){
   ['loadingOverlay','noTeacherOverlay','teacherGoogleOverlay','studentLoginOverlay'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
@@ -633,7 +611,6 @@ function sN(){
   stuName=n; stuClass=c;
   showMutoMoodCheck(enterMainApp);
 }
-
 // ══════════════════════════
 // 🐣 뮤토 기분체크
 // ══════════════════════════
@@ -712,7 +689,6 @@ function mutoPcmToWavUrl(base64pcm){
   new Uint8Array(buffer,44).set(bytes);
   return URL.createObjectURL(new Blob([buffer],{type:'audio/wav'}));
 }
-
 // ══════════════════════════
 // 🪨🌊 지층/해양층 단면 데이터
 // ══════════════════════════
@@ -733,13 +709,12 @@ const OCEAN_LAYERS = [
 const VOLCANO_LAYERS = [
   { name:'지각', range:'깊이 0~35km', color:'#6b6560', tex:'crust', desc:'우리가 발을 딛고 사는 단단한 겉층이에요. 판과 판이 만나는 경계에서 지진이 자주 발생해요.', zoomNote:'표면에 가느다란 균열이 보여요. 이 틈을 따라 지진이 일어나기도 해요.' },
   { name:'상부 맨틀', range:'깊이 35~660km', color:'#8a3a1e', tex:'uppermantle', desc:'뜨거운 열로 인해 고체 암석이 아주 천천히 흐르는 층이에요. 여기서 마그마가 만들어지기 시작해요.', zoomNote:'암석 사이로 붉은 빛이 새어 나오는 게 보여요. 부분적으로 녹아있다는 신호예요.' },
-  { name:'마그마방', range:'화산 하부, 지표 근처', color:'#e8590c', tex:'magma', desc:'화산 아래에 마그마가 모여있는 공간이에요. 압력이 쌓이면 지표를 뚫고 화산이 분화해요.', zoomNote:'부글부글 끓어오르는 마그마 표면에서 가스 방울이 터지는 게 보여요.' },
+  { name:'마그마방', range:'화산 하부, 지표 근처', color:'#e8590c', tex:'magma', desc:'화산 아래에 마그마가 모여있는 공간이에요. 압력이 쌓이면 지표를 뚫고 화산이 분화해요. 지표 근처까지 올라온 마그마가 빠르게 식으면 화산암(예: 현무암)이, 지표까지 오르지 못하고 지하 깊은 곳에서 서서히 식으면 심성암(예: 화강암)이 만들어져요.', zoomNote:'부글부글 끓어오르는 마그마 표면에서 가스 방울이 터지는 게 보여요.' },
   { name:'하부 맨틀', range:'깊이 660~2,900km', color:'#5c2412', tex:'lowermantle', desc:'상부 맨틀보다 압력이 훨씬 높아 더 단단한 고체 상태예요. 지구 부피의 대부분을 차지해요.', zoomNote:'결정처럼 촘촘하게 압축된 암석 무늬가 보여요.' },
   { name:'핵', range:'깊이 2,900~6,371km', color:'#facc15', tex:'core', desc:'철과 니켈로 이루어진 뜨거운 금속 층이에요. 이 층이 움직이면서 지구 자기장을 만들어내요.', zoomNote:'소용돌이치는 액체 금속의 흐름이 보이는 듯해요.' }
 ];
 const LAYER_SETS = { soil: SOIL_LAYERS, ocean: OCEAN_LAYERS, volcano: VOLCANO_LAYERS };
 const TEXTURE_CACHE = {};
-
 function hexToRgb(hex){
   hex = hex.replace('#','');
   const num = parseInt(hex,16);
@@ -755,7 +730,6 @@ function generateSoilTexture(hex, kind){
   const ctx=c.getContext('2d');
   const rgb=hexToRgb(hex);
   ctx.fillStyle=hex; ctx.fillRect(0,0,w,h);
-
   for(let i=0;i<2400;i++){
     ctx.globalAlpha = 0.4+Math.random()*0.4;
     ctx.fillStyle = shadeRgb(rgb, (Math.random()-0.5)*70);
@@ -763,7 +737,6 @@ function generateSoilTexture(hex, kind){
     ctx.fillRect(Math.random()*w, Math.random()*h, s, s);
   }
   ctx.globalAlpha=1;
-
   if(kind==='litter'){
     for(let i=0;i<44;i++){
       ctx.save();
@@ -809,7 +782,6 @@ function generateSoilTexture(hex, kind){
     }
     ctx.globalAlpha=1;
   }
-
   const vg = ctx.createLinearGradient(0,0,0,h);
   vg.addColorStop(0,'rgba(0,0,0,0.16)'); vg.addColorStop(0.5,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.28)');
   ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
@@ -823,7 +795,6 @@ function generateOceanTexture(hex, kind){
   const g = ctx.createLinearGradient(0,0,0,h);
   g.addColorStop(0, shadeRgb(rgb,28)); g.addColorStop(1, shadeRgb(rgb,-38));
   ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
-
   if(kind==='epipelagic'){
     ctx.strokeStyle='rgba(255,255,255,0.16)';
     for(let i=0;i<9;i++){
@@ -839,7 +810,6 @@ function generateOceanTexture(hex, kind){
       ctx.lineWidth=6; ctx.stroke();
     }
   }
-
   const bubbleCount = kind==='epipelagic'?55 : kind==='mesopelagic'?28 : 10;
   for(let i=0;i<bubbleCount;i++){
     ctx.beginPath();
@@ -847,7 +817,6 @@ function generateOceanTexture(hex, kind){
     ctx.arc(Math.random()*w, Math.random()*h, 1+Math.random()*3, 0, Math.PI*2);
     ctx.fill();
   }
-
   if(kind==='bathypelagic' || kind==='abyssalpelagic' || kind==='hadalpelagic'){
     for(let i=0;i<20;i++){
       const gx=Math.random()*w, gy=Math.random()*h;
@@ -866,7 +835,6 @@ function generateVolcanoTexture(hex, kind){
   const ctx=c.getContext('2d');
   const rgb=hexToRgb(hex);
   ctx.fillStyle=hex; ctx.fillRect(0,0,w,h);
-
   for(let i=0;i<2000;i++){
     ctx.globalAlpha = 0.35+Math.random()*0.35;
     ctx.fillStyle = shadeRgb(rgb, (Math.random()-0.5)*55);
@@ -874,7 +842,6 @@ function generateVolcanoTexture(hex, kind){
     ctx.fillRect(Math.random()*w, Math.random()*h, s, s);
   }
   ctx.globalAlpha=1;
-
   if(kind==='crust'){
     ctx.lineWidth=1.3; ctx.globalAlpha=0.5;
     for(let i=0;i<40;i++){
@@ -940,7 +907,6 @@ function generateVolcanoTexture(hex, kind){
       ctx.fill();
     }
   }
-
   const vg = ctx.createLinearGradient(0,0,0,h);
   vg.addColorStop(0,'rgba(0,0,0,0.14)'); vg.addColorStop(0.5,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.3)');
   ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
@@ -955,11 +921,9 @@ function getLayerTexture(mode, layer){
   }
   return TEXTURE_CACHE[key];
 }
-
 let currentMode = 'soil';
 let currentLayerIndex = 0;
 let viewMode = 'drill'; // 'drill' | 'overview'
-
 function initCrossSection(){
   buildCrossSection();
   window.addEventListener('resize', layoutCrossSection);
@@ -1081,7 +1045,6 @@ function drawDepthMarkerIcon(){
     `;
   }
 }
-
 // ══════════════════════════
 // 🔍 층 확대 관찰 (줌인)
 // ══════════════════════════
@@ -1114,7 +1077,24 @@ function applyZoom(){
   const note = document.getElementById('zoom-note');
   if(note) note.textContent = zoomIndex > 0 ? (l.zoomNote || '') : '＋ 버튼을 눌러 이 층을 더 가까이 관찰해보세요.';
 }
-
+// ══════════════════════════
+// ℹ️ 정보 팝업 (P파/S파, 화산암/심성암 비교)
+// ══════════════════════════
+let infoPopupTimeout = null;
+function showInfoPopup(title, bodyHtml){
+  const popup = document.getElementById('info-popup');
+  if(!popup) return;
+  document.getElementById('info-popup-title').textContent = title;
+  document.getElementById('info-popup-body').innerHTML = bodyHtml;
+  popup.classList.add('show');
+  clearTimeout(infoPopupTimeout);
+  infoPopupTimeout = setTimeout(()=> popup.classList.remove('show'), 12000);
+}
+function closeInfoPopup(){
+  const popup = document.getElementById('info-popup');
+  if(popup) popup.classList.remove('show');
+  clearTimeout(infoPopupTimeout);
+}
 // ══════════════════════════
 // ⚡ 지진 · 화산 이벤트
 // ══════════════════════════
@@ -1130,29 +1110,47 @@ function showEventToast(text){
   toast._t = setTimeout(()=> toast.classList.remove('show'), 3200);
 }
 function triggerEarthquake(){
-  eventContextForMission = '방금 진도 5.0 규모의 지진이 발생해서 지각이 흔들렸어.';
+  eventContextForMission = '방금 진도 5.0 규모의 지진이 발생했어. 지진파 중 P파(속도가 빠르고 가장 먼저 도착, 고체와 액체를 모두 통과하며 물질을 밀고 당기는 방향인 종파)가 먼저 감지됐고, 이어서 S파(속도가 느리고 나중에 도착, 고체만 통과하며 진행 방향과 수직으로 흔드는 횡파)가 감지됐어. P파와 S파의 도착 시간 차이를 이용하면 진앙까지의 거리를 구할 수 있어.';
   const viewer = document.getElementById('viewer-section');
   viewer.classList.remove('shake-effect'); void viewer.offsetWidth; viewer.classList.add('shake-effect');
-  showEventToast('🌍 진도 5.0 지진 발생! 지각이 흔들리고 있어요');
+  showEventToast('🌍 진도 5.0 지진 발생! P파가 먼저, S파가 나중에 도착해요');
   spawnSeismicRings();
+  showInfoPopup('🌍 P파 vs S파', `
+    <div class="wave-compare-row">
+      <div class="wave-chip p"><b>P파 (Primary)</b>속도 빠름 · 가장 먼저 도착<br>고체·액체 모두 통과<br>진행 방향과 나란히 밀고 당김(종파)</div>
+      <div class="wave-chip s"><b>S파 (Secondary)</b>속도 느림 · 나중에 도착<br>고체만 통과(액체 통과 못함)<br>진행 방향과 수직으로 흔들림(횡파)</div>
+    </div>
+    <p class="info-note">두 파의 도착 시간 차이(P-S 시간차)가 클수록 진앙에서 멀리 떨어져 있다는 뜻이에요.</p>
+  `);
   setTimeout(()=> viewer.classList.remove('shake-effect'), 900);
 }
 function triggerEruption(){
-  eventContextForMission = '방금 화산이 분화해서 마그마가 지표를 뚫고 용암으로 분출했어.';
-  showEventToast('🌋 마그마가 지표를 뚫고 용암으로 분출하고 있어요!');
+  eventContextForMission = '방금 화산이 분화했어. 지표까지 뚫고 올라와 용암으로 분출되어 빠르게 식은 마그마는 화산암(예: 현무암)이 되고, 지표까지 오르지 못한 채 지하 깊은 곳에서 아주 천천히 식은 마그마는 심성암(예: 화강암)이 돼. 냉각 속도 차이 때문에 화산암은 결정이 작고 치밀하며, 심성암은 결정이 크고 뚜렷해.';
+  showEventToast('🌋 마그마가 분출! 화산암과 심성암이 만들어지고 있어요');
   spawnLavaRise();
+  showInfoPopup('🌋 화산암 vs 심성암', `
+    <div class="rock-compare-row">
+      <div class="rock-chip volcanic"><b>화산암 (예: 현무암)</b>지표 근처, 빠르게 냉각<br>결정 크기 작음(치밀함)<br>용암이 분출해 굳어 생성</div>
+      <div class="rock-chip plutonic"><b>심성암 (예: 화강암)</b>지하 깊은 곳, 천천히 냉각<br>결정 크기 큼(알갱이 뚜렷)<br>마그마가 땅속에서 굳어 생성</div>
+    </div>
+    <p class="info-note">같은 마그마라도 식는 위치와 속도에 따라 서로 다른 화성암이 만들어져요.</p>
+  `);
 }
 function spawnSeismicRings(){
   const layer = document.getElementById('event-fx-layer');
   if(!layer) return;
-  [0, 250].forEach(delay=>{
-    setTimeout(()=>{
-      const ring = document.createElement('div');
-      ring.className = 'seismic-ring';
-      layer.appendChild(ring);
-      setTimeout(()=> ring.remove(), 1500);
-    }, delay);
-  });
+  const pRing = document.createElement('div');
+  pRing.className = 'seismic-ring p-wave';
+  pRing.innerHTML = '<span class="seismic-ring-label p">P</span>';
+  layer.appendChild(pRing);
+  setTimeout(()=> pRing.remove(), 1300);
+  setTimeout(()=>{
+    const sRing = document.createElement('div');
+    sRing.className = 'seismic-ring s-wave';
+    sRing.innerHTML = '<span class="seismic-ring-label s">S</span>';
+    layer.appendChild(sRing);
+    setTimeout(()=> sRing.remove(), 2200);
+  }, 450);
 }
 function spawnLavaRise(){
   const layer = document.getElementById('event-fx-layer');
@@ -1162,12 +1160,10 @@ function spawnLavaRise(){
   layer.appendChild(lava);
   setTimeout(()=> lava.remove(), 3200);
 }
-
 // ══════════════════════════
 // 🔬 AI 탐사 미션
 // ══════════════════════════
 let currentEarthMission = null;
-
 async function callGemini(prompt, maxTokens=600){
   const key = (settings.apiKey||'').trim();
   if(!key) throw new Error('NO_KEY');
@@ -1183,7 +1179,6 @@ async function callGemini(prompt, maxTokens=600){
   if(data.error) throw new Error(data.error.message);
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
-
 async function generateEarthMission(){
   if(!(settings.apiKey||'').trim()){
     alert('선생님이 아직 API 키를 설정하지 않았어요. 선생님께 문의해주세요.');
@@ -1193,21 +1188,17 @@ async function generateEarthMission(){
   const l = layers[currentLayerIndex];
   const modeNameMap = { soil:'토양층(지층)', ocean:'바다층(해양)', volcano:'지구 내부 구조(지진·화산)' };
   const modeName = modeNameMap[currentMode];
-
   const btn = document.getElementById('earth-mission-btn');
   btn.disabled = true; btn.textContent = '🤖 질문 만드는 중...';
   document.getElementById('earth-question-card').style.display = 'none';
   document.getElementById('earth-answer-area').style.display = 'none';
   document.getElementById('earth-feedback-box').style.display = 'none';
-
   const eventNote = eventContextForMission ? `\n${eventContextForMission}` : '';
   eventContextForMission = '';
-
   const prompt = `중학교 과학 교사로서, 학생이 ${modeName} 단면도를 드릴/잠수정으로 파고 내려가며 "${l.name}"(${l.range})에 도달했어.${eventNote}
 이 층의 특징: ${l.desc}
 이 층의 특징을 학생이 스스로 떠올리거나 추론하도록 유도하는 관측 질문을 1개, 2문장 이내로 만들어줘.
 정답을 알려주지 말고, 학생이 직접 생각하게 만드는 질문으로 써줘.`;
-
   try{
     const q = await callGemini(prompt, 400);
     currentEarthMission = { mode: currentMode, layerName: l.name, range: l.range, question: q };
@@ -1221,23 +1212,18 @@ async function generateEarthMission(){
   }
   btn.disabled = false; btn.textContent = '🔬 탐사 질문 받기';
 }
-
 async function submitEarthAnswer(){
   const answer = document.getElementById('earth-student-answer').value.trim();
   if(!answer){ alert('생각을 먼저 적어주세요!'); return; }
   if(!currentEarthMission){ return; }
-
   const fb = document.getElementById('earth-feedback-box');
   fb.style.display = 'block';
   fb.textContent = '📡 AI 선생님이 답변을 읽는 중...';
-
   const prompt = `중학교 과학 교사로서 학생의 탐사 답변을 따뜻하게 첨삭해줘.
 층: ${currentEarthMission.layerName} (${currentEarthMission.range})
 질문: ${currentEarthMission.question}
 학생 답변: ${answer}
-
 과학적으로 맞는 부분은 칭찬하고, 부족한 부분은 힌트로 보완해줘. 3~4문장, 한국어로.`;
-
   try{
     const feedback = await callGemini(prompt, 600);
     fb.textContent = feedback;
@@ -1246,7 +1232,6 @@ async function submitEarthAnswer(){
     fb.textContent = '❌ 피드백 생성 실패: ' + e.message;
   }
 }
-
 function saveEarthLog(mission, answer, feedback){
   const modeIconMap = { soil:'🪨', ocean:'🌊', volcano:'🌋' };
   const modeIcon = modeIconMap[mission.mode] || '🔬';
@@ -1260,7 +1245,6 @@ function saveEarthLog(mission, answer, feedback){
   });
   localStorage.setItem('eaim_earth_logs', JSON.stringify(logs.slice(0, 20)));
   renderLogs();
-
   if(teacherUid && stuName){
     earthLogsColRef(teacherUid).add({
       name: stuName, group: stuClass||'',
@@ -1268,7 +1252,6 @@ function saveEarthLog(mission, answer, feedback){
       question: mission.question, answer, feedback,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(e=>console.warn('탐사 기록 저장 실패', e));
-
     studentsColRef(teacherUid).doc(stuName.trim()).set({
       name: stuName, group: stuClass||'',
       lastLayer: pairLabel,
@@ -1277,7 +1260,6 @@ function saveEarthLog(mission, answer, feedback){
     }, {merge:true}).catch(e=>console.warn('학생 현황 기록 실패', e));
   }
 }
-
 function renderLogs(){
   const logs = JSON.parse(localStorage.getItem('eaim_earth_logs') || '[]');
   const el = document.getElementById('log-list');
@@ -1288,7 +1270,6 @@ function renderLogs(){
       ${l.answer.substring(0,50)}${l.answer.length>50?'...':''}
     </div>`).join('');
 }
-
 // ══════════════════════════
 // 진입점
 // ══════════════════════════
@@ -1297,12 +1278,10 @@ function renderLogs(){
   const role=params.get('role');
   const teacherParam=params.get('teacher');
   const groupParam=params.get('group');
-
   if(!firebaseReady){
     document.getElementById('loadingOverlay').textContent='⚠️ Firebase 설정이 필요해요';
     return;
   }
-
   if(role==='student'){
     isStudentMode=true;
     if(!teacherParam){ renderNoTeacherLink(); return; }
@@ -1312,7 +1291,6 @@ function renderLogs(){
     subscribeGroups(teacherUid);
     return;
   }
-
   auth.onAuthStateChanged(user=>{
     currentUser=user;
     if(user){

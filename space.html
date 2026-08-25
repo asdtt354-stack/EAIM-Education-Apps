@@ -896,8 +896,8 @@ function updateTelescopeEyepiece(){
 function updateChromaticAberration(){
   if(!renderer || !renderer.domElement) return;
   const canvasEl = renderer.domElement;
-  if(telescopeType === 'refractor' && telescopeTarget && telescopeZoom > 6){
-    const strength = Math.min(1, (telescopeZoom - 6) / 24) * 3.2;
+ if(telescopeType === 'refractor' && telescopeTarget && telescopeZoom > 3){
+    const strength = Math.min(1, (telescopeZoom - 3) / 12) * 3.2;
     const rOff = document.getElementById('caROffset'), bOff = document.getElementById('caBOffset');
     if(rOff){ rOff.setAttribute('dx', strength.toFixed(2)); rOff.setAttribute('dy', (strength*0.2).toFixed(2)); }
     if(bOff){ bOff.setAttribute('dx', (-strength).toFixed(2)); bOff.setAttribute('dy', (-strength*0.2).toFixed(2)); }

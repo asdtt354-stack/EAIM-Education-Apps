@@ -56,6 +56,11 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #organ-info-name { font-weight: 800; font-size: 0.95em; margin-bottom: 6px; color: var(--main-color); }
 #organ-info-func { font-size: 0.78em; line-height: 1.55; color: #ddd; margin-bottom: 10px; }
 #organ-explain-box { display:none; font-size: 0.76em; line-height: 1.55; color: #d8b4fe; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+#system-explain-box { display:none; background: #141416; border: 1px solid #2a2a2c; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+#system-explain-title { font-weight: 800; font-size: 0.95em; margin-bottom: 6px; color: var(--accent); }
+#system-explain-text { font-size: 0.8em; line-height: 1.6; color: #ddd; margin-bottom: 8px; white-space: pre-line; }
+#system-explain-voice-btn { border: 1.5px solid var(--accent); background: rgba(168,85,247,0.12); color: #d8b4fe; border-radius: 7px; padding: 6px 10px; font-size: 0.74em; font-weight: 700; cursor: pointer; }
+#system-explain-voice-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 #log-section {
   flex: 4; min-width: 300px; max-width: 380px;
@@ -285,6 +290,12 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
     <button type="button" class="action-btn energy" id="energy-btn" onclick="toggleEnergyMode()">🔥 세포호흡·에너지 흐름 보기</button>
     <button type="button" class="action-btn" id="energy-explain-btn" style="display:none;border-color:#fb923c;background:rgba(251,146,60,0.1);color:#fdba74" onclick="explainEnergyIntegration()">🤖 통합 설명 듣기</button>
     <button type="button" class="action-btn" style="border-color:#38bdf8;background:rgba(56,189,248,0.1);color:#7dd3fc" onclick="openReferenceAtlas()">📖 실제 도감처럼 보기</button>
+
+    <div id="system-explain-box" style="display:none">
+      <div id="system-explain-title"></div>
+      <div id="system-explain-text"></div>
+      <button type="button" id="system-explain-voice-btn" onclick="replaySystemVoice()">🔊 다시 듣기</button>
+    </div>
 
     <div id="organ-info-box">
       <div id="organ-info-name"></div>
@@ -713,6 +724,45 @@ const ORGAN_SYSTEMS = {
 };
 const SYSTEM_KEYS = Object.keys(ORGAN_SYSTEMS);
 
+const SYSTEM_DESCRIPTIONS = {
+  digestive: '소화계는 우리가 먹은 음식을 몸이 쓸 수 있는 영양분으로 바꾸는 계통이에요. 입에서 잘게 씹은 음식은 식도를 지나 위로 내려가서 강한 산과 효소로 분해돼요. 이후 소장에서 영양분이 흡수되고, 간은 그 영양분을 저장하고 가공하며 독소를 해독해요. 마지막으로 대장에서 수분을 흡수하고 남은 찌꺼기를 내보내요.',
+  circulatory: '순환계는 혈액을 온몸 구석구석으로 보내는 계통이에요. 심장이 펌프질을 하면 혈액이 혈관을 타고 흐르면서 산소와 영양분을 세포에 전달하고, 이산화탄소와 노폐물을 회수해서 돌아와요. 심장이 잠깐이라도 멈추면 온몸에 문제가 생길 만큼 중요한 계통이에요.',
+  respiratory: '호흡계는 우리 몸이 숨을 쉬는 계통이에요. 코와 기관을 통해 들어온 공기는 폐로 전달되고, 폐 속 작은 공기주머니에서 산소를 혈액으로 보내고 이산화탄소를 받아와요. 이렇게 얻은 산소는 순환계를 통해 온몸의 세포로 운반돼서 에너지를 만드는 데 쓰여요.',
+  excretory: '배설계는 우리 몸의 노폐물을 걸러내는 계통이에요. 콩팥(신장)이 혈액을 걸러서 필요 없는 노폐물과 수분을 오줌으로 만들고, 방광이 그 오줌을 저장했다가 몸 밖으로 내보내요. 이 과정 덕분에 몸속 노폐물이 쌓이지 않고 깨끗하게 유지돼요.',
+  nervous: '신경계는 몸의 모든 명령을 내리고 정보를 처리하는 계통이에요. 뇌는 생각하고 판단하고 몸을 움직이도록 명령을 내리는 사령탑이고, 척수는 그 명령을 온몸의 신경으로 전달하는 통로 역할을 해요. 신경계 덕분에 우리는 보고 듣고 느끼고 움직일 수 있어요.',
+  musculoskeletal: '근육/골격계는 몸을 지탱하고 움직이게 하는 계통이에요. 갈비뼈는 심장과 폐 같은 중요한 장기를 감싸서 보호하고, 척추는 몸을 세우고 척수를 보호해요. 팔다리 근육은 뼈에 붙어서 수축하고 이완하며 우리가 걷고 뛰고 물건을 잡을 수 있게 해줘요.'
+};
+let currentSystemVoiceText = '';
+
+async function showSystemExplanation(key){
+  const sys = ORGAN_SYSTEMS[key];
+  const box = document.getElementById('system-explain-box');
+  const text = SYSTEM_DESCRIPTIONS[key] || '';
+  document.getElementById('system-explain-title').textContent = `${sys.icon} ${sys.label} 설명`;
+  document.getElementById('system-explain-text').textContent = text;
+  box.style.display = 'block';
+  currentSystemVoiceText = text;
+  const voiceBtn = document.getElementById('system-explain-voice-btn');
+  if((settings.apiKey||'').trim()){
+    voiceBtn.disabled = true; voiceBtn.textContent = '🔊 읽는 중...';
+    await speakMuto(text);
+    voiceBtn.disabled = false; voiceBtn.textContent = '🔊 다시 듣기';
+  }
+}
+function hideSystemExplanation(){
+  document.getElementById('system-explain-box').style.display = 'none';
+  currentSystemVoiceText = '';
+}
+function replaySystemVoice(){
+  if(!currentSystemVoiceText) return;
+  if(!(settings.apiKey||'').trim()){ alert('선생님이 아직 API 키를 설정하지 않았어요.'); return; }
+  const voiceBtn = document.getElementById('system-explain-voice-btn');
+  voiceBtn.disabled = true; voiceBtn.textContent = '🔊 읽는 중...';
+  speakMuto(currentSystemVoiceText).finally(()=>{
+    voiceBtn.disabled = false; voiceBtn.textContent = '🔊 다시 듣기';
+  });
+}
+
 let activeSystems = new Set();
 let selectedOrgan = null;
 let explodeLevel = 0; // 0=조립, 1=부분분리, 2=완전해체
@@ -949,6 +999,11 @@ function toggleSystem(key){
   document.getElementById('chip-'+key).classList.toggle('on', activeSystems.has(key));
   syncSystemVisibility();
   updateMissionState();
+  if(activeSystems.has(key)){
+    showSystemExplanation(key);
+  } else if(!Array.from(activeSystems).length){
+    hideSystemExplanation();
+  }
 }
 function syncSystemVisibility(){
   Object.values(organElements).forEach(entry=>{
@@ -1001,6 +1056,7 @@ function setExplodeLevel(level){
     if(selectedMarkerEl){ selectedMarkerEl.classList.remove('selected'); selectedMarkerEl = null; }
     selectedOrgan = null;
     document.getElementById('organ-info-box').style.display = 'none';
+    hideSystemExplanation();
     updateMissionState();
   } else if(activeSystems.size === 0){
     // 켜진 계통이 하나도 없으면 분리/해체가 눈에 보이도록 전체를 켠다

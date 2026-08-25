@@ -23,6 +23,8 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #cross-section-track.overview .cs-band:hover { filter: brightness(1.2); }
 #cross-section-track.overview .cs-band:first-child { border-top: none; }
 #cross-section-track.overview .cs-band-label { font-size: 0.85em; padding: 6px 14px; }
+.cs-band.band-highlight { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.5); animation: band-pulse 1.2s ease-in-out infinite; z-index: 2; }
+@keyframes band-pulse { 0%,100%{ box-shadow: inset 0 0 0 3px rgba(255,255,255,0.2);} 50%{ box-shadow: inset 0 0 0 3px rgba(255,255,255,0.8);} }
 #overview-hint { display:none; font-size: 0.72em; color: #aaa; text-align:center; padding: 8px 4px; line-height: 1.5; }
 #depth-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 30; pointer-events: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
 #depth-marker-line { position: absolute; top: 50%; left: 0; width: 100vw; height: 2px; background: repeating-linear-gradient(90deg, rgba(250,204,21,0.55) 0 10px, transparent 10px 20px); transform: translateY(-50%); z-index: 29; pointer-events: none; }
@@ -72,9 +74,10 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 @keyframes seismic-expand { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1400px;height:1400px;margin:-700px 0 0 -700px; opacity:0;} }
 @keyframes seismic-expand-p { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:900px;height:900px;margin:-450px 0 0 -450px; opacity:0;} }
 @keyframes seismic-expand-s { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1500px;height:1500px;margin:-750px 0 0 -750px; opacity:0;} }
+.lava-wrap { position:absolute; left:0; right:0; overflow:hidden; }
 .lava-rise { position:absolute; left:0; right:0; bottom:-20%; height:60%; background: linear-gradient(180deg, rgba(255,200,80,0) 0%, rgba(255,140,40,0.85) 35%, rgba(220,40,10,0.95) 100%); filter: blur(1px); animation: lava-rise-anim 3.2s ease-in-out forwards; }
 @keyframes lava-rise-anim { 0%{ transform:translateY(100%); opacity:0;} 15%{ opacity:1;} 55%{ transform:translateY(0%);} 100%{ transform:translateY(-8%); opacity:0;} }
-.pluton-cool { position:absolute; left:50%; bottom:8%; width:44%; height:32%; transform:translateX(-50%) scale(0.7); border-radius:46% 46% 40% 40% / 60% 60% 30% 30%; filter: blur(2px); animation: pluton-cool-anim 3.6s ease-in-out forwards; }
+.pluton-cool { position:absolute; left:50%; width:44%; transform:translateX(-50%) scale(0.7); border-radius:46% 46% 40% 40% / 60% 60% 30% 30%; filter: blur(2px); animation: pluton-cool-anim 3.6s ease-in-out forwards; }
 @keyframes pluton-cool-anim {
   0% { opacity:0; transform:translateX(-50%) scale(0.65); background: radial-gradient(ellipse at center, rgba(255,205,120,0.95) 0%, rgba(210,110,50,0.85) 55%, rgba(120,90,120,0.6) 100%); }
   20% { opacity:1; transform:translateX(-50%) scale(1); }
@@ -1213,6 +1216,29 @@ function jumpToLayerByName(name){
   const idx = layers.findIndex(l=>l.name===name);
   if(idx>=0) jumpToLayer(idx);
 }
+// 전체 단면(overview) 상태에서 특정 층이 화면의 어느 세로 구간(px)을 차지하는지 계산.
+// layoutCrossSection()의 overview 계산(뷰포트 높이/층 수)과 동일한 공식을 사용함.
+function getBandRectOverview(name){
+  const viewport = document.getElementById('cross-section-viewport');
+  const layers = LAYER_SETS[currentMode];
+  const idx = layers.findIndex(l=>l.name===name);
+  if(idx<0 || !viewport) return null;
+  const vh = viewport.clientHeight;
+  const n = layers.length;
+  const bandH = vh/n;
+  return { top: idx*bandH, height: bandH, bottom: (idx+1)*bandH };
+}
+// 전체 단면 보기에서 특정 층의 테두리를 잠깐 반짝여서 "지금 이 층에서 일어나는 일"임을 알려줌
+function highlightBand(name){
+  const track = document.getElementById('cross-section-track');
+  const layers = LAYER_SETS[currentMode];
+  const idx = layers.findIndex(l=>l.name===name);
+  if(idx<0 || !track) return;
+  const band = track.children[idx];
+  if(!band) return;
+  band.classList.add('band-highlight');
+  setTimeout(()=> band.classList.remove('band-highlight'), 3600);
+}
 function triggerEarthquake(){
   // 지진은 지표에 가까운 지각(판 경계)에서 발생하는 현상이라, 보고 있던 층과 상관없이
   // 항상 지각 층으로 이동해서 보여줌 (하부맨틀/핵에서 흔들리는 것처럼 보이는 걸 방지)
@@ -1233,11 +1259,12 @@ function triggerEarthquake(){
   setTimeout(()=> viewer.classList.remove('shake-effect'), 900);
 }
 function triggerEruption(type){
-  // 화산암/심성암은 둘 다 '마그마방'(화산 하부, 지표 근처)에서 갈리는 현상이라,
-  // 보고 있던 층과 상관없이 항상 마그마방 층으로 이동해서 보여줌
-  // (하부맨틀·핵처럼 훨씬 깊은 층에서 일어나는 것처럼 보이는 걸 방지)
-  ensureDrillView();
-  jumpToLayerByName('마그마방');
+  // 화산암/심성암은 둘 다 '마그마방'(화산 하부, 지표 근처)에서 갈리는 현상이고,
+  // 화산암은 마그마방에서 지표까지 뚫고 올라가는 과정 자체가 핵심이라 한 층만 확대해서는
+  // 잘 안 보임 → 전체 단면 보기로 전환해서 마그마방 층을 강조하고, 그 위치를 기준으로
+  // 용암이 지표까지 솟구치는(화산암) / 그 자리에 갇혀 식는(심성암) 애니메이션을 보여줌
+  setViewMode('overview');
+  highlightBand('마그마방');
   type = (type === 'plutonic') ? 'plutonic' : 'volcanic';
   rockTriedTypes.add(type);
   const bothTried = rockTriedTypes.has('volcanic') && rockTriedTypes.has('plutonic');
@@ -1296,16 +1323,36 @@ function spawnSeismicRings(){
 function spawnLavaRise(){
   const layer = document.getElementById('event-fx-layer');
   if(!layer) return;
+  const rect = getBandRectOverview('마그마방');
+  // 마그마방 바닥(rect.bottom)부터 화면 맨 위(지표)까지만 담는 클리핑 창을 만들고,
+  // 그 안에서 용암이 솟아오르게 해서 "마그마방 → 지표"로 뚫고 올라가는 과정을 보여줌.
+  // 하부맨틀·핵처럼 마그마방보다 아래쪽 층에는 용암이 침범하지 않음.
+  const wrap = document.createElement('div');
+  wrap.className = 'lava-wrap';
+  wrap.style.top = '0px';
+  wrap.style.height = (rect ? rect.bottom : layer.clientHeight) + 'px';
   const lava = document.createElement('div');
   lava.className = 'lava-rise';
-  layer.appendChild(lava);
-  setTimeout(()=> lava.remove(), 3200);
+  wrap.appendChild(lava);
+  layer.appendChild(wrap);
+  setTimeout(()=> wrap.remove(), 3200);
 }
 function spawnPlutonicCooling(){
   const layer = document.getElementById('event-fx-layer');
   if(!layer) return;
+  const rect = getBandRectOverview('마그마방');
   const pool = document.createElement('div');
   pool.className = 'pluton-cool';
+  if(rect){
+    // 마그마방 층의 세로 구간 안에만 머무르게 위치를 고정 — 위(상부맨틀·지각)나
+    // 아래(하부맨틀·핵)로 번지지 않고, 딱 그 자리에서 식는 모습을 보여줌
+    const margin = rect.height * 0.14;
+    pool.style.top = (rect.top + margin) + 'px';
+    pool.style.height = Math.max(20, rect.height - margin*2) + 'px';
+  } else {
+    pool.style.top = '40%';
+    pool.style.height = '32%';
+  }
   layer.appendChild(pool);
   setTimeout(()=> pool.remove(), 3700);
 }

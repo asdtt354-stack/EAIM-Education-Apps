@@ -1205,7 +1205,19 @@ function showEventToast(text){
   clearTimeout(toast._t);
   toast._t = setTimeout(()=> toast.classList.remove('show'), 3200);
 }
+function ensureDrillView(){
+  if(viewMode !== 'drill') setViewMode('drill');
+}
+function jumpToLayerByName(name){
+  const layers = LAYER_SETS[currentMode];
+  const idx = layers.findIndex(l=>l.name===name);
+  if(idx>=0) jumpToLayer(idx);
+}
 function triggerEarthquake(){
+  // 지진은 지표에 가까운 지각(판 경계)에서 발생하는 현상이라, 보고 있던 층과 상관없이
+  // 항상 지각 층으로 이동해서 보여줌 (하부맨틀/핵에서 흔들리는 것처럼 보이는 걸 방지)
+  ensureDrillView();
+  jumpToLayerByName('지각');
   eventContextForMission = '방금 진도 5.0 규모의 지진이 발생했어. 지진파 중 P파(속도가 빠르고 가장 먼저 도착, 고체와 액체를 모두 통과하며 물질을 밀고 당기는 방향인 종파)가 먼저 감지됐고, 이어서 S파(속도가 느리고 나중에 도착, 고체만 통과하며 진행 방향과 수직으로 흔드는 횡파)가 감지됐어. P파와 S파의 도착 시간 차이를 이용하면 진앙까지의 거리를 구할 수 있어.';
   const viewer = document.getElementById('viewer-section');
   viewer.classList.remove('shake-effect'); void viewer.offsetWidth; viewer.classList.add('shake-effect');
@@ -1221,16 +1233,21 @@ function triggerEarthquake(){
   setTimeout(()=> viewer.classList.remove('shake-effect'), 900);
 }
 function triggerEruption(type){
+  // 화산암/심성암은 둘 다 '마그마방'(화산 하부, 지표 근처)에서 갈리는 현상이라,
+  // 보고 있던 층과 상관없이 항상 마그마방 층으로 이동해서 보여줌
+  // (하부맨틀·핵처럼 훨씬 깊은 층에서 일어나는 것처럼 보이는 걸 방지)
+  ensureDrillView();
+  jumpToLayerByName('마그마방');
   type = (type === 'plutonic') ? 'plutonic' : 'volcanic';
   rockTriedTypes.add(type);
   const bothTried = rockTriedTypes.has('volcanic') && rockTriedTypes.has('plutonic');
   if(type === 'volcanic'){
-    eventContextForMission = '방금 마그마가 지표까지 뚫고 올라와 용암으로 분출됐어. 지표 근처에서 빠르게 식었기 때문에 화산암(예: 현무암)이 만들어지고 있고, 결정 크기가 작고 치밀해.';
-    showEventToast('🌋 마그마가 지표로 분출! 빠르게 식어 화산암이 되고 있어요');
+    eventContextForMission = '방금 마그마방의 마그마가 지표까지 뚫고 올라와 용암으로 분출됐어. 지표 근처에서 빠르게 식었기 때문에 화산암(예: 현무암)이 만들어지고 있고, 결정 크기가 작고 치밀해.';
+    showEventToast('🌋 마그마방의 마그마가 지표로 분출! 빠르게 식어 화산암이 되고 있어요');
     spawnLavaRise();
   } else {
-    eventContextForMission = '방금 마그마가 지표까지 오르지 못하고 지하 깊은 곳에 머물렀어. 아주 천천히 식었기 때문에 심성암(예: 화강암)이 만들어지고 있고, 결정 크기가 크고 뚜렷해.';
-    showEventToast('🪨 마그마가 지하 깊은 곳에서 천천히 식어 심성암이 되고 있어요');
+    eventContextForMission = '방금 마그마방 부근의 마그마가 지표까지 오르지 못하고 지각 속 깊숙한 곳에 갇힌 채 머물렀어. 아주 천천히 식었기 때문에 심성암(예: 화강암)이 만들어지고 있고, 결정 크기가 크고 뚜렷해.';
+    showEventToast('🪨 마그마방 부근에 갇힌 마그마가 천천히 식어 심성암이 되고 있어요');
     spawnPlutonicCooling();
   }
   if(bothTried){
@@ -1249,12 +1266,12 @@ function buildRockCompareCard(selected, bothTried){
       <div class="rock-chip volcanic${selected==='volcanic'?' active':''}">
         <div class="rock-swatch" style="background-image:url(${getRockTexture('volcanic')})"></div>
         <span class="rock-swatch-cap">현무암 표면(확대)</span>
-        <b>🌋 화산암 (예: 현무암)</b>지표 근처, 빠르게 냉각<br>결정이 매우 작아 눈에 안 보임(세립질)<br>용암이 분출해 굳어 생성${vTried?'<span class="tried-tag">✅ 만들어봤어요</span>':''}
+        <b>🌋 화산암 (예: 현무암)</b>마그마방 → 지표, 빠르게 냉각<br>결정이 매우 작아 눈에 안 보임(세립질)<br>용암이 분출해 굳어 생성${vTried?'<span class="tried-tag">✅ 만들어봤어요</span>':''}
       </div>
       <div class="rock-chip plutonic${selected==='plutonic'?' active':''}">
         <div class="rock-swatch" style="background-image:url(${getRockTexture('plutonic')})"></div>
         <span class="rock-swatch-cap">화강암 표면(확대)</span>
-        <b>🪨 심성암 (예: 화강암)</b>지하 깊은 곳, 천천히 냉각<br>결정이 크고 알알이 뚜렷함(조립질)<br>마그마가 땅속에서 굳어 생성${pTried?'<span class="tried-tag">✅ 만들어봤어요</span>':''}
+        <b>🪨 심성암 (예: 화강암)</b>마그마방 부근 지각 속, 천천히 냉각<br>결정이 크고 알알이 뚜렷함(조립질)<br>지표까지 못 오르고 땅속에서 굳어 생성${pTried?'<span class="tried-tag">✅ 만들어봤어요</span>':''}
       </div>
     </div>
     <p class="info-note">${note}</p>

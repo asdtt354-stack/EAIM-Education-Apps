@@ -59,8 +59,9 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #system-explain-box { display:none; background: #141416; border: 1px solid #2a2a2c; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
 #system-explain-title { font-weight: 800; font-size: 0.95em; margin-bottom: 6px; color: var(--accent); }
 #system-explain-text { font-size: 0.8em; line-height: 1.6; color: #ddd; margin-bottom: 8px; white-space: pre-line; }
-#system-explain-voice-btn { border: 1.5px solid var(--accent); background: rgba(168,85,247,0.12); color: #d8b4fe; border-radius: 7px; padding: 6px 10px; font-size: 0.74em; font-weight: 700; cursor: pointer; }
+#system-explain-voice-btn { border: 1.5px solid var(--accent); background: rgba(168,85,247,0.12); color: #d8b4fe; border-radius: 7px; padding: 6px 10px; font-size: 0.74em; font-weight: 700; cursor: pointer; margin-right: 6px; }
 #system-explain-voice-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#system-explain-stop-btn { border: 1.5px solid #666; background: rgba(255,255,255,0.06); color: #ccc; border-radius: 7px; padding: 6px 10px; font-size: 0.74em; font-weight: 700; cursor: pointer; }
 
 #log-section {
   flex: 4; min-width: 300px; max-width: 380px;
@@ -295,6 +296,7 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
       <div id="system-explain-title"></div>
       <div id="system-explain-text"></div>
       <button type="button" id="system-explain-voice-btn" onclick="replaySystemVoice()">🔊 다시 듣기</button>
+      <button type="button" id="system-explain-stop-btn" onclick="stopSystemVoice()">⏹ 정지</button>
     </div>
 
     <div id="organ-info-box">
@@ -647,13 +649,14 @@ function closeMutoMoodAndEnter(){
   if(afterMutoMoodFn) afterMutoMoodFn();
 }
 let currentAudioEl = null;
-let ttsGeneration = 0;
 async function speakMuto(text){
   try{
     const key = (settings.apiKey||'').trim();
     if(!key) return;
-    if(currentAudioEl){ currentAudioEl.pause(); currentAudioEl.currentTime = 0; currentAudioEl = null; }
-    const myGen = ++ttsGeneration;
+    if(currentAudioEl){
+      try{ currentAudioEl.pause(); currentAudioEl.currentTime = 0; }catch(e){}
+      currentAudioEl = null;
+    }
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
     const res = await fetch(url, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -666,13 +669,14 @@ async function speakMuto(text){
       })
     });
     const data = await res.json();
+    if(data.error){ console.warn('TTS API 오류', data.error); return; }
     const part = data?.candidates?.[0]?.content?.parts?.find(p=>p.inlineData);
-    if(!part) return;
-    if(myGen !== ttsGeneration) return; // 그 사이 더 새로운 음성 요청이 시작됐으면 재생하지 않음
+    if(!part){ console.warn('TTS 응답에 오디오 데이터가 없어요', data); return; }
     const wavUrl = mutoPcmToWavUrl(part.inlineData.data);
     const audio = new Audio(wavUrl);
     currentAudioEl = audio;
-    audio.play().catch(()=>{});
+    audio.addEventListener('ended', ()=>{ if(currentAudioEl === audio) currentAudioEl = null; });
+    try{ await audio.play(); }catch(playErr){ console.warn('오디오 재생 차단됨', playErr); }
   }catch(e){ console.warn('뮤토 음성 재생 실패', e); }
 }
 function mutoPcmToWavUrl(base64pcm){
@@ -758,6 +762,14 @@ async function showSystemExplanation(key){
 function hideSystemExplanation(){
   document.getElementById('system-explain-box').style.display = 'none';
   currentSystemVoiceText = '';
+}
+function stopSystemVoice(){
+  if(currentAudioEl){
+    try{ currentAudioEl.pause(); currentAudioEl.currentTime = 0; }catch(e){}
+    currentAudioEl = null;
+  }
+  const voiceBtn = document.getElementById('system-explain-voice-btn');
+  if(voiceBtn){ voiceBtn.disabled = false; voiceBtn.textContent = '🔊 다시 듣기'; }
 }
 function replaySystemVoice(){
   if(!currentSystemVoiceText) return;

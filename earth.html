@@ -48,13 +48,38 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 .zoom-btn { width:34px; height:34px; border-radius:8px; border:1.5px solid #444; background:#1e1e20; color:#fff; font-weight:900; font-size:1em; cursor:pointer; }
 .zoom-btn:disabled { opacity:0.35; cursor:not-allowed; }
 #zoom-note { font-size:.72em; color:#bbb; line-height:1.5; margin:8px 0 0; }
-#event-box { margin-bottom: 12px; }
-#event-box label { display:block; color:#f87171; font-weight:700; font-size:.78em; margin-bottom:6px; }
+.event-box-panel { margin-bottom: 12px; }
+.event-box-panel > label { display:block; color:#f87171; font-weight:700; font-size:.78em; margin-bottom:6px; }
 .event-btn { flex:1; padding:9px 4px; border-radius:8px; font-weight:700; font-size:.72em; cursor:pointer; }
 .event-btn.quake { border:1.5px solid #f87171; background:rgba(248,113,113,0.12); color:#fca5a5; }
 .event-btn.eruption.volcanic { border:1.5px solid #fb923c; background:rgba(251,146,60,0.12); color:#fdba74; }
 .event-btn.eruption.plutonic { border:1.5px solid #c4b5fd; background:rgba(196,181,253,0.12); color:#ddd6fe; }
-#event-compare-note { font-size:.66em; color:#888; line-height:1.5; margin:8px 0 0; }
+.event-btn.soil-decomp { border:1.5px solid #84cc16; background:rgba(132,204,22,0.12); color:#bef264; }
+.event-btn.soil-erosion { border:1.5px solid #38bdf8; background:rgba(56,189,248,0.12); color:#7dd3fc; }
+.event-btn.ocean-pressure { border:1.5px solid #38bdf8; background:rgba(56,189,248,0.12); color:#7dd3fc; }
+.event-btn.ocean-bio { border:1.5px solid #a78bfa; background:rgba(167,139,250,0.12); color:#ddd6fe; }
+#event-compare-note, #soil-event-note, #ocean-event-note { font-size:.66em; color:#888; line-height:1.5; margin:8px 0 0; }
+#visc-box { background:#141416; border:1px solid #2a2a2c; border-radius:10px; padding:10px; margin-bottom:8px; }
+#visc-box label { display:block; color:var(--accent); font-weight:700; font-size:.72em; margin-bottom:6px; }
+.visc-btn { flex:1; padding:7px 4px; border-radius:8px; font-weight:700; font-size:.66em; cursor:pointer; border:1.5px solid #444; background:#1e1e20; color:#ccc; }
+.visc-btn.active { border-color: var(--accent); background:rgba(56,189,248,0.15); color:#7dd3fc; }
+#visc-note { font-size:.64em; color:#888; line-height:1.5; margin:6px 0 0; }
+#rock-cycle-btn { width:100%; margin-top:8px; padding:9px 4px; border-radius:8px; border:1.5px solid rgba(250,204,21,0.4); background:rgba(250,204,21,0.08); color:var(--main-color); font-weight:700; font-size:.72em; cursor:pointer; }
+.rc-diagram { display:flex; flex-direction:column; align-items:stretch; gap:2px; }
+.rc-node { background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); border-radius:14px; padding:12px; text-align:center; font-size:1.4rem; font-weight:800; }
+.rc-node span { display:block; font-size:.62rem; font-weight:500; color:rgba(255,255,255,.5); margin-top:4px; }
+.rc-node.igneous { border-color:rgba(248,113,113,0.4); }
+.rc-node.sedimentary { border-color:rgba(250,204,21,0.4); }
+.rc-node.metamorphic { border-color:rgba(196,181,253,0.4); }
+.rc-node.magma { border-color:rgba(251,146,60,0.5); background:rgba(251,146,60,0.08); }
+.rc-arrow { font-size:.85rem; color:rgba(255,255,255,.6); text-align:center; padding:3px 0; }
+.rc-arrow span { display:block; font-size:.6rem; color:rgba(255,255,255,.4); margin-top:2px; }
+.quiz-box { background:#141416; border:1px solid #2a2a2c; border-radius:10px; padding:10px; margin-top:8px; }
+.quiz-box p { font-size:.72em; line-height:1.55; color:#ddd; margin:0 0 8px; }
+.quiz-row { display:flex; gap:6px; }
+.quiz-row input { flex:1; padding:7px 8px; background:#1a1a1c; color:#fff; border:1px solid #444; border-radius:7px; font-size:.78em; font-family:inherit; }
+.quiz-row button { padding:7px 12px; border-radius:7px; border:none; background:var(--accent); color:#001018; font-weight:700; font-size:.74em; cursor:pointer; }
+.quiz-feedback { font-size:.72em; line-height:1.5; margin-top:6px; color:#fbbf24; }
 #event-fx-layer { position:absolute; inset:0; z-index:18; pointer-events:none; overflow:hidden; }
 @keyframes earth-shake {
   0%,100% { transform: translate(0,0); }
@@ -93,6 +118,18 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
   80%  { height:84%; background-color: rgba(176,150,168,0.85); }
   100% { height:84%; background-color: rgba(150,140,168,0.55); opacity:0.7; }
 }
+.ash-cloud { position:absolute; left:50%; bottom:0; width:56%; height:70%; transform:translateX(-50%); background: radial-gradient(ellipse at bottom, rgba(70,58,50,0.95) 0%, rgba(45,38,34,0.85) 45%, rgba(20,18,17,0) 100%); border-radius:50% 50% 30% 30%; filter:blur(3px); animation: ash-cloud-anim 2.6s ease-out forwards; }
+@keyframes ash-cloud-anim { 0%{ transform:translateX(-50%) translateY(15%) scale(0.35); opacity:0;} 15%{ opacity:1;} 60%{ transform:translateX(-50%) translateY(-45%) scale(1.15); opacity:0.9;} 100%{ transform:translateX(-50%) translateY(-75%) scale(1.3); opacity:0;} }
+.ash-particle { position:absolute; width:5px; height:5px; border-radius:50%; background:#4a3f38; opacity:0.95; animation: ash-particle-anim 1.5s ease-out forwards; }
+@keyframes ash-particle-anim { 0%{ transform:translate(0,0) scale(1); opacity:1;} 100%{ transform:translate(var(--dx), var(--dy)) scale(0.25); opacity:0;} }
+.decomp-particle { position:absolute; font-size:16px; opacity:0; animation: decomp-particle-anim 2.2s ease-in-out forwards; }
+@keyframes decomp-particle-anim { 0%{ opacity:0; transform:translateY(6px) scale(0.6);} 20%{ opacity:1;} 80%{ opacity:1;} 100%{ opacity:0; transform:translateY(-10px) scale(1.1);} }
+.rain-streak { position:absolute; top:-40px; width:2px; height:34px; background:linear-gradient(180deg, rgba(125,211,252,0) 0%, rgba(125,211,252,0.8) 100%); animation: rain-fall-anim 0.9s linear forwards; }
+@keyframes rain-fall-anim { 0%{ transform:translateY(0); opacity:0.9;} 100%{ transform:translateY(120vh); opacity:0.4;} }
+.pressure-diver { position:absolute; left:50%; top:2%; font-size:34px; transform:translate(-50%,0) scale(1); animation: pressure-dive-anim 3.6s ease-in forwards; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
+@keyframes pressure-dive-anim { 0%{ top:2%; transform:translate(-50%,0) scale(1); opacity:1;} 85%{ top:92%; transform:translate(-50%,0) scale(0.22); opacity:1;} 100%{ top:94%; transform:translate(-50%,0) scale(0.18); opacity:0;} }
+.bio-spark { position:absolute; width:6px; height:6px; border-radius:50%; background:#a7f3d0; box-shadow:0 0 8px 3px rgba(167,243,208,0.9); animation: bio-spark-anim 1.4s ease-in-out forwards; }
+@keyframes bio-spark-anim { 0%{ opacity:0; transform:scale(0.4);} 30%{ opacity:1; transform:scale(1.2);} 70%{ opacity:1;} 100%{ opacity:0; transform:scale(0.5);} }
 #event-toast { position:absolute; top:70px; left:50%; transform:translateX(-50%) translateY(-10px); background:rgba(0,0,0,0.75); border:1.5px solid rgba(248,113,113,0.5); color:#fff; padding:10px 18px; border-radius:99px; font-size:0.82em; font-weight:700; z-index:26; opacity:0; transition: opacity 0.3s, transform 0.3s; white-space:nowrap; pointer-events:none; }
 #event-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 #info-popup { position:absolute; top:70px; right:24px; width:300px; max-width:calc(100% - 48px); z-index:28; background:rgba(10,10,14,0.95); border:1.5px solid #3a3a3a; border-radius:14px; padding:16px; box-shadow:0 16px 34px rgba(0,0,0,0.55); opacity:0; transform:translateY(-10px); transition:opacity .3s, transform .3s; pointer-events:none; }
@@ -293,6 +330,27 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     <button id="mutoContinueBtn" type="button" class="btn-primary" style="display:none;margin-top:16px" onclick="closeMutoMoodAndEnter()">시작하기 →</button>
   </div>
 </div>
+<div id="rockCycleOverlay" class="ov" style="display:none;z-index:340" onclick="if(event.target===this) closeRockCycle()">
+  <div class="mb" style="max-width:440px;text-align:left">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-weight:900;font-size:1.15rem;color:var(--main-color)">🔄 암석의 순환</div>
+      <button onclick="closeRockCycle()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:rgba(255,255,255,.5)">✖</button>
+    </div>
+    <p style="font-size:.78rem;color:rgba(255,255,255,.5);margin:0 0 16px">암석은 한 번 만들어지면 끝이 아니에요 — 열·압력·풍화를 거치며 서로 다른 암석으로 영원히 돌고 돌아요!</p>
+    <div class="rc-diagram">
+      <div class="rc-node magma">🔥<br>마그마<span>땅속 깊이 눌려 다시 녹은 암석</span></div>
+      <div class="rc-arrow">⬇<span>식으면서 굳음 (지금까지 만든 화산암·심성암!)</span></div>
+      <div class="rc-node igneous">🌋<br>화성암<span>화산암(빠르게 냉각) · 심성암(천천히 냉각)</span></div>
+      <div class="rc-arrow">⬇<span>풍화·침식으로 잘게 부서져 운반·퇴적됨</span></div>
+      <div class="rc-node sedimentary">🏖️<br>퇴적암<span>모래·자갈이 겹겹이 쌓여 다져짐</span></div>
+      <div class="rc-arrow">⬇<span>땅속에서 열과 압력을 오래 받음</span></div>
+      <div class="rc-node metamorphic">💎<br>변성암<span>성질이 완전히 달라진 암석</span></div>
+      <div class="rc-arrow">⬇<span>더 깊이 눌려 다시 녹아버리면…</span></div>
+      <div class="rc-node magma">🔥<br>다시 마그마로!<span>그래서 "순환(cycle)"이라고 불러요</span></div>
+    </div>
+    <p style="font-size:.75rem;color:rgba(255,255,255,.55);margin-top:14px;line-height:1.6">화성암도, 퇴적암도, 변성암도 — 어떤 암석이든 땅속 깊이 들어가 다시 뜨거워지면 마그마로 돌아갈 수 있어요. 끝없이 돌고 도는 암석 이야기, 그게 바로 "암석의 순환"이에요!</p>
+  </div>
+</div>
 <div id="mainApp" style="display:none">
 <div id="viewer-section">
   <div class="header">
@@ -330,16 +388,41 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
       </div>
       <p id="zoom-note"></p>
     </div>
-    <div id="event-box" style="display:none">
+    <div id="event-box-volcano" class="event-box-panel" style="display:none">
       <label>⚡ 지질 이벤트 일으키기</label>
       <div style="display:flex;gap:6px;margin-bottom:6px">
         <button type="button" class="event-btn quake" onclick="triggerEarthquake()">🌍 지진 발생</button>
+      </div>
+      <div id="visc-box">
+        <label>🧪 마그마 점성 선택</label>
+        <div style="display:flex;gap:6px">
+          <button type="button" class="visc-btn active" id="visc-btn-basaltic" onclick="setMagmaViscosity('basaltic')">🌊 현무암질(묽음)</button>
+          <button type="button" class="visc-btn" id="visc-btn-rhyolitic" onclick="setMagmaViscosity('rhyolitic')">🍯 유문암질(끈적함)</button>
+        </div>
+        <p id="visc-note">점성이 낮으면 스르륵 흐르고, 높으면 가스가 갇혔다가 펑 터져요.</p>
       </div>
       <div style="display:flex;gap:6px">
         <button type="button" class="event-btn eruption volcanic" onclick="triggerEruption('volcanic')">🌋 화산암 만들기</button>
         <button type="button" class="event-btn eruption plutonic" onclick="triggerEruption('plutonic')">🪨 심성암 만들기</button>
       </div>
       <p id="event-compare-note">두 버튼을 각각 눌러보며 화산암과 심성암이 어떻게 다른지 직접 비교해보세요.</p>
+      <button type="button" id="rock-cycle-btn" onclick="openRockCycle()">🔄 암석의 순환 알아보기</button>
+    </div>
+    <div id="event-box-soil" class="event-box-panel" style="display:none">
+      <label>⚡ 토양 이벤트 일으키기</label>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="event-btn soil-decomp" onclick="triggerDecomposition()">🐛 분해 촉진</button>
+        <button type="button" class="event-btn soil-erosion" onclick="triggerErosion()">🌧️ 폭우 침식</button>
+      </div>
+      <p id="soil-event-note">버튼을 눌러 분해자의 활동과 폭우로 인한 토양 침식을 직접 관찰해보세요.</p>
+    </div>
+    <div id="event-box-ocean" class="event-box-panel" style="display:none">
+      <label>⚡ 바다 이벤트 일으키기</label>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="event-btn ocean-pressure" onclick="triggerPressureDemo()">🤿 수압 체험</button>
+        <button type="button" class="event-btn ocean-bio" onclick="triggerBioluminescence()">✨ 발광생물</button>
+      </div>
+      <p id="ocean-event-note">버튼을 눌러 깊이에 따른 수압 변화와 심해 생물의 발광을 체험해보세요.</p>
     </div>
     <div id="layer-info-box">
       <div id="layer-info-name"></div>
@@ -741,7 +824,8 @@ const VOLCANO_LAYERS = [
   { name:'상부 맨틀', range:'깊이 35~660km', color:'#8a3a1e', tex:'uppermantle', desc:'뜨거운 열로 인해 고체 암석이 아주 천천히 흐르는 층이에요. 여기서 마그마가 만들어지기 시작해요.', zoomNote:'암석 사이로 붉은 빛이 새어 나오는 게 보여요. 부분적으로 녹아있다는 신호예요.' },
   { name:'마그마방', range:'화산 하부, 지표 근처', color:'#e8590c', tex:'magma', desc:'화산 아래에 마그마가 모여있는 공간이에요. 압력이 쌓이면 지표를 뚫고 화산이 분화해요. 지표 근처까지 올라온 마그마가 빠르게 식으면 화산암(예: 현무암)이, 지표까지 오르지 못하고 지하 깊은 곳에서 서서히 식으면 심성암(예: 화강암)이 만들어져요.', zoomNote:'부글부글 끓어오르는 마그마 표면에서 가스 방울이 터지는 게 보여요.' },
   { name:'하부 맨틀', range:'깊이 660~2,900km', color:'#5c2412', tex:'lowermantle', desc:'상부 맨틀보다 압력이 훨씬 높아 더 단단한 고체 상태예요. 지구 부피의 대부분을 차지해요.', zoomNote:'결정처럼 촘촘하게 압축된 암석 무늬가 보여요.' },
-  { name:'핵', range:'깊이 2,900~6,371km', color:'#facc15', tex:'core', desc:'철과 니켈로 이루어진 뜨거운 금속 층이에요. 이 층이 움직이면서 지구 자기장을 만들어내요.', zoomNote:'소용돌이치는 액체 금속의 흐름이 보이는 듯해요.' }
+  { name:'외핵', range:'깊이 2,900~5,100km · 액체', color:'#f59e0b', tex:'outercore', desc:'철과 니켈이 무려 4,000~5,000℃로 펄펄 끓는 "쇳물 바다"예요! 온도는 어마어마하게 뜨거운데, 내핵만큼 짓누르는 압력은 아니라서 열이 압력을 이기고 철을 완전히 녹여버렸어요. 그래서 액체 상태로 출렁출렁·빙글빙글 흘러다녀요. 이 거대한 쇳물이 지구 자전을 따라 소용돌이치면서 지구를 감싸는 거대한 자석, 즉 지구 자기장을 만들어내요 — 나침반이 항상 북쪽을 가리키는 것도, 오로라가 생기는 것도 다 이 쇳물 바다 덕분이에요!', zoomNote:'빙글빙글 소용돌이치는 쇳물의 흐름과 반짝이는 금속 알갱이들이 보여요.' },
+  { name:'내핵', range:'깊이 5,100~6,371km · 지구 중심 · 고체', color:'#fef08a', tex:'innercore', desc:'놀랍게도 내핵은 외핵보다 훨씬 더 뜨거워요 — 무려 태양 표면(약 5,500℃)만큼요! 그런데 액체가 아니라 고체예요. 왜냐하면 지구 전체의 무게가 이곳을 짓누르는 압력이 대기압의 약 360만 배나 되거든요. 원자들이 옴짝달싹할 틈도 없이 꽉꽉 눌려있어서, 아무리 뜨거워도 액체가 될 공간이 없는 거예요. 만원 버스 안에서는 아무리 신나도(=열이 많아도) 춤출 공간이 없어서 못 움직이는 것과 똑같아요 — 그래서 초고온인데도 꽁꽁 언 것처럼 단단하게 굳어있답니다!', zoomNote:'빈틈없이 촘촘하게 눌려 붙은 결정 격자 무늬가 보여요. 초고압으로 꽉 다져진 흔적이에요.' }
 ];
 const LAYER_SETS = { soil: SOIL_LAYERS, ocean: OCEAN_LAYERS, volcano: VOLCANO_LAYERS };
 const TEXTURE_CACHE = {};
@@ -921,7 +1005,8 @@ function generateVolcanoTexture(hex, kind){
       ctx.restore();
     }
     ctx.globalAlpha=1;
-  } else if(kind==='core'){
+  } else if(kind==='outercore'){
+    // 액체 상태 — 소용돌이치는 쇳물의 흐름
     for(let i=0;i<8;i++){
       ctx.strokeStyle='rgba(255,255,220,0.55)';
       ctx.lineWidth=3+Math.random()*3;
@@ -934,6 +1019,28 @@ function generateVolcanoTexture(hex, kind){
       ctx.fillStyle='rgba(255,255,255,'+(0.2+Math.random()*0.4).toFixed(2)+')';
       ctx.beginPath();
       ctx.arc(Math.random()*w, Math.random()*h, 1+Math.random()*2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  } else if(kind==='innercore'){
+    // 고체 상태 — 초고압으로 빈틈없이 눌려 붙은 결정 격자
+    ctx.globalAlpha=0.55;
+    const gap=15;
+    for(let gx=0; gx<w; gx+=gap){
+      for(let gy=0; gy<h; gy+=gap){
+        ctx.fillStyle = shadeRgb(rgb, (Math.random()-0.5)*28);
+        const s=gap*0.74;
+        ctx.save();
+        ctx.translate(gx+gap/2+(Math.random()-0.5)*2, gy+gap/2+(Math.random()-0.5)*2);
+        ctx.rotate(Math.PI/4);
+        ctx.fillRect(-s/2,-s/2,s,s);
+        ctx.restore();
+      }
+    }
+    ctx.globalAlpha=1;
+    for(let i=0;i<30;i++){
+      ctx.fillStyle='rgba(255,255,255,'+(0.15+Math.random()*0.35).toFixed(2)+')';
+      ctx.beginPath();
+      ctx.arc(Math.random()*w, Math.random()*h, 0.8+Math.random()*1.6, 0, Math.PI*2);
       ctx.fill();
     }
   }
@@ -1041,7 +1148,9 @@ function setMode(mode){
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
   const labelMap = { soil:'🪨 지금 층 질문받기', ocean:'🌊 지금 층 질문받기', volcano:'🌋 지금 층 질문받기' };
   document.getElementById('mission-box-label').textContent = labelMap[mode];
-  document.getElementById('event-box').style.display = mode === 'volcano' ? 'block' : 'none';
+  document.getElementById('event-box-volcano').style.display = mode === 'volcano' ? 'block' : 'none';
+  document.getElementById('event-box-soil').style.display = mode === 'soil' ? 'block' : 'none';
+  document.getElementById('event-box-ocean').style.display = mode === 'ocean' ? 'block' : 'none';
   buildCrossSection();
   setViewMode('drill');
 }
@@ -1248,24 +1357,69 @@ function highlightBand(name){
   band.classList.add('band-highlight');
   setTimeout(()=> band.classList.remove('band-highlight'), 3600);
 }
+let currentQuakeSPTime = null;
+let currentQuakeDistanceAnswer = null;
 function triggerEarthquake(){
   // 지진은 지표에 가까운 지각(판 경계)에서 발생하는 현상이라, 보고 있던 층과 상관없이
   // 항상 지각 층으로 이동해서 보여줌 (하부맨틀/핵에서 흔들리는 것처럼 보이는 걸 방지)
   ensureDrillView();
   jumpToLayerByName('지각');
-  eventContextForMission = '방금 진도 5.0 규모의 지진이 발생했어. 지진파 중 P파(속도가 빠르고 가장 먼저 도착, 고체와 액체를 모두 통과하며 물질을 밀고 당기는 방향인 종파)가 먼저 감지됐고, 이어서 S파(속도가 느리고 나중에 도착, 고체만 통과하며 진행 방향과 수직으로 흔드는 횡파)가 감지됐어. P파와 S파의 도착 시간 차이를 이용하면 진앙까지의 거리를 구할 수 있어.';
+  // 매번 다른 P-S 시간차를 뽑아서, "거리(km) ≈ P-S시간(초) × 8" 이라는 중학교 과학 공식으로
+  // 진앙까지의 거리를 직접 계산해보는 미니 퀴즈를 함께 제공함
+  currentQuakeSPTime = +(4 + Math.random()*10).toFixed(1);
+  currentQuakeDistanceAnswer = Math.round(currentQuakeSPTime * 8);
+  eventContextForMission = `방금 진도 5.0 규모의 지진이 발생했어. 지진파 중 P파(속도가 빠르고 가장 먼저 도착, 고체와 액체를 모두 통과하며 물질을 밀고 당기는 방향인 종파)가 먼저 감지됐고, 이어서 S파(속도가 느리고 나중에 도착, 고체만 통과하며 진행 방향과 수직으로 흔드는 횡파)가 감지됐어. 진원(지하에서 실제로 지진이 발생한 지점)의 바로 위 지표 지점을 진앙이라고 해. 이번 지진의 P-S 시간차는 ${currentQuakeSPTime}초였고, "거리(km) ≈ P-S시간(초) × 8" 공식으로 계산하면 진앙까지의 거리는 약 ${currentQuakeDistanceAnswer}km야.`;
   const viewer = document.getElementById('viewer-section');
   viewer.classList.remove('shake-effect'); void viewer.offsetWidth; viewer.classList.add('shake-effect');
   showEventToast('🌍 진도 5.0 지진 발생! P파가 먼저, S파가 나중에 도착해요');
   spawnSeismicRings();
-  showInfoPopup('🌍 P파 vs S파', `
+  showInfoPopup('🌍 진원 · 진앙 · P파 vs S파', `
     <div class="wave-compare-row">
       <div class="wave-chip p"><b>P파 (Primary)</b>속도 빠름 · 가장 먼저 도착<br>고체·액체 모두 통과<br>진행 방향과 나란히 밀고 당김(종파)</div>
       <div class="wave-chip s"><b>S파 (Secondary)</b>속도 느림 · 나중에 도착<br>고체만 통과(액체 통과 못함)<br>진행 방향과 수직으로 흔들림(횡파)</div>
     </div>
+    <p class="info-note">🔴 진원: 지하에서 지진이 실제로 발생한 지점 &nbsp;·&nbsp; 🟡 진앙: 진원 바로 위 지표의 지점(뉴스에서 말하는 "지진 발생 위치"가 보통 진앙이에요)</p>
     <p class="info-note">두 파의 도착 시간 차이(P-S 시간차)가 클수록 진앙에서 멀리 떨어져 있다는 뜻이에요.</p>
+    <div class="quiz-box">
+      <p>🧮 이번 지진의 P-S 시간차는 <b>${currentQuakeSPTime}초</b>예요. 진앙까지의 거리는 몇 km일까요?<br><span style="color:#888">힌트: 거리(km) ≈ P-S시간(초) × 8</span></p>
+      <div class="quiz-row">
+        <input type="number" id="quake-distance-input" placeholder="km" step="1" onkeydown="if(event.key==='Enter')checkQuakeDistance()">
+        <button type="button" onclick="checkQuakeDistance()">확인</button>
+      </div>
+      <p class="quiz-feedback" id="quake-distance-feedback"></p>
+    </div>
   `);
   setTimeout(()=> viewer.classList.remove('shake-effect'), 900);
+}
+function checkQuakeDistance(){
+  const input = document.getElementById('quake-distance-input');
+  const fb = document.getElementById('quake-distance-feedback');
+  if(!input || !fb || currentQuakeDistanceAnswer === null) return;
+  const val = parseFloat(input.value);
+  if(isNaN(val)){ fb.textContent = '숫자를 먼저 입력해주세요!'; return; }
+  const diff = Math.abs(val - currentQuakeDistanceAnswer);
+  if(diff <= 5){
+    fb.textContent = `🎉 정답이에요! ${currentQuakeSPTime}초 × 8 ≈ ${currentQuakeDistanceAnswer}km`;
+  } else {
+    fb.textContent = `아쉬워요! 정답은 약 ${currentQuakeDistanceAnswer}km예요. (${currentQuakeSPTime} × 8을 계산해보세요)`;
+  }
+}
+// ══════════════════════════
+// 🧪 마그마 점성 → 분출 방식 (완만한 용암류 vs 폭발적 분화)
+// ══════════════════════════
+let magmaViscosity = 'basaltic'; // 'basaltic'(현무암질, 묽음) | 'rhyolitic'(유문암질, 끈적함)
+function setMagmaViscosity(v){
+  magmaViscosity = (v === 'rhyolitic') ? 'rhyolitic' : 'basaltic';
+  const bBtn = document.getElementById('visc-btn-basaltic');
+  const rBtn = document.getElementById('visc-btn-rhyolitic');
+  if(bBtn) bBtn.classList.toggle('active', magmaViscosity === 'basaltic');
+  if(rBtn) rBtn.classList.toggle('active', magmaViscosity === 'rhyolitic');
+  const note = document.getElementById('visc-note');
+  if(note){
+    note.textContent = magmaViscosity === 'basaltic'
+      ? '점성이 낮아 가스가 잘 빠져나가요 → 스르륵 흐르는 완만한 용암류 (예: 하와이 화산)'
+      : '점성이 높아 가스가 잘 못 빠져나가요 → 압력이 쌓였다가 펑! 터지는 폭발적 분화 (예: 성층화산)';
+  }
 }
 function triggerEruption(type){
   // 화산암/심성암은 둘 다 '마그마방'(화산 하부, 지표 근처)에서 갈리는 현상이고,
@@ -1278,9 +1432,20 @@ function triggerEruption(type){
   rockTriedTypes.add(type);
   const bothTried = rockTriedTypes.has('volcanic') && rockTriedTypes.has('plutonic');
   if(type === 'volcanic'){
-    eventContextForMission = '방금 마그마방의 마그마가 지표까지 뚫고 올라와 용암으로 분출됐어. 지표 근처에서 빠르게 식었기 때문에 화산암(예: 현무암)이 만들어지고 있고, 결정 크기가 작고 치밀해.';
-    showEventToast('🌋 마그마방의 마그마가 지표로 분출! 빠르게 식어 화산암이 되고 있어요');
-    spawnLavaRise();
+    // 마그마 점성에 따라 분출 방식 자체가 달라짐: 묽으면 완만하게 흐르고(용암류),
+    // 끈적하면 가스가 갇혔다가 폭발적으로 터짐(화산 쇄설물 분출)
+    if(magmaViscosity === 'rhyolitic'){
+      eventContextForMission = '방금 마그마방의 점성이 높은 유문암질 마그마가 가스를 가두고 있다가 압력을 이기지 못하고 폭발적으로 분화했어. 화산재와 화산 쇄설물이 크게 뿜어져 나왔어. 지표 근처에서 빠르게 식었기 때문에 화산암이 만들어지고 있고, 결정 크기가 작고 치밀해.';
+      showEventToast('💥 점성 높은 유문암질 마그마가 폭발적으로 분화했어요!');
+      spawnAshBlast();
+      const viewer2 = document.getElementById('viewer-section');
+      viewer2.classList.remove('shake-effect'); void viewer2.offsetWidth; viewer2.classList.add('shake-effect');
+      setTimeout(()=> viewer2.classList.remove('shake-effect'), 900);
+    } else {
+      eventContextForMission = '방금 마그마방의 점성이 낮은 현무암질 마그마가 가스를 순순히 내보내며 스르륵 흘러나와 완만한 용암류를 이뤘어. 지표 근처에서 빠르게 식었기 때문에 화산암(예: 현무암)이 만들어지고 있고, 결정 크기가 작고 치밀해.';
+      showEventToast('🌊 점성 낮은 현무암질 마그마가 완만하게 흘러나와요! 빠르게 식어 화산암이 되고 있어요');
+      spawnLavaRise();
+    }
   } else {
     eventContextForMission = '방금 마그마방 부근의 마그마가 지표까지 오르지 못하고 지각 속 깊숙한 곳에 갇힌 채 머물렀어. 아주 천천히 식었기 때문에 심성암(예: 화강암)이 만들어지고 있고, 결정 크기가 크고 뚜렷해.';
     showEventToast('🪨 마그마방 부근에 갇힌 마그마가 천천히 식어 심성암이 되고 있어요');
@@ -1307,7 +1472,12 @@ function triggerEruption(type){
   if(bothTried){
     eventContextForMission += ' 이렇게 화산암과 심성암을 둘 다 만들어봤더니, 같은 마그마라도 식는 위치와 속도에 따라 결정 크기가 다른 서로 다른 화성암이 만들어진다는 걸 알 수 있었어.';
   }
-  showInfoPopup('🌋 화산암 vs 심성암', buildRockCompareCard(type, bothTried));
+  const eruptionStyleNote = type === 'volcanic'
+    ? `<p class="info-note">${magmaViscosity === 'rhyolitic'
+        ? '💥 이번엔 유문암질(끈적한) 마그마라 가스가 갇혔다가 폭발적으로 터졌어요 — 성층화산 같은 폭발적 분화 스타일이에요.'
+        : '🌊 이번엔 현무암질(묽은) 마그마라 가스가 잘 빠져나가 완만하게 흘렀어요 — 하와이 화산 같은 용암류 분화 스타일이에요.'}</p>`
+    : '';
+  showInfoPopup('🌋 화산암 vs 심성암', buildRockCompareCard(type, bothTried) + eruptionStyleNote);
 }
 function triggerVolcanicTremor(){
   const viewer = document.getElementById('viewer-section');
@@ -1397,6 +1567,141 @@ function spawnPlutonicCooling(){
   wrap.appendChild(pool);
   layer.appendChild(wrap);
   setTimeout(()=> wrap.remove(), 3800);
+}
+function spawnAshBlast(){
+  // 유문암질(끈적한) 마그마의 폭발적 분화 — 마그마방 위치를 기준점으로 화산재 구름 +
+  // 사방으로 튀는 화산 쇄설물 입자를 뿜어냄 (현무암질의 잔잔한 lava-rise와 대비됨)
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const rect = getBandRectOverview('마그마방');
+  const originY = rect ? rect.bottom : layer.clientHeight * 0.6;
+  const cloud = document.createElement('div');
+  cloud.className = 'ash-cloud';
+  cloud.style.bottom = Math.max(0, layer.clientHeight - originY) + 'px';
+  layer.appendChild(cloud);
+  setTimeout(()=> cloud.remove(), 2700);
+  for(let i=0;i<24;i++){
+    const p = document.createElement('div');
+    p.className = 'ash-particle';
+    const angle = -Math.PI/2 + (Math.random()-0.5) * Math.PI; // 위쪽 반원으로 퍼짐
+    const dist = 50 + Math.random()*170;
+    p.style.setProperty('--dx', (Math.cos(angle)*dist) + 'px');
+    p.style.setProperty('--dy', (Math.sin(angle)*dist) + 'px');
+    p.style.left = '50%';
+    p.style.top = originY + 'px';
+    layer.appendChild(p);
+    setTimeout(()=> p.remove(), 1600);
+  }
+}
+// ══════════════════════════
+// 🔄 암석의 순환 모달
+// ══════════════════════════
+function openRockCycle(){
+  const el = document.getElementById('rockCycleOverlay');
+  if(el) el.style.display = 'flex';
+}
+function closeRockCycle(){
+  const el = document.getElementById('rockCycleOverlay');
+  if(el) el.style.display = 'none';
+}
+// ══════════════════════════
+// 🐛🌧️ 토양층 이벤트: 분해 촉진 · 폭우 침식
+// ══════════════════════════
+function triggerDecomposition(){
+  ensureDrillView();
+  jumpToLayerByName('낙엽층 (O층)');
+  showEventToast('🐛 분해자들이 낙엽을 부지런히 분해하고 있어요!');
+  spawnDecomposerParticles();
+  eventContextForMission = '방금 낙엽층에서 지렁이·세균·곰팡이 같은 분해자들이 죽은 낙엽과 생물을 열심히 분해하는 모습을 관찰했어. 분해된 유기물(부식질)은 빗물에 실려 표토(A층)로 스며들어 흙을 비옥하게 만들어.';
+  showInfoPopup('🐛 분해자의 힘', `
+    <p class="info-note">낙엽층의 지렁이·세균·곰팡이 같은 분해자들은 죽은 낙엽과 동식물을 잘게 분해해서 <b>부식질</b>(양분이 풍부한 검은 유기물)을 만들어요.</p>
+    <p class="info-note">이 부식질이 빗물에 씻겨 표토(A층)로 스며들면 그 흙이 훨씬 비옥해져서 식물이 잘 자랄 수 있게 돼요 — 분해자가 없다면 낙엽은 영원히 쌓이기만 하고, 흙은 척박한 채로 남았을 거예요!</p>
+  `);
+}
+function spawnDecomposerParticles(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const icons = ['🐛','🍂','✨'];
+  for(let i=0;i<14;i++){
+    const p = document.createElement('div');
+    p.className = 'decomp-particle';
+    p.textContent = icons[Math.floor(Math.random()*icons.length)];
+    p.style.left = (10 + Math.random()*80) + '%';
+    p.style.top = (30 + Math.random()*45) + '%';
+    p.style.animationDelay = (Math.random()*0.6) + 's';
+    layer.appendChild(p);
+    setTimeout(()=> p.remove(), 2900);
+  }
+}
+function triggerErosion(){
+  ensureDrillView();
+  jumpToLayerByName('표토 (A층)');
+  showEventToast('🌧️ 폭우로 표토가 쓸려 내려가고 있어요!');
+  spawnRain();
+  eventContextForMission = '방금 폭우가 쏟아져서 표토(A층)의 흙이 빗물에 쓸려 침식되는 모습을 관찰했어. 식물 뿌리가 없거나 적은 곳일수록 표토가 더 쉽게 쓸려 내려가서 그 아래 심토나 모재층이 드러나기도 해.';
+  showInfoPopup('🌧️ 폭우와 토양 침식', `
+    <p class="info-note">비가 많이 내리면 표토(A층)의 흙 알갱이가 빗물에 쓸려 낮은 곳으로 이동해요 — 이걸 <b>토양 침식</b>이라고 해요.</p>
+    <p class="info-note">식물 뿌리는 흙을 단단히 붙잡아주는 그물 역할을 해서 침식을 막아줘요. 그래서 나무가 없는 민둥산은 폭우가 오면 표토가 훨씬 빨리 쓸려나가고, 산사태의 위험도 커져요.</p>
+  `);
+}
+function spawnRain(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  for(let i=0;i<40;i++){
+    const drop = document.createElement('div');
+    drop.className = 'rain-streak';
+    drop.style.left = Math.random()*100 + '%';
+    drop.style.animationDelay = (Math.random()*0.5) + 's';
+    drop.style.animationDuration = (0.6 + Math.random()*0.5) + 's';
+    layer.appendChild(drop);
+    setTimeout(()=> drop.remove(), 1400);
+  }
+}
+// ══════════════════════════
+// 🤿✨ 바다층 이벤트: 수압 체험 · 발광생물
+// ══════════════════════════
+function triggerPressureDemo(){
+  setViewMode('overview');
+  showEventToast('🤿 잠수정과 함께 깊이에 따른 수압 변화를 느껴보세요!');
+  spawnPressureDiver();
+  eventContextForMission = '방금 잠수정이 표층에서 해구층까지 내려가며 수압이 점점 세지는 걸 관찰했어. 물속에서는 10m 내려갈 때마다 수압이 약 1기압씩 늘어나서, 깊은 곳에서는 물체가 찌그러질 정도로 압력이 세져.';
+  showInfoPopup('🤿 깊이와 수압', `
+    <p class="info-note">물속에서는 <b>10m 내려갈 때마다 수압이 약 1기압씩</b> 늘어나요. 수심 200m에서는 약 21기압, 수심 4,000m(초심해층)에서는 무려 약 400기압이나 돼요!</p>
+    <p class="info-note">실제로 스티로폼 컵을 잠수정에 매달아 깊은 바다로 내려보내면, 컵 속의 작은 공기 방울들이 눌려서 손바닥만 한 미니어처 컵이 되어 돌아와요 — 그만큼 심해의 수압이 어마어마하다는 뜻이에요!</p>
+  `);
+}
+function spawnPressureDiver(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const diver = document.createElement('div');
+  diver.className = 'pressure-diver';
+  diver.textContent = '🥤';
+  layer.appendChild(diver);
+  setTimeout(()=> diver.remove(), 3700);
+}
+function triggerBioluminescence(){
+  ensureDrillView();
+  jumpToLayerByName('심해층');
+  showEventToast('✨ 심해 생물들이 반짝반짝 빛을 내고 있어요!');
+  spawnBioSparks();
+  eventContextForMission = '방금 빛이 거의 없는 심해층에서 스스로 빛을 내는 발광 생물들을 관찰했어. 이 발광은 몸속의 화학 물질(루시페린)이 반응해서 빛을 내는 현상으로, 천적을 피하거나 짝을 찾거나 먹이를 유인하는 데 쓰여.';
+  showInfoPopup('✨ 심해의 반짝임 (생물발광)', `
+    <p class="info-note">햇빛이 거의 닿지 않는 심해에서는 많은 생물이 몸속 화학 반응(루시페린)으로 스스로 빛을 만들어내요. 이걸 <b>생물발광</b>이라고 해요.</p>
+    <p class="info-note">이 빛은 천적에게서 도망치거나, 짝을 찾거나, 심지어 아귀처럼 빛으로 먹이를 유인하는 "낚싯대"로 쓰이기도 해요 — 깜깜한 어둠 속에서 살아남기 위한 생물들의 놀라운 생존 전략이에요!</p>
+  `);
+}
+function spawnBioSparks(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  for(let i=0;i<20;i++){
+    const s = document.createElement('div');
+    s.className = 'bio-spark';
+    s.style.left = (5 + Math.random()*90) + '%';
+    s.style.top = (15 + Math.random()*70) + '%';
+    s.style.animationDelay = (Math.random()*1) + 's';
+    layer.appendChild(s);
+    setTimeout(()=> s.remove(), 2500);
+  }
 }
 // ══════════════════════════
 // 🔬 AI 탐사 미션

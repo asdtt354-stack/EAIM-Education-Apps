@@ -932,7 +932,7 @@ function initAnatomyApp(){
     buildOrganMarkers();
     setupStageInteraction();
   }
-  SYSTEM_KEYS.forEach(k=>{ activeSystems.add(k); }); // 기본은 전체 표시
+  // 기본은 전체 조립된 깨끗한 몸 그림 (계통은 모두 꺼진 상태로 시작)
   syncSystemVisibility();
   setExplodeLevel(0);
   updateMissionState();
@@ -941,7 +941,7 @@ function renderSystemChips(){
   const wrap = document.getElementById('system-chips');
   wrap.innerHTML = SYSTEM_KEYS.map(k=>{
     const s = ORGAN_SYSTEMS[k];
-    return `<button type="button" class="system-chip on" id="chip-${k}" style="--c:${s.color}" onclick="toggleSystem('${k}')">${s.icon} ${s.label}</button>`;
+    return `<button type="button" class="system-chip${activeSystems.has(k)?' on':''}" id="chip-${k}" style="--c:${s.color}" onclick="toggleSystem('${k}')">${s.icon} ${s.label}</button>`;
   }).join('');
 }
 function toggleSystem(key){
@@ -994,6 +994,15 @@ function setExplodeLevel(level){
     const b = document.getElementById('explode-btn-'+n);
     if(b) b.classList.toggle('on', String(explodeLevel) === n);
   });
+  if(level === 0){
+    activeSystems.clear();
+    SYSTEM_KEYS.forEach(k=>{ const chip = document.getElementById('chip-'+k); if(chip) chip.classList.remove('on'); });
+    syncSystemVisibility();
+    if(selectedMarkerEl){ selectedMarkerEl.classList.remove('selected'); selectedMarkerEl = null; }
+    selectedOrgan = null;
+    document.getElementById('organ-info-box').style.display = 'none';
+    updateMissionState();
+  }
   applyExplodeTransform();
 }
 function toggleEnergyMode(){

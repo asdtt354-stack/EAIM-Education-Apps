@@ -646,10 +646,14 @@ function closeMutoMoodAndEnter(){
   document.getElementById('mutoMoodOverlay').style.display='none';
   if(afterMutoMoodFn) afterMutoMoodFn();
 }
+let currentAudioEl = null;
+let ttsGeneration = 0;
 async function speakMuto(text){
   try{
     const key = (settings.apiKey||'').trim();
     if(!key) return;
+    if(currentAudioEl){ currentAudioEl.pause(); currentAudioEl.currentTime = 0; currentAudioEl = null; }
+    const myGen = ++ttsGeneration;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
     const res = await fetch(url, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -664,8 +668,10 @@ async function speakMuto(text){
     const data = await res.json();
     const part = data?.candidates?.[0]?.content?.parts?.find(p=>p.inlineData);
     if(!part) return;
+    if(myGen !== ttsGeneration) return; // 그 사이 더 새로운 음성 요청이 시작됐으면 재생하지 않음
     const wavUrl = mutoPcmToWavUrl(part.inlineData.data);
     const audio = new Audio(wavUrl);
+    currentAudioEl = audio;
     audio.play().catch(()=>{});
   }catch(e){ console.warn('뮤토 음성 재생 실패', e); }
 }

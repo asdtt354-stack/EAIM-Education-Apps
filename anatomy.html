@@ -1002,6 +1002,11 @@ function setExplodeLevel(level){
     selectedOrgan = null;
     document.getElementById('organ-info-box').style.display = 'none';
     updateMissionState();
+  } else if(activeSystems.size === 0){
+    // 켜진 계통이 하나도 없으면 분리/해체가 눈에 보이도록 전체를 켠다
+    SYSTEM_KEYS.forEach(k=>{ activeSystems.add(k); const chip = document.getElementById('chip-'+k); if(chip) chip.classList.add('on'); });
+    syncSystemVisibility();
+    updateMissionState();
   }
   applyExplodeTransform();
 }

@@ -65,7 +65,14 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
   90% { transform: translate(-4px,3px); }
 }
 #viewer-section.shake-effect { animation: earth-shake 0.12s linear 7; }
+@keyframes volcanic-tremor {
+  0%,100% { transform: translate(0,0); }
+  20% { transform: translate(-2px,1px); } 40% { transform: translate(2px,-1.5px); }
+  60% { transform: translate(-1.5px,1.5px); } 80% { transform: translate(1.5px,-1px); }
+}
+#viewer-section.tremor-effect { animation: volcanic-tremor 0.14s linear 4; }
 .seismic-ring { position:absolute; top:50%; left:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border:3px solid rgba(248,113,113,0.8); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.seismic-ring.tremor { border-color: rgba(250,204,21,0.85); border-width: 2px; animation: seismic-expand-tremor 1s ease-out forwards; }
 .seismic-ring.p-wave { border-color: rgba(56,189,248,0.9); border-width: 3px; animation: seismic-expand-p 1.1s ease-out forwards; }
 .seismic-ring.s-wave { border-color: rgba(248,113,113,0.9); border-width: 5px; animation: seismic-expand-s 2s ease-out forwards; }
 .seismic-ring-label { font-weight:900; font-size:15px; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
@@ -74,6 +81,7 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 @keyframes seismic-expand { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1400px;height:1400px;margin:-700px 0 0 -700px; opacity:0;} }
 @keyframes seismic-expand-p { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:900px;height:900px;margin:-450px 0 0 -450px; opacity:0;} }
 @keyframes seismic-expand-s { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1500px;height:1500px;margin:-750px 0 0 -750px; opacity:0;} }
+@keyframes seismic-expand-tremor { 0%{ width:14px;height:14px;margin:-7px 0 0 -7px; opacity:0.9;} 100%{ width:280px;height:280px;margin:-140px 0 0 -140px; opacity:0;} }
 .lava-wrap { position:absolute; left:0; right:0; overflow:hidden; }
 .lava-rise { position:absolute; left:0; right:0; bottom:0; height:0%; background: linear-gradient(180deg, rgba(255,220,120,0.95) 0%, rgba(255,140,40,0.9) 35%, rgba(220,40,10,0.95) 100%); filter: blur(1px); animation: lava-rise-anim 3.2s ease-in-out forwards; }
 @keyframes lava-rise-anim { 0%{ height:0%; opacity:0;} 10%{ opacity:1;} 70%{ height:100%; opacity:1;} 100%{ height:100%; opacity:0;} }
@@ -1278,10 +1286,43 @@ function triggerEruption(type){
     showEventToast('🪨 마그마방 부근에 갇힌 마그마가 천천히 식어 심성암이 되고 있어요');
     spawnPlutonicCooling();
   }
+  // 🌍↔️🌋 지진-화산 연계: 마그마가 지각을 뚫고 움직이면(분출하든, 갇혀서 멈추든) 주변 암석에
+  // 균열을 내면서 약한 '화산성 지진(화산 미진)'이 함께 나타나는 경우가 많음 — 다만 이건
+  // 100% 확정된 인과관계가 아니라 '관련성이 높은 확률적 현상'이라, 매번 반드시 지진이
+  // 함께 일어나는 것처럼 보이면 과장된 학습이 될 수 있음. 그래서 매 클릭마다 확률적으로만
+  // 미진을 재생하고, 안 일어난 경우에도 그 자체를 "항상은 아니다"라는 근거로 보여줌
+  const tremorHappens = Math.random() < 0.65;
+  if(tremorHappens){
+    eventContextForMission += ' 이때 마그마가 지각을 뚫고 움직이면서 약한 화산성 지진(화산 미진)도 함께 감지됐어. 화산 활동과 지진은 관련이 깊은 현상이지만, 모든 화산 분화가 반드시 뚜렷한 지진을 동반하는 건 아니야.';
+    setTimeout(()=>{
+      triggerVolcanicTremor();
+      showEventToast('⚡ 화산성 지진(화산 미진) 감지! 마그마가 움직이며 약한 흔들림이 발생했어요');
+    }, 1000);
+  } else {
+    eventContextForMission += ' 이번엔 뚜렷하게 느껴지는 지진 없이 비교적 조용히 진행됐어. 화산 활동과 지진이 관련은 있지만, 항상 함께 일어나는 건 아니라는 걸 보여주는 사례야.';
+    setTimeout(()=>{
+      showEventToast('🌱 이번엔 뚜렷한 지진 없이 조용히 진행됐어요 — 화산 분화가 항상 지진을 동반하진 않아요');
+    }, 1000);
+  }
   if(bothTried){
     eventContextForMission += ' 이렇게 화산암과 심성암을 둘 다 만들어봤더니, 같은 마그마라도 식는 위치와 속도에 따라 결정 크기가 다른 서로 다른 화성암이 만들어진다는 걸 알 수 있었어.';
   }
   showInfoPopup('🌋 화산암 vs 심성암', buildRockCompareCard(type, bothTried));
+}
+function triggerVolcanicTremor(){
+  const viewer = document.getElementById('viewer-section');
+  if(!viewer) return;
+  viewer.classList.remove('tremor-effect'); void viewer.offsetWidth; viewer.classList.add('tremor-effect');
+  spawnTremorRing();
+  setTimeout(()=> viewer.classList.remove('tremor-effect'), 600);
+}
+function spawnTremorRing(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const ring = document.createElement('div');
+  ring.className = 'seismic-ring tremor';
+  layer.appendChild(ring);
+  setTimeout(()=> ring.remove(), 1000);
 }
 function buildRockCompareCard(selected, bothTried){
   const vTried = rockTriedTypes.has('volcanic');
@@ -1303,6 +1344,7 @@ function buildRockCompareCard(selected, bothTried){
       </div>
     </div>
     <p class="info-note">${note}</p>
+    <p class="info-note">⚡ 화산과 지진은 관련이 깊은 현상이에요. 마그마가 지각을 뚫고 움직이면 암석에 균열이 생기며 약한 화산성 지진(화산 미진)이 종종 함께 나타나요. 다만 항상 100% 함께 일어나는 건 아니고, 대부분의 지진은 화산과 무관한 판 경계의 단층 운동 때문에 생겨요.</p>
   `;
 }
 function spawnSeismicRings(){

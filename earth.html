@@ -50,7 +50,9 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #event-box label { display:block; color:#f87171; font-weight:700; font-size:.78em; margin-bottom:6px; }
 .event-btn { flex:1; padding:9px 4px; border-radius:8px; font-weight:700; font-size:.72em; cursor:pointer; }
 .event-btn.quake { border:1.5px solid #f87171; background:rgba(248,113,113,0.12); color:#fca5a5; }
-.event-btn.eruption { border:1.5px solid #fb923c; background:rgba(251,146,60,0.12); color:#fdba74; }
+.event-btn.eruption.volcanic { border:1.5px solid #fb923c; background:rgba(251,146,60,0.12); color:#fdba74; }
+.event-btn.eruption.plutonic { border:1.5px solid #c4b5fd; background:rgba(196,181,253,0.12); color:#ddd6fe; }
+#event-compare-note { font-size:.66em; color:#888; line-height:1.5; margin:8px 0 0; }
 #event-fx-layer { position:absolute; inset:0; z-index:18; pointer-events:none; overflow:hidden; }
 @keyframes earth-shake {
   0%,100% { transform: translate(0,0); }
@@ -72,9 +74,16 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 @keyframes seismic-expand-s { 0%{ width:20px;height:20px;margin:-10px 0 0 -10px; opacity:1;} 100%{ width:1500px;height:1500px;margin:-750px 0 0 -750px; opacity:0;} }
 .lava-rise { position:absolute; left:0; right:0; bottom:-20%; height:60%; background: linear-gradient(180deg, rgba(255,200,80,0) 0%, rgba(255,140,40,0.85) 35%, rgba(220,40,10,0.95) 100%); filter: blur(1px); animation: lava-rise-anim 3.2s ease-in-out forwards; }
 @keyframes lava-rise-anim { 0%{ transform:translateY(100%); opacity:0;} 15%{ opacity:1;} 55%{ transform:translateY(0%);} 100%{ transform:translateY(-8%); opacity:0;} }
+.pluton-cool { position:absolute; left:50%; bottom:8%; width:44%; height:32%; transform:translateX(-50%) scale(0.7); border-radius:46% 46% 40% 40% / 60% 60% 30% 30%; filter: blur(2px); animation: pluton-cool-anim 3.6s ease-in-out forwards; }
+@keyframes pluton-cool-anim {
+  0% { opacity:0; transform:translateX(-50%) scale(0.65); background: radial-gradient(ellipse at center, rgba(255,205,120,0.95) 0%, rgba(210,110,50,0.85) 55%, rgba(120,90,120,0.6) 100%); }
+  20% { opacity:1; transform:translateX(-50%) scale(1); }
+  60% { background: radial-gradient(ellipse at center, rgba(224,160,130,0.85) 0%, rgba(160,105,120,0.8) 55%, rgba(145,125,165,0.75) 100%); }
+  100% { opacity:0; transform:translateX(-50%) scale(1.06); background: radial-gradient(ellipse at center, rgba(196,181,253,0.7) 0%, rgba(150,140,170,0.65) 55%, rgba(120,110,140,0.55) 100%); }
+}
 #event-toast { position:absolute; top:70px; left:50%; transform:translateX(-50%) translateY(-10px); background:rgba(0,0,0,0.75); border:1.5px solid rgba(248,113,113,0.5); color:#fff; padding:10px 18px; border-radius:99px; font-size:0.82em; font-weight:700; z-index:26; opacity:0; transition: opacity 0.3s, transform 0.3s; white-space:nowrap; pointer-events:none; }
 #event-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-#info-popup { position:absolute; top:70px; right:24px; width:280px; max-width:calc(100% - 48px); z-index:28; background:rgba(10,10,14,0.95); border:1.5px solid #3a3a3a; border-radius:14px; padding:16px; box-shadow:0 16px 34px rgba(0,0,0,0.55); opacity:0; transform:translateY(-10px); transition:opacity .3s, transform .3s; pointer-events:none; }
+#info-popup { position:absolute; top:70px; right:24px; width:300px; max-width:calc(100% - 48px); z-index:28; background:rgba(10,10,14,0.95); border:1.5px solid #3a3a3a; border-radius:14px; padding:16px; box-shadow:0 16px 34px rgba(0,0,0,0.55); opacity:0; transform:translateY(-10px); transition:opacity .3s, transform .3s; pointer-events:none; }
 #info-popup.show { opacity:1; transform:translateY(0); pointer-events:auto; }
 .info-popup-close { position:absolute; top:8px; right:10px; background:none; border:none; color:#888; font-size:1rem; cursor:pointer; line-height:1; }
 .info-popup-close:hover { color:#fff; }
@@ -84,8 +93,13 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 .wave-chip b, .rock-chip b { display:block; font-size:1.08em; margin-bottom:4px; }
 .wave-chip.p { background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.4); color:#7dd3fc; }
 .wave-chip.s { background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); color:#fca5a5; }
-.rock-chip.volcanic { background:rgba(251,146,60,0.12); border:1px solid rgba(251,146,60,0.4); color:#fdba74; }
-.rock-chip.plutonic { background:rgba(196,181,253,0.12); border:1px solid rgba(196,181,253,0.4); color:#ddd6fe; }
+.rock-chip.volcanic { background:rgba(251,146,60,0.12); border:1px solid rgba(251,146,60,0.4); color:#fdba74; transition: box-shadow .3s, transform .3s, background .3s; }
+.rock-chip.plutonic { background:rgba(196,181,253,0.12); border:1px solid rgba(196,181,253,0.4); color:#ddd6fe; transition: box-shadow .3s, transform .3s, background .3s; }
+.rock-chip.active.volcanic { background:rgba(251,146,60,0.22); box-shadow:0 0 0 2px rgba(251,146,60,0.55); transform:translateY(-2px); }
+.rock-chip.active.plutonic { background:rgba(196,181,253,0.22); box-shadow:0 0 0 2px rgba(196,181,253,0.55); transform:translateY(-2px); }
+.rock-chip .tried-tag { display:inline-block; margin-top:4px; font-size:.92em; font-weight:800; }
+.rock-swatch { width:100%; height:60px; border-radius:8px; background-size:cover; background-position:center; margin-bottom:6px; border:1px solid rgba(255,255,255,0.18); }
+.rock-swatch-cap { display:block; font-size:.85em; color:rgba(255,255,255,0.55); margin:2px 0 6px; text-align:center; }
 #info-popup .info-note { font-size:.7em; color:#bbb; margin:6px 0 0; line-height:1.55; }
 #layer-info-box { background: #141416; border: 1px solid #2a2a2c; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
 #layer-info-name { font-weight: 800; font-size: 0.95em; margin-bottom: 4px; color: var(--main-color); }
@@ -306,10 +320,14 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
     </div>
     <div id="event-box" style="display:none">
       <label>⚡ 지질 이벤트 일으키기</label>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;margin-bottom:6px">
         <button type="button" class="event-btn quake" onclick="triggerEarthquake()">🌍 지진 발생</button>
-        <button type="button" class="event-btn eruption" onclick="triggerEruption()">🌋 화산 분화</button>
       </div>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="event-btn eruption volcanic" onclick="triggerEruption('volcanic')">🌋 화산암 만들기</button>
+        <button type="button" class="event-btn eruption plutonic" onclick="triggerEruption('plutonic')">🪨 심성암 만들기</button>
+      </div>
+      <p id="event-compare-note">두 버튼을 각각 눌러보며 화산암과 심성암이 어떻게 다른지 직접 비교해보세요.</p>
     </div>
     <div id="layer-info-box">
       <div id="layer-info-name"></div>
@@ -921,6 +939,82 @@ function getLayerTexture(mode, layer){
   }
   return TEXTURE_CACHE[key];
 }
+// ══════════════════════════
+// 🪨 암석 표면 텍스처 — 현무암(화산암) vs 화강암(심성암)
+// 냉각 속도 차이가 만드는 결정 크기 차이를 시각적으로 보여줌
+// ══════════════════════════
+const ROCK_TEXTURE_CACHE = {};
+function generateBasaltTexture(){
+  // 현무암: 지표에서 빠르게 식어 결정을 눈으로 구분할 수 없는 세립질(아페니틱) 조직 + 기공(vesicle)
+  const w=300,h=170;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  const bg = ctx.createLinearGradient(0,0,0,h);
+  bg.addColorStop(0,'#3c3c40'); bg.addColorStop(1,'#19191c');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  for(let i=0;i<5000;i++){
+    const shade = 18 + Math.random()*70;
+    ctx.fillStyle = `rgba(${shade},${shade},${shade+6},${0.3+Math.random()*0.4})`;
+    const s = 0.6+Math.random()*1.3;
+    ctx.fillRect(Math.random()*w, Math.random()*h, s, s);
+  }
+  for(let i=0;i<28;i++){
+    const x=Math.random()*w, y=Math.random()*h, r=1.4+Math.random()*3;
+    ctx.beginPath(); ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.strokeStyle='rgba(255,255,255,0.14)'; ctx.lineWidth=0.6; ctx.arc(x-r*0.3,y-r*0.3,r*0.55,0,Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha=0.07;
+  for(let i=0;i<6;i++){
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=6+Math.random()*10;
+    const y = Math.random()*h;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y+(Math.random()-0.5)*30); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  return c.toDataURL();
+}
+function generateGraniteTexture(){
+  // 화강암: 지하에서 천천히 식어 육안으로 보이는 크고 뚜렷한 결정(장석·석영·운모)이 맞물린 조립질(페너릭) 조직
+  const w=300,h=170;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#cfc3ba'; ctx.fillRect(0,0,w,h);
+  const minerals = [
+    { color:'#f2ede6', prob:0.34 }, // 장석(백색)
+    { color:'#e7a891', prob:0.18 }, // 장석(분홍)
+    { color:'#37373a', prob:0.22 }, // 흑운모/각섬석(검정)
+    { color:'#b9c6c9', prob:0.26 }  // 석영(반투명 회색)
+  ];
+  for(let i=0;i<170;i++){
+    let r = Math.random(), acc=0, chosen=minerals[0];
+    for(const m of minerals){ acc+=m.prob; if(r<=acc){ chosen=m; break; } }
+    ctx.save();
+    ctx.translate(Math.random()*w, Math.random()*h);
+    ctx.rotate(Math.random()*Math.PI);
+    ctx.fillStyle = chosen.color;
+    const s = 5+Math.random()*11;
+    const sides = 5+Math.floor(Math.random()*3);
+    ctx.beginPath();
+    for(let k=0;k<sides;k++){
+      const ang = (k/sides)*Math.PI*2;
+      const rad = s*(0.7+Math.random()*0.5);
+      const px = Math.cos(ang)*rad, py = Math.sin(ang)*rad*0.8;
+      if(k===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=0.6; ctx.stroke();
+    ctx.restore();
+  }
+  const vg = ctx.createLinearGradient(0,0,0,h);
+  vg.addColorStop(0,'rgba(0,0,0,0.06)'); vg.addColorStop(1,'rgba(0,0,0,0.16)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+  return c.toDataURL();
+}
+function getRockTexture(type){
+  if(!ROCK_TEXTURE_CACHE[type]){
+    ROCK_TEXTURE_CACHE[type] = type === 'plutonic' ? generateGraniteTexture() : generateBasaltTexture();
+  }
+  return ROCK_TEXTURE_CACHE[type];
+}
 let currentMode = 'soil';
 let currentLayerIndex = 0;
 let viewMode = 'drill'; // 'drill' | 'overview'
@@ -931,6 +1025,7 @@ function initCrossSection(){
 function setMode(mode){
   currentMode = mode;
   currentLayerIndex = 0;
+  rockTriedTypes = new Set();
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
   const labelMap = { soil:'🪨 지금 층 질문받기', ocean:'🌊 지금 층 질문받기', volcano:'🌋 지금 층 질문받기' };
   document.getElementById('mission-box-label').textContent = labelMap[mode];
@@ -1099,6 +1194,7 @@ function closeInfoPopup(){
 // ⚡ 지진 · 화산 이벤트
 // ══════════════════════════
 let eventContextForMission = '';
+let rockTriedTypes = new Set();
 function showEventToast(text){
   const toast = document.getElementById('event-toast');
   if(!toast) return;
@@ -1124,17 +1220,45 @@ function triggerEarthquake(){
   `);
   setTimeout(()=> viewer.classList.remove('shake-effect'), 900);
 }
-function triggerEruption(){
-  eventContextForMission = '방금 화산이 분화했어. 지표까지 뚫고 올라와 용암으로 분출되어 빠르게 식은 마그마는 화산암(예: 현무암)이 되고, 지표까지 오르지 못한 채 지하 깊은 곳에서 아주 천천히 식은 마그마는 심성암(예: 화강암)이 돼. 냉각 속도 차이 때문에 화산암은 결정이 작고 치밀하며, 심성암은 결정이 크고 뚜렷해.';
-  showEventToast('🌋 마그마가 분출! 화산암과 심성암이 만들어지고 있어요');
-  spawnLavaRise();
-  showInfoPopup('🌋 화산암 vs 심성암', `
+function triggerEruption(type){
+  type = (type === 'plutonic') ? 'plutonic' : 'volcanic';
+  rockTriedTypes.add(type);
+  const bothTried = rockTriedTypes.has('volcanic') && rockTriedTypes.has('plutonic');
+  if(type === 'volcanic'){
+    eventContextForMission = '방금 마그마가 지표까지 뚫고 올라와 용암으로 분출됐어. 지표 근처에서 빠르게 식었기 때문에 화산암(예: 현무암)이 만들어지고 있고, 결정 크기가 작고 치밀해.';
+    showEventToast('🌋 마그마가 지표로 분출! 빠르게 식어 화산암이 되고 있어요');
+    spawnLavaRise();
+  } else {
+    eventContextForMission = '방금 마그마가 지표까지 오르지 못하고 지하 깊은 곳에 머물렀어. 아주 천천히 식었기 때문에 심성암(예: 화강암)이 만들어지고 있고, 결정 크기가 크고 뚜렷해.';
+    showEventToast('🪨 마그마가 지하 깊은 곳에서 천천히 식어 심성암이 되고 있어요');
+    spawnPlutonicCooling();
+  }
+  if(bothTried){
+    eventContextForMission += ' 이렇게 화산암과 심성암을 둘 다 만들어봤더니, 같은 마그마라도 식는 위치와 속도에 따라 결정 크기가 다른 서로 다른 화성암이 만들어진다는 걸 알 수 있었어.';
+  }
+  showInfoPopup('🌋 화산암 vs 심성암', buildRockCompareCard(type, bothTried));
+}
+function buildRockCompareCard(selected, bothTried){
+  const vTried = rockTriedTypes.has('volcanic');
+  const pTried = rockTriedTypes.has('plutonic');
+  const note = bothTried
+    ? '✅ 두 버튼을 모두 눌러봤어요! 같은 마그마라도 식는 위치와 속도가 다르면 결정 크기가 이렇게 달라져요.'
+    : '아직 안 눌러본 버튼도 눌러서 두 암석을 직접 비교해보세요 →';
+  return `
     <div class="rock-compare-row">
-      <div class="rock-chip volcanic"><b>화산암 (예: 현무암)</b>지표 근처, 빠르게 냉각<br>결정 크기 작음(치밀함)<br>용암이 분출해 굳어 생성</div>
-      <div class="rock-chip plutonic"><b>심성암 (예: 화강암)</b>지하 깊은 곳, 천천히 냉각<br>결정 크기 큼(알갱이 뚜렷)<br>마그마가 땅속에서 굳어 생성</div>
+      <div class="rock-chip volcanic${selected==='volcanic'?' active':''}">
+        <div class="rock-swatch" style="background-image:url(${getRockTexture('volcanic')})"></div>
+        <span class="rock-swatch-cap">현무암 표면(확대)</span>
+        <b>🌋 화산암 (예: 현무암)</b>지표 근처, 빠르게 냉각<br>결정이 매우 작아 눈에 안 보임(세립질)<br>용암이 분출해 굳어 생성${vTried?'<span class="tried-tag">✅ 만들어봤어요</span>':''}
+      </div>
+      <div class="rock-chip plutonic${selected==='plutonic'?' active':''}">
+        <div class="rock-swatch" style="background-image:url(${getRockTexture('plutonic')})"></div>
+        <span class="rock-swatch-cap">화강암 표면(확대)</span>
+        <b>🪨 심성암 (예: 화강암)</b>지하 깊은 곳, 천천히 냉각<br>결정이 크고 알알이 뚜렷함(조립질)<br>마그마가 땅속에서 굳어 생성${pTried?'<span class="tried-tag">✅ 만들어봤어요</span>':''}
+      </div>
     </div>
-    <p class="info-note">같은 마그마라도 식는 위치와 속도에 따라 서로 다른 화성암이 만들어져요.</p>
-  `);
+    <p class="info-note">${note}</p>
+  `;
 }
 function spawnSeismicRings(){
   const layer = document.getElementById('event-fx-layer');
@@ -1159,6 +1283,14 @@ function spawnLavaRise(){
   lava.className = 'lava-rise';
   layer.appendChild(lava);
   setTimeout(()=> lava.remove(), 3200);
+}
+function spawnPlutonicCooling(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const pool = document.createElement('div');
+  pool.className = 'pluton-cool';
+  layer.appendChild(pool);
+  setTimeout(()=> pool.remove(), 3700);
 }
 // ══════════════════════════
 // 🔬 AI 탐사 미션

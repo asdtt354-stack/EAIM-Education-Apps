@@ -776,7 +776,7 @@ const ORGAN_TEXTURES = {
   brain:          { file:'organ_brain.png',          aspect:1.329 },
   spinalcord:     { file:'organ_spinalcord.png',     aspect:0.643 },
   ribs:           { file:'organ_ribs.png',           aspect:1.176 },
-  spine:          { file:'organ_spine.png',          aspect:0.211 },
+  spine:          { file:'organ_spine.png',          aspect:0.125 },
   limbmuscle:     { file:'organ_limbmuscle.png',     aspect:0.332 }
 };
 
@@ -916,7 +916,7 @@ function setupStageInteraction(){
 }
 
 function applyExplodeTransform(){
-  const distDesign = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 16 : 40;
+  const distDesign = explodeLevel === 0 ? 0 : explodeLevel === 1 ? 95 : 230;
   const stage = document.getElementById('body-stage');
   const k = stage.getBoundingClientRect().width / STAGE_W || 1;
   const dist = distDesign * k;

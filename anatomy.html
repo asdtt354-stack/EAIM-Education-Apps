@@ -280,6 +280,18 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
     <div id="zoom-layer">
       <div id="body-stage">
         <img id="body-bg" src="body-realistic.png" alt="">
+        <svg id="energy-flow-svg" viewBox="0 0 450 740" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none">
+          <defs>
+            <marker id="flowArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/>
+            </marker>
+          </defs>
+          <g id="energy-flow-lines"></g>
+          <g id="energy-flow-labels"></g>
+          <circle id="energy-flow-dot" r="7" fill="#fde68a" stroke="#78350f" stroke-width="2">
+            <animateMotion id="energy-flow-motion" dur="7s" repeatCount="indefinite" path=""></animateMotion>
+          </circle>
+        </svg>
       </div>
     </div>
   </div>
@@ -1103,6 +1115,15 @@ function setExplodeLevel(level){
     selectedOrgan = null;
     document.getElementById('organ-info-box').style.display = 'none';
     hideSystemExplanation();
+    if(energyMode){
+      energyMode = false;
+      const ebtn = document.getElementById('energy-btn');
+      if(ebtn) ebtn.textContent = '🔥 세포호흡·에너지 흐름 보기';
+      const eebtn = document.getElementById('energy-explain-btn');
+      if(eebtn) eebtn.style.display = 'none';
+      document.getElementById('energy-explain-result').style.display = 'none';
+    }
+    hideEnergyFlow();
     updateMissionState();
   } else if(activeSystems.size === 0){
     // 켜진 계통이 하나도 없으면 분리/해체가 눈에 보이도록 전체를 켠다
@@ -1111,6 +1132,59 @@ function setExplodeLevel(level){
     updateMissionState();
   }
   applyExplodeTransform();
+}
+// ══════════════════════════
+// 🔥 에너지 흐름 시각화 (화살표 + 번호 + 움직이는 점)
+// ══════════════════════════
+const ENERGY_FLOW_SEQUENCE = ['mouth','stomach','duodenum','smallintestine','heart','lungs','limbmuscle'];
+const ENERGY_FLOW_STEP_NAMES = ['입','위','십이지장','소장(흡수)','심장(운반)','폐(산소)','세포(에너지 생성)'];
+function renderEnergyFlow(){
+  const svg = document.getElementById('energy-flow-svg');
+  const linesG = document.getElementById('energy-flow-lines');
+  const labelsG = document.getElementById('energy-flow-labels');
+  linesG.innerHTML = ''; labelsG.innerHTML = '';
+  const pts = ENERGY_FLOW_SEQUENCE.map(id => BG_MAP[id]).filter(Boolean);
+  if(pts.length < 2) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  let pathD = `M ${pts[0].x} ${pts[0].y}`;
+  for(let i=1;i<pts.length;i++){
+    pathD += ` L ${pts[i].x} ${pts[i].y}`;
+    const line = document.createElementNS(NS,'line');
+    line.setAttribute('x1', pts[i-1].x); line.setAttribute('y1', pts[i-1].y);
+    line.setAttribute('x2', pts[i].x); line.setAttribute('y2', pts[i].y);
+    line.setAttribute('stroke', '#fbbf24');
+    line.setAttribute('stroke-width', '3');
+    line.setAttribute('stroke-dasharray', '3 7');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('marker-end', 'url(#flowArrow)');
+    line.setAttribute('opacity', '0.85');
+    linesG.appendChild(line);
+  }
+  pts.forEach((p,i)=>{
+    const badgeY = p.y - (p.h/2) - 10;
+    const circle = document.createElementNS(NS,'circle');
+    circle.setAttribute('cx', p.x); circle.setAttribute('cy', badgeY);
+    circle.setAttribute('r', 11);
+    circle.setAttribute('fill', '#fbbf24');
+    circle.setAttribute('stroke', '#78350f');
+    circle.setAttribute('stroke-width', '1.5');
+    const text = document.createElementNS(NS,'text');
+    text.setAttribute('x', p.x); text.setAttribute('y', badgeY + 4.5);
+    text.setAttribute('text-anchor','middle');
+    text.setAttribute('font-size','13');
+    text.setAttribute('font-weight','800');
+    text.setAttribute('fill','#3b1c00');
+    text.textContent = String(i+1);
+    labelsG.appendChild(circle);
+    labelsG.appendChild(text);
+  });
+  const motion = document.getElementById('energy-flow-motion');
+  motion.setAttribute('path', pathD);
+  try{ motion.beginElement(); }catch(e){}
+  svg.style.display = 'block';
+}
+function hideEnergyFlow(){
+  document.getElementById('energy-flow-svg').style.display = 'none';
 }
 function toggleEnergyMode(){
   energyMode = !energyMode;
@@ -1126,6 +1200,7 @@ function toggleEnergyMode(){
   SYSTEM_KEYS.forEach(k=> document.getElementById('chip-'+k).classList.toggle('on', activeSystems.has(k)));
   syncSystemVisibility();
   updateMissionState();
+  if(energyMode){ renderEnergyFlow(); } else { hideEnergyFlow(); }
 }
 async function explainEnergyIntegration(){
   if(!(settings.apiKey||'').trim()){

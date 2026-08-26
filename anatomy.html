@@ -706,9 +706,12 @@ const ORGAN_SYSTEMS = {
     { id:'mouth', name:'입', x:180, y:62, z:16, r:12, func:'음식을 씹고 침과 섞어 소화를 시작해요.' },
     { id:'esophagus', name:'식도', x:180, y:95, z:-4, r:7, func:'입에서 삼킨 음식을 위까지 운반하는 통로예요.' },
     { id:'stomach', name:'위', x:158, y:150, z:8, r:20, func:'강한 산과 소화 효소로 음식을 잘게 분해해요.' },
+    { id:'duodenum', name:'십이지장', x:190, y:180, z:8, r:14, func:'위에서 나온 음식물을 처음 받는 소장의 첫 부분이에요. 이자(췌장)액과 쓸개즙이 여기로 흘러들어와 본격적인 소화가 시작돼요.' },
     { id:'smallintestine', name:'소장', x:180, y:205, z:10, r:24, func:'분해된 영양분을 몸으로 흡수하는 가장 긴 소화 기관이에요.' },
     { id:'largeintestine', name:'대장', x:195, y:245, z:12, r:18, func:'남은 찌꺼기에서 수분을 흡수하고 대변을 만들어요.' },
-    { id:'liver', name:'간', x:205, y:140, z:12, r:16, func:'영양분을 저장·가공하고 몸의 독소를 해독해요.' }
+    { id:'liver', name:'간', x:205, y:140, z:12, r:16, func:'영양분을 저장·가공하고 몸의 독소를 해독해요.' },
+    { id:'gallbladder', name:'쓸개(담낭)', x:212, y:148, z:14, r:9, func:'간에서 만든 쓸개즙을 저장했다가 지방을 소화할 때 내보내요. 간 뒤에 숨어 있어서 평소엔 잘 안 보여요.' },
+    { id:'spleen', name:'지라(비장)', x:150, y:145, z:6, r:12, func:'낡은 적혈구를 걸러내고 면역세포를 만들어 몸을 지켜요. 위 뒤에 숨어 있어서 평소엔 잘 안 보여요.' }
   ]},
   circulatory: { label:'순환계', color:'#ef4444', icon:'❤️', organs: [
     { id:'heart', name:'심장', x:168, y:118, z:6, r:15, func:'혈액을 온몸으로 펌프질해서 보내는 순환의 중심이에요.' },
@@ -835,6 +838,9 @@ const ORGAN_TEXTURES = {
   smallintestine: { file:'organ_smallintestine.png', aspect:1.235 },
   largeintestine: { file:'organ_largeintestine.png', aspect:0.915 },
   liver:          { file:'organ_liver.png',          aspect:1.265 },
+  gallbladder:    { file:'organ_gallbladder.png',     aspect:1.792 },
+  duodenum:       { file:'organ_duodenum.png',         aspect:1.333 },
+  spleen:         { file:'organ_spleen.png',            aspect:1.667 },
   heart:          { file:'organ_heart.png',          aspect:0.599 },
   vessels:        { file:'organ_vessels.png',        aspect:1.623 },
   trachea:        { file:'organ_trachea.png',        aspect:0.405 },
@@ -862,6 +868,9 @@ const BG_MAP = {
   vessels:        { x:222, y:255, h:65  },
   ribs:           { x:220, y:305, h:155 },
   liver:          { x:165, y:430, h:90  },
+  gallbladder:    { x:198, y:468, h:42  },
+  duodenum:       { x:250, y:475, h:60  },
+  spleen:         { x:292, y:400, h:70  },
   stomach:        { x:235, y:435, h:90  },
   smallintestine: { x:220, y:525, h:100 },
   largeintestine: { x:220, y:545, h:130 },
@@ -1030,14 +1039,29 @@ function syncSystemVisibility(){
     entry.el.classList.toggle('sys-on', visible);
   });
 }
+const PAIRED_ORGANS = {
+  stomach: ['spleen'], spleen: ['stomach'],
+  liver: ['gallbladder'], gallbladder: ['liver']
+};
+let pairedMarkerEls = [];
+
 async function selectOrgan(sysKey, organId){
   const sys = ORGAN_SYSTEMS[sysKey];
   const organ = sys.organs.find(o=>o.id===organId);
   selectedOrgan = { sysKey, organ, sysLabel: sys.label };
 
   if(selectedMarkerEl) selectedMarkerEl.classList.remove('selected');
+  pairedMarkerEls.forEach(el=>el.classList.remove('selected'));
+  pairedMarkerEls = [];
   const entry = organElements[keyFor(sysKey, organId)];
   if(entry){ entry.el.classList.add('selected'); selectedMarkerEl = entry.el; }
+
+  // 위↔지라, 간↔쓸개처럼 몸속에 숨어 있어 같이 나와야 하는 장기도 함께 강조
+  const pairedIds = PAIRED_ORGANS[organId] || [];
+  pairedIds.forEach(pid=>{
+    const pairedEntry = organElements[keyFor(sysKey, pid)];
+    if(pairedEntry){ pairedEntry.el.classList.add('selected'); pairedMarkerEls.push(pairedEntry.el); }
+  });
 
   document.getElementById('organ-info-box').style.display='block';
   document.getElementById('organ-info-name').textContent = `${organ.name} (${sys.label})`;
@@ -1072,6 +1096,8 @@ function setExplodeLevel(level){
     SYSTEM_KEYS.forEach(k=>{ const chip = document.getElementById('chip-'+k); if(chip) chip.classList.remove('on'); });
     syncSystemVisibility();
     if(selectedMarkerEl){ selectedMarkerEl.classList.remove('selected'); selectedMarkerEl = null; }
+    pairedMarkerEls.forEach(el=>el.classList.remove('selected'));
+    pairedMarkerEls = [];
     selectedOrgan = null;
     document.getElementById('organ-info-box').style.display = 'none';
     hideSystemExplanation();

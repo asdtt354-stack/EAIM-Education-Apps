@@ -20,12 +20,14 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #zoom-layer { width:100%; height:100%; display:flex; align-items:center; justify-content:center; transition: transform 0.05s linear; }
 #body-stage { position: relative; height: min(90%, 90vh, 820px); aspect-ratio: 450 / 740; margin: auto; }
 #body-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
-.organ-marker { position:absolute; transform:translate(-50%,-50%); cursor:pointer; transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; opacity:1; }
+.organ-marker { position:absolute; transform:translate(-50%,-50%); cursor:pointer; transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; opacity:1; z-index:1; }
+.organ-marker.sys-on { z-index:2; }
+.organ-marker.selected { z-index:3; }
 .organ-marker-inner { transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), filter 0.3s ease; }
 .organ-marker.sys-on .organ-marker-inner { transform: scale(1.22); filter: drop-shadow(0 0 8px rgba(255,255,255,0.35)); }
 .organ-marker.selected .organ-marker-inner { transform: scale(1.5); filter: drop-shadow(0 0 12px var(--main-color)); }
 .organ-marker img { display:block; width:100%; height:100%; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7)); pointer-events:none; }
-.organ-marker-label { position:absolute; bottom:-13px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:800; color:#fff; text-shadow:0 0 3px #000,0 0 3px #000,0 0 3px #000; white-space:nowrap; pointer-events:none; }
+.organ-marker-label { position:absolute; bottom:-14px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:800; color:#fff; background:rgba(10,7,8,0.85); padding:2px 6px; border-radius:5px; border:1px solid rgba(255,255,255,0.25); text-shadow:0 0 3px #000; white-space:nowrap; pointer-events:none; z-index:5; }
 .organ-marker.spin .organ-marker-inner { animation: organ-spin 2.4s linear infinite; }
 @keyframes organ-spin { from{ transform: scale(1.3) rotate(0deg);} to{ transform: scale(1.3) rotate(360deg);} }
 #energy-explain-result { display:none; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); border-radius: 10px; padding: 12px; font-size: 0.78em; line-height: 1.6; color: #fed7aa; margin-top: 12px; }
@@ -861,20 +863,20 @@ const ORGAN_TEXTURES = {
 const BG_MAP = {
   brain:          { x:210, y:65,  h:95  },
   mouth:          { x:210, y:195, h:45  },
-  esophagus:      { x:200, y:245, h:110 },
-  trachea:        { x:218, y:215, h:55  },
+  esophagus:      { x:190, y:250, h:110 },
+  trachea:        { x:232, y:200, h:55  },
   lungs:          { x:220, y:300, h:145 },
   heart:          { x:228, y:335, h:110 },
-  vessels:        { x:222, y:255, h:65  },
+  vessels:        { x:258, y:258, h:65  },
   ribs:           { x:220, y:305, h:155 },
-  liver:          { x:165, y:430, h:90  },
-  gallbladder:    { x:198, y:468, h:42  },
-  duodenum:       { x:250, y:475, h:60  },
-  spleen:         { x:292, y:400, h:70  },
-  stomach:        { x:235, y:435, h:90  },
-  smallintestine: { x:220, y:525, h:100 },
-  largeintestine: { x:220, y:545, h:130 },
-  kidney:         { x:230, y:450, h:65  },
+  liver:          { x:112, y:405, h:100 },
+  gallbladder:    { x:150, y:472, h:38  },
+  duodenum:       { x:258, y:490, h:55  },
+  spleen:         { x:335, y:365, h:62  },
+  stomach:        { x:232, y:400, h:95  },
+  smallintestine: { x:210, y:548, h:100 },
+  largeintestine: { x:210, y:568, h:130 },
+  kidney:         { x:340, y:462, h:60  },
   bladder:        { x:225, y:635, h:85  },
   spinalcord:     { x:218, y:220, h:75  },
   spine:          { x:225, y:350, h:430 },

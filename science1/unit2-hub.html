@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ⅱ. 생물의 구성과 다양성 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 20px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.9em, 4.5vw, 2.7em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 25%, #fda4af 55%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.75; margin: 0 auto; max-width: 580px; }
+
+  /* ── 진행률 ───────────────────────────────── */
+  .progress-shell { max-width: 620px; margin: 30px auto 0; padding: 16px 22px; background: #121012; border: 1px solid #262022; border-radius: 16px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .progress-top .p-label { font-size: 0.82em; color: #ccc; font-weight: 700; }
+  .progress-top .p-count { font-size: 0.78em; color: #888; }
+  .progress-bar-outer { height: 9px; border-radius: 5px; background: #262022; overflow: hidden; }
+  .progress-bar-inner { height: 100%; background: linear-gradient(90deg, var(--accent), var(--main-color)); }
+
+  /* ── 소단원 그룹 ──────────────────────────── */
+  .group-wrap { max-width: 900px; margin: 50px auto 0; padding: 0 20px; }
+  .group-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+  .group-head .g-num { font-size: 0.78em; font-weight: 900; color: var(--accent); background: rgba(168,85,247,0.14); padding: 3px 10px; border-radius: 7px; }
+  .group-head h2 { margin: 0; font-size: 1.15em; }
+
+  .lesson-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 42px; }
+  @media (max-width: 640px) { .lesson-grid { grid-template-columns: 1fr; } }
+
+  .lcard {
+    display: flex; align-items: center; gap: 14px;
+    background: #121012; border: 1.5px solid #262022; border-radius: 16px; padding: 16px 18px;
+    transition: all .2s;
+  }
+  .lcard:hover { border-color: var(--main-color); transform: translateY(-2px); }
+  .lcard .l-icon { font-size: 1.7em; flex-shrink: 0; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; background: #1a1a1c; border-radius: 12px; }
+  .lcard .l-body { flex: 1; min-width: 0; }
+  .lcard .l-page { font-size: 0.68em; color: #777; margin-bottom: 3px; }
+  .lcard .l-title { font-size: 0.94em; font-weight: 800; color: #fff; margin-bottom: 3px; }
+  .lcard .l-desc { font-size: 0.76em; color: #999; line-height: 1.5; }
+  .lcard .l-badge { font-size: 0.66em; font-weight: 800; color: #34d399; background: rgba(52,211,153,0.14); padding: 3px 8px; border-radius: 6px; flex-shrink: 0; white-space: nowrap; }
+
+  .footer-note { max-width: 620px; margin: 10px auto 60px; padding: 0 20px; text-align: center; color: #666; font-size: 0.8em; line-height: 1.7; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span><b>Ⅱ. 생물의 구성과 다양성</b></div>
+    <a class="hub-link" href="../index.html">← 전체 단원 목록</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">과학1 · Ⅱ단원 · 교과서 34쪽 ~ 74쪽</div>
+    <h1>생물의 구성과 다양성</h1>
+    <p class="lead">세포 하나에서 시작해 하나의 개체가 되기까지, 그리고 지구상의 수많은 생물이 어떻게 나뉘고 왜 다양하게 유지되어야 하는지를 살펴보는 단원이다.</p>
+  </section>
+
+  <div class="progress-shell">
+    <div class="progress-top">
+      <span class="p-label">단원 진행률</span>
+      <span class="p-count" id="pCount">8 / 8 완료</span>
+    </div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="pBar" style="width:100%"></div></div>
+  </div>
+
+  <div class="group-wrap">
+    <div class="group-head"><span class="g-num">1</span><h2>생물의 구성</h2></div>
+    <div class="lesson-grid" id="group1"></div>
+
+    <div class="group-head"><span class="g-num">2</span><h2>생물의 다양성</h2></div>
+    <div class="lesson-grid" id="group2"></div>
+  </div>
+
+  <div class="footer-note">모든 소단원 페이지는 하단에 이전 · 다음 내비게이션이 있어, 순서대로 하나씩 이어서 학습할 수도 있다.</div>
+
+  <footer>EAIM 과학 수업 · 과학1</footer>
+
+<script>
+const GROUP1 = [
+  { icon:'🔬', page:'38쪽', title:'세포', desc:'동물세포·식물세포의 구조와 소기관', href:'unit2/cell-structure.html', done:true },
+  { icon:'🧩', page:'44쪽', title:'생물의 구성 단계', desc:'세포 → 조직 → 기관 → 개체', href:'unit2/organization-levels.html', done:true },
+];
+const GROUP2 = [
+  { icon:'🐞', page:'50쪽', title:'생물다양성', desc:'유전적·종·생태계 다양성 비교', href:'unit2/biodiversity.html', done:true },
+  { icon:'🗂️', page:'56쪽', title:'생물의 분류 방법', desc:'기준에 따라 달라지는 분류 결과', href:'unit2/classification-methods.html', done:true },
+  { icon:'👑', page:'60쪽', title:'생물의 분류', desc:'5계 분류체계와 분류 맞히기 게임', href:'unit2/classification-kingdoms.html', done:true },
+  { icon:'⚠️', page:'64쪽', title:'생물다양성보전의 필요성', desc:'감소 원인과 먹이사슬 시뮬레이션', href:'unit2/biodiversity-conservation-need.html', done:true },
+  { icon:'🌱', page:'66쪽', title:'생물다양성 유지 방안과 실천', desc:'국가적 노력과 나의 실천 체크리스트', href:'unit2/biodiversity-practice.html', done:true },
+  { icon:'🎲', page:'68쪽', title:'생물다양성보전 놀이 활동하기', desc:'주사위 보드게임으로 단원 총정리', href:'unit2/biodiversity-boardgame.html', done:true },
+];
+
+function renderGroup(id, items){
+  const wrap = document.getElementById(id);
+  wrap.innerHTML = items.map(item => `
+    <a class="lcard" href="${item.href}">
+      <div class="l-icon">${item.icon}</div>
+      <div class="l-body">
+        <div class="l-page">${item.page}</div>
+        <div class="l-title">${item.title}</div>
+        <div class="l-desc">${item.desc}</div>
+      </div>
+      <div class="l-badge">${item.done ? '완료' : '준비중'}</div>
+    </a>
+  `).join('');
+}
+renderGroup('group1', GROUP1);
+renderGroup('group2', GROUP2);
+
+const total = GROUP1.length + GROUP2.length;
+const done = [...GROUP1, ...GROUP2].filter(i => i.done).length;
+document.getElementById('pCount').textContent = `${done} / ${total} 완료`;
+document.getElementById('pBar').style.width = (done/total*100) + '%';
+</script>
+</body>
+</html>

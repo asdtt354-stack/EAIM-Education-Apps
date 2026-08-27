@@ -433,7 +433,7 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
       </div>
       <div style="display:flex;gap:6px">
         <button type="button" class="event-btn eruption volcanic" id="eruption-volcanic-btn" onclick="triggerEruption('volcanic')">🌋 화산암 만들기</button>
-        <button type="button" class="event-btn eruption plutonic" onclick="triggerEruption('plutonic')">🪨 심성암 만들기</button>
+        <button type="button" class="event-btn eruption plutonic" id="eruption-plutonic-btn" onclick="triggerEruption('plutonic')">🪨 심성암 만들기</button>
       </div>
       <p id="event-compare-note">두 버튼을 각각 눌러보며 화산암과 심성암이 어떻게 다른지 직접 비교해보세요.</p>
       <button type="button" id="rock-cycle-btn" onclick="openRockCycle()">🔄 암석의 순환 알아보기</button>
@@ -1458,13 +1458,16 @@ function setMagmaViscosity(v){
   showEventToast(magmaViscosity === 'basaltic'
     ? '🌊 현무암질(묽은) 마그마 선택! 이제 "화산암 만들기"를 눌러 확인해보세요'
     : '🍯 유문암질(끈적한) 마그마 선택! 이제 "화산암 만들기"를 눌러 확인해보세요');
-  const eBtn = document.getElementById('eruption-volcanic-btn');
-  if(eBtn){
-    eBtn.classList.remove('hint-pulse');
-    void eBtn.offsetWidth;
-    eBtn.classList.add('hint-pulse');
-    setTimeout(()=> eBtn.classList.remove('hint-pulse'), 1700);
-  }
+  // 점성 선택은 화산암(volcanic) 쪽 분출 스타일에만 영향을 주지만, 심성암(plutonic) 버튼도
+  // 똑같이 '다음에 눌러볼 수 있는' 버튼이므로 두 버튼 모두 반짝여서 안내함.
+  [ 'eruption-volcanic-btn', 'eruption-plutonic-btn' ].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.classList.remove('hint-pulse');
+    void btn.offsetWidth;
+    btn.classList.add('hint-pulse');
+    setTimeout(()=> btn.classList.remove('hint-pulse'), 1700);
+  });
 }
 function triggerEruption(type){
   // 화산암/심성암은 둘 다 '마그마방'(화산 하부, 지표 근처)에서 갈리는 현상이고,

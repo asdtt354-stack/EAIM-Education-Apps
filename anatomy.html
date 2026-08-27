@@ -31,6 +31,7 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 .organ-marker.spin .organ-marker-inner { animation: organ-spin 2.4s linear infinite; }
 @keyframes organ-spin { from{ transform: scale(1.3) rotate(0deg);} to{ transform: scale(1.3) rotate(360deg);} }
 #energy-explain-result { display:none; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); border-radius: 10px; padding: 12px; font-size: 0.78em; line-height: 1.6; color: #fed7aa; margin-top: 12px; }
+#energy-flow-legend { display:none; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 10px 12px; font-size: 0.74em; line-height: 1.65; color: #fde68a; margin-bottom: 8px; }
 
 .header { position: absolute; top: 20px; left: 0; width: 100%; text-align: center; pointer-events: none; z-index: 25; }
 .header h1 { color: var(--main-color); margin: 0; font-size: 1.85em; text-shadow: 0 0 20px rgba(244,63,94,0.4); letter-spacing: 1px; }
@@ -280,7 +281,7 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
     <div id="zoom-layer">
       <div id="body-stage">
         <img id="body-bg" src="body-realistic.png" alt="">
-        <svg id="energy-flow-svg" viewBox="0 0 450 740" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none">
+        <svg id="energy-flow-svg" viewBox="0 0 450 740" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;z-index:10">
           <defs>
             <marker id="flowArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
               <path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/>
@@ -303,6 +304,7 @@ select { width: 100%; padding: 9px; background: #222; color: white; border: 1px 
     <button type="button" class="action-btn" id="explode-btn-2" onclick="setExplodeLevel(2)">💥 완전 해체하기</button>
     <button type="button" class="action-btn" id="explode-btn-0" onclick="setExplodeLevel(0)">🧷 다시 조립하기</button>
     <button type="button" class="action-btn energy" id="energy-btn" onclick="toggleEnergyMode()">🔥 세포호흡·에너지 흐름 보기</button>
+    <div id="energy-flow-legend" style="display:none"></div>
     <button type="button" class="action-btn" id="energy-explain-btn" style="display:none;border-color:#fb923c;background:rgba(251,146,60,0.1);color:#fdba74" onclick="explainEnergyIntegration()">🤖 통합 설명 듣기</button>
     <button type="button" class="action-btn" style="border-color:#38bdf8;background:rgba(56,189,248,0.1);color:#7dd3fc" onclick="openReferenceAtlas()">📖 실제 도감처럼 보기</button>
 
@@ -1136,15 +1138,21 @@ function setExplodeLevel(level){
 // ══════════════════════════
 // 🔥 에너지 흐름 시각화 (화살표 + 번호 + 움직이는 점)
 // ══════════════════════════
-const ENERGY_FLOW_SEQUENCE = ['mouth','stomach','duodenum','smallintestine','heart','lungs','limbmuscle'];
-const ENERGY_FLOW_STEP_NAMES = ['입','위','십이지장','소장(흡수)','심장(운반)','폐(산소)','세포(에너지 생성)'];
+const ENERGY_FLOW_POINTS = [
+  { x:210, y:65,  short:'입',   label:'입' },
+  { x:232, y:400, short:'위',   label:'위' },
+  { x:258, y:485, short:'십이지장', label:'십이지장' },
+  { x:210, y:545, short:'소장', label:'소장 (영양분 흡수)' },
+  { x:228, y:335, short:'심장', label:'심장 (혈액으로 운반)' },
+  { x:220, y:225, short:'폐',   label:'폐 (산소 공급)' },
+  { x:305, y:420, short:'온몸 세포', label:'온몸 세포 (에너지 생성)' }
+];
 function renderEnergyFlow(){
   const svg = document.getElementById('energy-flow-svg');
   const linesG = document.getElementById('energy-flow-lines');
   const labelsG = document.getElementById('energy-flow-labels');
   linesG.innerHTML = ''; labelsG.innerHTML = '';
-  const pts = ENERGY_FLOW_SEQUENCE.map(id => BG_MAP[id]).filter(Boolean);
-  if(pts.length < 2) return;
+  const pts = ENERGY_FLOW_POINTS;
   const NS = 'http://www.w3.org/2000/svg';
   let pathD = `M ${pts[0].x} ${pts[0].y}`;
   for(let i=1;i<pts.length;i++){
@@ -1157,34 +1165,65 @@ function renderEnergyFlow(){
     line.setAttribute('stroke-dasharray', '3 7');
     line.setAttribute('stroke-linecap', 'round');
     line.setAttribute('marker-end', 'url(#flowArrow)');
-    line.setAttribute('opacity', '0.85');
+    line.setAttribute('opacity', '0.9');
     linesG.appendChild(line);
   }
   pts.forEach((p,i)=>{
-    const badgeY = p.y - (p.h/2) - 10;
     const circle = document.createElementNS(NS,'circle');
-    circle.setAttribute('cx', p.x); circle.setAttribute('cy', badgeY);
-    circle.setAttribute('r', 11);
+    circle.setAttribute('cx', p.x); circle.setAttribute('cy', p.y);
+    circle.setAttribute('r', 12);
     circle.setAttribute('fill', '#fbbf24');
     circle.setAttribute('stroke', '#78350f');
     circle.setAttribute('stroke-width', '1.5');
-    const text = document.createElementNS(NS,'text');
-    text.setAttribute('x', p.x); text.setAttribute('y', badgeY + 4.5);
-    text.setAttribute('text-anchor','middle');
-    text.setAttribute('font-size','13');
-    text.setAttribute('font-weight','800');
-    text.setAttribute('fill','#3b1c00');
-    text.textContent = String(i+1);
+    const numText = document.createElementNS(NS,'text');
+    numText.setAttribute('x', p.x); numText.setAttribute('y', p.y + 4.5);
+    numText.setAttribute('text-anchor','middle');
+    numText.setAttribute('font-size','13');
+    numText.setAttribute('font-weight','800');
+    numText.setAttribute('fill','#3b1c00');
+    numText.textContent = String(i+1);
+
+    // 번호 옆 이름표 (오른쪽이 화면 밖으로 넘어갈 것 같으면 왼쪽에 표시)
+    const goLeft = p.x > 340;
+    const nameLen = p.short.length;
+    const pillW = nameLen * 12.5 + 14;
+    const pillX = goLeft ? (p.x - 18 - pillW) : (p.x + 18);
+    const pill = document.createElementNS(NS,'rect');
+    pill.setAttribute('x', pillX); pill.setAttribute('y', p.y - 10);
+    pill.setAttribute('width', pillW); pill.setAttribute('height', 20);
+    pill.setAttribute('rx', 6);
+    pill.setAttribute('fill', 'rgba(10,7,8,0.82)');
+    pill.setAttribute('stroke', 'rgba(251,191,36,0.5)');
+    pill.setAttribute('stroke-width', '1');
+    const nameText = document.createElementNS(NS,'text');
+    nameText.setAttribute('x', pillX + pillW/2); nameText.setAttribute('y', p.y + 4.5);
+    nameText.setAttribute('text-anchor','middle');
+    nameText.setAttribute('font-size','11.5');
+    nameText.setAttribute('font-weight','800');
+    nameText.setAttribute('fill','#fde68a');
+    nameText.textContent = p.short;
+
+    labelsG.appendChild(pill);
+    labelsG.appendChild(nameText);
     labelsG.appendChild(circle);
-    labelsG.appendChild(text);
+    labelsG.appendChild(numText);
   });
   const motion = document.getElementById('energy-flow-motion');
   motion.setAttribute('path', pathD);
   try{ motion.beginElement(); }catch(e){}
   svg.style.display = 'block';
+  renderEnergyFlowLegend();
+}
+function renderEnergyFlowLegend(){
+  const legend = document.getElementById('energy-flow-legend');
+  if(!legend) return;
+  legend.innerHTML = ENERGY_FLOW_POINTS.map((p,i)=>`<div>${i+1}. ${p.label}</div>`).join('');
+  legend.style.display = 'block';
 }
 function hideEnergyFlow(){
   document.getElementById('energy-flow-svg').style.display = 'none';
+  const legend = document.getElementById('energy-flow-legend');
+  if(legend) legend.style.display = 'none';
 }
 function toggleEnergyMode(){
   energyMode = !energyMode;
@@ -1192,12 +1231,9 @@ function toggleEnergyMode(){
   btn.textContent = energyMode ? '🔥 일반 모드로 돌아가기' : '🔥 세포호흡·에너지 흐름 보기';
   document.getElementById('energy-explain-btn').style.display = energyMode ? 'block' : 'none';
   if(!energyMode) document.getElementById('energy-explain-result').style.display = 'none';
-  if(energyMode){
-    activeSystems = new Set(['digestive','respiratory','circulatory']);
-  } else {
-    activeSystems = new Set(SYSTEM_KEYS);
-  }
-  SYSTEM_KEYS.forEach(k=> document.getElementById('chip-'+k).classList.toggle('on', activeSystems.has(k)));
+  // 에너지 흐름 모드는 화살표 위주로 보여주기 위해 계통 버튼은 건드리지 않고 깨끗하게 시작
+  activeSystems.clear();
+  SYSTEM_KEYS.forEach(k=>{ const chip = document.getElementById('chip-'+k); if(chip) chip.classList.remove('on'); });
   syncSystemVisibility();
   updateMissionState();
   if(energyMode){ renderEnergyFlow(); } else { hideEnergyFlow(); }

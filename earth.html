@@ -122,10 +122,34 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 @keyframes ash-cloud-anim { 0%{ transform:translateX(-50%) translateY(15%) scale(0.35); opacity:0;} 15%{ opacity:1;} 60%{ transform:translateX(-50%) translateY(-45%) scale(1.15); opacity:0.9;} 100%{ transform:translateX(-50%) translateY(-75%) scale(1.3); opacity:0;} }
 .ash-particle { position:absolute; width:5px; height:5px; border-radius:50%; background:#4a3f38; opacity:0.95; animation: ash-particle-anim 1.5s ease-out forwards; }
 @keyframes ash-particle-anim { 0%{ transform:translate(0,0) scale(1); opacity:1;} 100%{ transform:translate(var(--dx), var(--dy)) scale(0.25); opacity:0;} }
-.decomp-particle { position:absolute; font-size:16px; opacity:0; animation: decomp-particle-anim 2.2s ease-in-out forwards; }
-@keyframes decomp-particle-anim { 0%{ opacity:0; transform:translateY(6px) scale(0.6);} 20%{ opacity:1;} 80%{ opacity:1;} 100%{ opacity:0; transform:translateY(-10px) scale(1.1);} }
-.rain-streak { position:absolute; top:-40px; width:2px; height:34px; background:linear-gradient(180deg, rgba(125,211,252,0) 0%, rgba(125,211,252,0.8) 100%); animation: rain-fall-anim 0.9s linear forwards; }
-@keyframes rain-fall-anim { 0%{ transform:translateY(0); opacity:0.9;} 100%{ transform:translateY(120vh); opacity:0.4;} }
+.decomp-particle { position:absolute; opacity:0; animation: decomp-particle-anim 2.6s ease-in-out forwards; }
+.decomp-particle.bug { width:15px; height:7px; border-radius:50%/60%; background:linear-gradient(100deg, #8b5e34, #c99a5e); box-shadow: inset 0 -1px 2px rgba(0,0,0,0.4), 2px 3px 0 -2.5px #3f2a18, -2px 3px 0 -2.5px #3f2a18; }
+.decomp-particle.bug::before { content:''; position:absolute; left:-3px; top:1px; width:5px; height:5px; border-radius:50%; background:#3f2a18; }
+.decomp-particle.spore { width:11px; height:11px; border-radius:50%; background: radial-gradient(circle at 35% 32%, #ecfccb, #84cc16 65%, #4d7c0f 100%); box-shadow:0 0 7px 2px rgba(163,230,53,0.55); }
+.decomp-particle.spark { width:7px; height:7px; border-radius:50%; background:#fde68a; box-shadow:0 0 10px 4px rgba(253,224,138,0.85); }
+@keyframes decomp-particle-anim { 0%{ opacity:0; transform:translateY(6px) rotate(0deg) scale(0.5);} 15%{ opacity:1;} 50%{ transform:translateY(-6px) rotate(var(--rot,12deg)) scale(1.2);} 85%{ opacity:1;} 100%{ opacity:0; transform:translateY(-18px) rotate(calc(var(--rot,12deg) * -1)) scale(1.35);} }
+.humus-patch { position:absolute; bottom:-6%; width:26%; height:22%; border-radius:50%; background: radial-gradient(ellipse at center, rgba(120,74,32,0.85) 0%, rgba(80,52,26,0.5) 55%, rgba(80,52,26,0) 100%); opacity:0; animation: humus-patch-anim 3.2s ease-out forwards; filter:blur(1px); }
+@keyframes humus-patch-anim { 0%{ opacity:0; transform:scale(0.3);} 25%{ opacity:0.9;} 70%{ opacity:0.85; transform:scale(1);} 100%{ opacity:0; transform:scale(1.15);} }
+.decomp-glow { position:absolute; inset:0; background: radial-gradient(ellipse at 50% 88%, rgba(140,92,32,0.28) 0%, rgba(0,0,0,0) 65%); opacity:0; animation: decomp-glow-anim 3.6s ease-in-out forwards; }
+@keyframes decomp-glow-anim { 0%{opacity:0;} 30%{opacity:1;} 75%{opacity:0.8;} 100%{opacity:0;} }
+.rain-streak { position:absolute; top:-40px; width:2px; height:34px; background:linear-gradient(180deg, rgba(125,211,252,0) 0%, rgba(180,225,255,0.9) 100%); animation: rain-fall-anim 0.6s linear forwards; }
+.rain-streak.back { width:1px; height:22px; opacity:0.55; background:linear-gradient(180deg, rgba(125,211,252,0) 0%, rgba(150,200,235,0.7) 100%); }
+.rain-streak.front { width:3px; height:44px; background:linear-gradient(180deg, rgba(125,211,252,0) 0%, rgba(210,235,255,0.95) 100%); }
+@keyframes rain-fall-anim { 0%{ transform: skewX(var(--wind,-8deg)) translateY(0); opacity:0.95;} 100%{ transform: skewX(var(--wind,-8deg)) translateY(120vh); opacity:0.5;} }
+.storm-tint { position:absolute; inset:0; background:rgba(18,22,30,0.4); opacity:0; animation: storm-tint-anim 4.6s ease-in-out forwards; }
+@keyframes storm-tint-anim { 0%{opacity:0;} 25%{opacity:1;} 80%{opacity:0.85;} 100%{opacity:0;} }
+.storm-cloud { position:absolute; left:50%; top:-10%; width:92%; height:34%; transform:translateX(-50%); background: radial-gradient(ellipse at center, rgba(55,58,64,0.92) 0%, rgba(35,37,42,0.75) 55%, rgba(35,37,42,0) 100%); border-radius:50%; filter:blur(4px); opacity:0; animation: storm-cloud-anim 3.8s ease-in-out forwards; }
+@keyframes storm-cloud-anim { 0%{ opacity:0; transform:translateX(-50%) translateY(-25%);} 20%{ opacity:0.95; transform:translateX(-50%) translateY(0);} 85%{ opacity:0.9;} 100%{ opacity:0; transform:translateX(-50%) translateY(-6%);} }
+.lightning-flash { position:absolute; inset:0; background:#e8f2ff; opacity:0; mix-blend-mode:screen; animation: lightning-flash-anim 0.45s ease-out forwards; }
+@keyframes lightning-flash-anim { 0%{opacity:0;} 8%{opacity:0.85;} 18%{opacity:0.1;} 30%{opacity:0.6;} 45%{opacity:0;} 100%{opacity:0;} }
+.rain-splash { position:absolute; bottom:5%; width:14px; height:14px; border:2px solid rgba(186,216,255,0.75); border-radius:50%; opacity:0; animation: rain-splash-anim 0.6s ease-out forwards; }
+@keyframes rain-splash-anim { 0%{ opacity:0.9; transform:scale(0.2);} 100%{ opacity:0; transform:scale(1.9);} }
+.mud-rivulet { position:absolute; top:40%; width:5px; height:0; border-radius:2px; background:linear-gradient(180deg, rgba(120,80,44,0) 0%, rgba(120,80,44,0.85) 40%, rgba(90,58,30,0.9) 100%); animation: mud-rivulet-anim 1.6s ease-in forwards; }
+@keyframes mud-rivulet-anim { 0%{ height:0; opacity:0;} 20%{ opacity:0.9;} 100%{ height:56%; opacity:0.75; transform:translateY(4%);} }
+.erosion-crack { position:absolute; left:50%; bottom:0; width:70%; height:0%; transform:translateX(-50%); background: linear-gradient(180deg, rgba(45,30,16,0.95) 0%, rgba(20,14,8,0.9) 100%); clip-path: polygon(48% 0%, 55% 15%, 50% 30%, 60% 46%, 47% 62%, 58% 80%, 50% 100%, 42% 100%, 52% 80%, 40% 62%, 53% 46%, 43% 30%, 48% 15%); opacity:0; animation: erosion-crack-anim 2.4s ease-out forwards; }
+@keyframes erosion-crack-anim { 0%{ height:0%; opacity:0;} 25%{ opacity:0.9;} 100%{ height:38%; opacity:0.85;} }
+.sediment-particle { position:absolute; width:5px; height:5px; border-radius:2px; background:#8a5a34; opacity:0.95; animation: sediment-particle-anim 1.6s ease-in forwards; }
+@keyframes sediment-particle-anim { 0%{ transform:translate(0,0) scale(1); opacity:1;} 100%{ transform:translate(var(--sdx), var(--sdy)) scale(0.4); opacity:0;} }
 .pressure-diver { position:absolute; left:50%; top:2%; font-size:34px; transform:translate(-50%,0) scale(1); animation: pressure-dive-anim 3.6s ease-in forwards; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
 @keyframes pressure-dive-anim { 0%{ top:2%; transform:translate(-50%,0) scale(1); opacity:1;} 85%{ top:92%; transform:translate(-50%,0) scale(0.22); opacity:1;} 100%{ top:94%; transform:translate(-50%,0) scale(0.18); opacity:0;} }
 .bio-spark { position:absolute; width:6px; height:6px; border-radius:50%; background:#a7f3d0; box-shadow:0 0 8px 3px rgba(167,243,208,0.9); animation: bio-spark-anim 1.4s ease-in-out forwards; }
@@ -1612,6 +1636,10 @@ function triggerDecomposition(){
   jumpToLayerByName('낙엽층 (O층)');
   showEventToast('🐛 분해자들이 낙엽을 부지런히 분해하고 있어요!');
   spawnDecomposerParticles();
+  setTimeout(()=>{
+    showEventToast('✨ 부식질이 만들어지고 있어요!');
+    spawnHumusBloom();
+  }, 1500);
   eventContextForMission = '방금 낙엽층에서 지렁이·세균·곰팡이 같은 분해자들이 죽은 낙엽과 생물을 열심히 분해하는 모습을 관찰했어. 분해된 유기물(부식질)은 빗물에 실려 표토(A층)로 스며들어 흙을 비옥하게 만들어.';
   showInfoPopup('🐛 분해자의 힘', `
     <p class="info-note">낙엽층의 지렁이·세균·곰팡이 같은 분해자들은 죽은 낙엽과 동식물을 잘게 분해해서 <b>부식질</b>(양분이 풍부한 검은 유기물)을 만들어요.</p>
@@ -1621,40 +1649,150 @@ function triggerDecomposition(){
 function spawnDecomposerParticles(){
   const layer = document.getElementById('event-fx-layer');
   if(!layer) return;
-  const icons = ['🐛','🍂','✨'];
-  for(let i=0;i<14;i++){
+  const glow = document.createElement('div');
+  glow.className = 'decomp-glow';
+  layer.appendChild(glow);
+  setTimeout(()=> glow.remove(), 3700);
+  // 이모지 대신 CSS로 직접 그린 도형(작은 벌레·곰팡이 포자·양분 반짝임)을 사용해
+  // 기기·브라우저에 상관없이 항상 같은 모양으로 정확하게 표시되도록 함.
+  const kinds = ['bug','bug','spore','spark'];
+  for(let i=0;i<26;i++){
     const p = document.createElement('div');
-    p.className = 'decomp-particle';
-    p.textContent = icons[Math.floor(Math.random()*icons.length)];
-    p.style.left = (10 + Math.random()*80) + '%';
-    p.style.top = (30 + Math.random()*45) + '%';
-    p.style.animationDelay = (Math.random()*0.6) + 's';
+    const kind = kinds[Math.floor(Math.random()*kinds.length)];
+    p.className = 'decomp-particle ' + kind;
+    p.style.left = (8 + Math.random()*84) + '%';
+    p.style.top = (28 + Math.random()*48) + '%';
+    p.style.setProperty('--rot', (Math.random()*50 - 25) + 'deg');
+    p.style.animationDelay = (Math.random()*0.9) + 's';
     layer.appendChild(p);
-    setTimeout(()=> p.remove(), 2900);
+    setTimeout(()=> p.remove(), 3600);
+  }
+}
+function spawnHumusBloom(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  for(let i=0;i<3;i++){
+    const h = document.createElement('div');
+    h.className = 'humus-patch';
+    h.style.left = (10 + i*28 + Math.random()*10) + '%';
+    h.style.animationDelay = (i*0.25) + 's';
+    layer.appendChild(h);
+    setTimeout(()=> h.remove(), 3500);
   }
 }
 function triggerErosion(){
   ensureDrillView();
   jumpToLayerByName('표토 (A층)');
-  showEventToast('🌧️ 폭우로 표토가 쓸려 내려가고 있어요!');
-  spawnRain();
+  showEventToast('⛈️ 먹구름이 몰려오고 있어요...');
+  spawnStormClouds();
+  setTimeout(()=>{
+    showEventToast('🌧️🌧️ 폭우가 쏟아지고 있어요!');
+    spawnRain();
+  }, 700);
+  setTimeout(()=>{
+    spawnMudRivulets();
+    spawnErosionCrack();
+  }, 1500);
+  setTimeout(()=>{
+    showEventToast('🟤 표토가 갈라지고 흙이 쓸려가고 있어요!');
+    spawnSedimentWashout();
+  }, 2400);
   eventContextForMission = '방금 폭우가 쏟아져서 표토(A층)의 흙이 빗물에 쓸려 침식되는 모습을 관찰했어. 식물 뿌리가 없거나 적은 곳일수록 표토가 더 쉽게 쓸려 내려가서 그 아래 심토나 모재층이 드러나기도 해.';
   showInfoPopup('🌧️ 폭우와 토양 침식', `
-    <p class="info-note">비가 많이 내리면 표토(A층)의 흙 알갱이가 빗물에 쓸려 낮은 곳으로 이동해요 — 이걸 <b>토양 침식</b>이라고 해요.</p>
+    <p class="info-note">비가 많이 내리면 표토(A층)의 흙 알갱이가 빗물에 쓸려 낮은 곳으로 이동해요 — 이걸 <b>토양 침식</b>이라고 해요. 빗물이 한 곳으로 계속 흐르면 표면에 작은 도랑(우곡, rill)이 파이기 시작해요.</p>
     <p class="info-note">식물 뿌리는 흙을 단단히 붙잡아주는 그물 역할을 해서 침식을 막아줘요. 그래서 나무가 없는 민둥산은 폭우가 오면 표토가 훨씬 빨리 쓸려나가고, 산사태의 위험도 커져요.</p>
   `);
+}
+function spawnStormClouds(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const tint = document.createElement('div');
+  tint.className = 'storm-tint';
+  layer.appendChild(tint);
+  setTimeout(()=> tint.remove(), 4700);
+  const cloud = document.createElement('div');
+  cloud.className = 'storm-cloud';
+  layer.appendChild(cloud);
+  setTimeout(()=> cloud.remove(), 3900);
+  const flashCount = 3 + Math.floor(Math.random()*2);
+  for(let i=0;i<flashCount;i++){
+    setTimeout(()=>{
+      const flash = document.createElement('div');
+      flash.className = 'lightning-flash';
+      layer.appendChild(flash);
+      setTimeout(()=> flash.remove(), 500);
+    }, 400 + i*(450 + Math.random()*400));
+  }
 }
 function spawnRain(){
   const layer = document.getElementById('event-fx-layer');
   if(!layer) return;
-  for(let i=0;i<40;i++){
-    const drop = document.createElement('div');
-    drop.className = 'rain-streak';
-    drop.style.left = Math.random()*100 + '%';
-    drop.style.animationDelay = (Math.random()*0.5) + 's';
-    drop.style.animationDuration = (0.6 + Math.random()*0.5) + 's';
-    layer.appendChild(drop);
-    setTimeout(()=> drop.remove(), 1400);
+  // 한 번에 쏟아붓지 않고 짧은 간격으로 여러 파도(wave)를 연속 생성해
+  // '폭우'답게 화면 전체에 빗줄기가 끊이지 않고 쏟아지는 느낌을 줌.
+  let wave = 0;
+  const totalWaves = 10;
+  const timer = setInterval(()=>{
+    for(let i=0;i<24;i++){
+      const drop = document.createElement('div');
+      const r = Math.random();
+      drop.className = 'rain-streak ' + (r < 0.35 ? 'back' : r > 0.75 ? 'front' : '');
+      const x = Math.random()*100;
+      drop.style.left = x + '%';
+      drop.style.setProperty('--wind', (-16 + Math.random()*10) + 'deg');
+      drop.style.animationDuration = (0.4 + Math.random()*0.3) + 's';
+      layer.appendChild(drop);
+      setTimeout(()=>{
+        drop.remove();
+        if(Math.random() < 0.35){
+          const splash = document.createElement('div');
+          splash.className = 'rain-splash';
+          splash.style.left = x + '%';
+          layer.appendChild(splash);
+          setTimeout(()=> splash.remove(), 650);
+        }
+      }, 700);
+    }
+    wave++;
+    if(wave >= totalWaves) clearInterval(timer);
+  }, 170);
+}
+function spawnMudRivulets(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  for(let i=0;i<6;i++){
+    const m = document.createElement('div');
+    m.className = 'mud-rivulet';
+    m.style.left = (14 + i*14 + Math.random()*6) + '%';
+    m.style.animationDelay = (Math.random()*0.5) + 's';
+    layer.appendChild(m);
+    setTimeout(()=> m.remove(), 2400);
+  }
+}
+function spawnErosionCrack(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  const crack = document.createElement('div');
+  crack.className = 'erosion-crack';
+  layer.appendChild(crack);
+  setTimeout(()=> crack.remove(), 3200);
+}
+function spawnSedimentWashout(){
+  const layer = document.getElementById('event-fx-layer');
+  if(!layer) return;
+  // 사방으로 터지듯 흩어지지 않고, 아래쪽(경사 방향)으로 흘러가듯 이동시켜
+  // '침식되어 쓸려 내려간다'는 느낌이 확실히 보이도록 함.
+  for(let i=0;i<34;i++){
+    const s = document.createElement('div');
+    s.className = 'sediment-particle';
+    s.style.left = (10 + Math.random()*80) + '%';
+    s.style.top = (48 + Math.random()*26) + '%';
+    const dx = (Math.random()*44 - 22);
+    const dy = 60 + Math.random()*75;
+    s.style.setProperty('--sdx', dx + 'px');
+    s.style.setProperty('--sdy', dy + 'px');
+    s.style.animationDelay = (Math.random()*0.7) + 's';
+    layer.appendChild(s);
+    setTimeout(()=> s.remove(), 2400);
   }
 }
 // ══════════════════════════

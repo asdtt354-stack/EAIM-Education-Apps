@@ -61,9 +61,15 @@ body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Preten
 #event-compare-note, #soil-event-note, #ocean-event-note { font-size:.66em; color:#888; line-height:1.5; margin:8px 0 0; }
 #visc-box { background:#141416; border:1px solid #2a2a2c; border-radius:10px; padding:10px; margin-bottom:8px; }
 #visc-box label { display:block; color:var(--accent); font-weight:700; font-size:.72em; margin-bottom:6px; }
-.visc-btn { flex:1; padding:7px 4px; border-radius:8px; font-weight:700; font-size:.66em; cursor:pointer; border:1.5px solid #444; background:#1e1e20; color:#ccc; }
-.visc-btn.active { border-color: var(--accent); background:rgba(56,189,248,0.15); color:#7dd3fc; }
-#visc-note { font-size:.64em; color:#888; line-height:1.5; margin:6px 0 0; }
+.visc-btn { flex:1; padding:7px 4px; border-radius:8px; font-weight:700; font-size:.66em; cursor:pointer; border:1.5px solid #444; background:#1e1e20; color:#ccc; transition: border-color .2s, background .2s, color .2s, transform .15s; }
+.visc-btn.active { transform: scale(1.04); }
+.visc-btn.active#visc-btn-basaltic { border-color:#38bdf8; background:rgba(56,189,248,0.2); color:#7dd3fc; box-shadow:0 0 0 1px rgba(56,189,248,0.4); }
+.visc-btn.active#visc-btn-rhyolitic { border-color:#fb923c; background:rgba(251,146,60,0.2); color:#fdba74; box-shadow:0 0 0 1px rgba(251,146,60,0.4); }
+#visc-note { font-size:.72em; font-weight:700; line-height:1.5; margin:6px 0 0; padding:6px 8px; border-radius:6px; background:rgba(255,255,255,0.05); transition: color .2s; }
+#visc-note.basaltic { color:#7dd3fc; }
+#visc-note.rhyolitic { color:#fdba74; }
+.hint-pulse { animation: hint-pulse-anim 0.8s ease-in-out 2; }
+@keyframes hint-pulse-anim { 0%,100%{ box-shadow:0 0 0 0 rgba(250,204,21,0.6); } 50%{ box-shadow:0 0 0 6px rgba(250,204,21,0); } }
 #rock-cycle-btn { width:100%; margin-top:8px; padding:9px 4px; border-radius:8px; border:1.5px solid rgba(250,204,21,0.4); background:rgba(250,204,21,0.08); color:var(--main-color); font-weight:700; font-size:.72em; cursor:pointer; }
 .rc-diagram { display:flex; flex-direction:column; align-items:stretch; gap:2px; }
 .rc-node { background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); border-radius:14px; padding:12px; text-align:center; font-size:1.4rem; font-weight:800; }
@@ -426,7 +432,7 @@ textarea { width: 100%; height: 80px; background: #1a1a1c; color: white; border:
         <p id="visc-note">점성이 낮으면 스르륵 흐르고, 높으면 가스가 갇혔다가 펑 터져요.</p>
       </div>
       <div style="display:flex;gap:6px">
-        <button type="button" class="event-btn eruption volcanic" onclick="triggerEruption('volcanic')">🌋 화산암 만들기</button>
+        <button type="button" class="event-btn eruption volcanic" id="eruption-volcanic-btn" onclick="triggerEruption('volcanic')">🌋 화산암 만들기</button>
         <button type="button" class="event-btn eruption plutonic" onclick="triggerEruption('plutonic')">🪨 심성암 만들기</button>
       </div>
       <p id="event-compare-note">두 버튼을 각각 눌러보며 화산암과 심성암이 어떻게 다른지 직접 비교해보세요.</p>
@@ -1440,9 +1446,24 @@ function setMagmaViscosity(v){
   if(rBtn) rBtn.classList.toggle('active', magmaViscosity === 'rhyolitic');
   const note = document.getElementById('visc-note');
   if(note){
+    note.classList.remove('basaltic','rhyolitic');
+    note.classList.add(magmaViscosity);
     note.textContent = magmaViscosity === 'basaltic'
       ? '점성이 낮아 가스가 잘 빠져나가요 → 스르륵 흐르는 완만한 용암류 (예: 하와이 화산)'
       : '점성이 높아 가스가 잘 못 빠져나가요 → 압력이 쌓였다가 펑! 터지는 폭발적 분화 (예: 성층화산)';
+  }
+  // 선택 버튼 자체는 애니메이션 없이 '설정'만 하는 단계라 클릭해도 화면 변화가 작아 보일 수 있음.
+  // 그래서 토스트로 선택을 명확히 알리고, 다음 단계인 '화산암 만들기' 버튼을 잠깐 반짝여
+  // 사용자가 바로 다음 행동을 알 수 있게 안내함.
+  showEventToast(magmaViscosity === 'basaltic'
+    ? '🌊 현무암질(묽은) 마그마 선택! 이제 "화산암 만들기"를 눌러 확인해보세요'
+    : '🍯 유문암질(끈적한) 마그마 선택! 이제 "화산암 만들기"를 눌러 확인해보세요');
+  const eBtn = document.getElementById('eruption-volcanic-btn');
+  if(eBtn){
+    eBtn.classList.remove('hint-pulse');
+    void eBtn.offsetWidth;
+    eBtn.classList.add('hint-pulse');
+    setTimeout(()=> eBtn.classList.remove('hint-pulse'), 1700);
   }
 }
 function triggerEruption(type){

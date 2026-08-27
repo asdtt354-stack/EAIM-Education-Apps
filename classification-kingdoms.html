@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생물의 분류 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --k1: #94a3b8; --k2: #38bdf8; --k3: #fb923c; --k4: #34d399; --k5: #f43f5e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #fda4af 55%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 5계 카드 ─────────────────────────────── */
+  .kingdoms-wrap { max-width: 1040px; margin: 44px auto 10px; padding: 0 20px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media (max-width: 900px) { .kingdoms-wrap { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .kingdoms-wrap { grid-template-columns: 1fr; } }
+  .kcard { background: #121012; border: 1.5px solid #262022; border-radius: 16px; padding: 16px; text-align: center; cursor: pointer; transition: all .25s; }
+  .kcard.open { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 15%, transparent); }
+  .kcard .k-icon { font-size: 2em; margin-bottom: 8px; }
+  .kcard .k-name { font-weight: 800; font-size: 0.92em; color: var(--c); margin-bottom: 6px; }
+  .kcard .k-trait { font-size: 0.76em; color: #999; line-height: 1.5; }
+  .kcard .k-detail { max-height: 0; overflow: hidden; transition: max-height .35s ease; text-align: left; }
+  .kcard.open .k-detail { max-height: 200px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #2f2f31; }
+  .kcard .k-detail p { font-size: 0.78em; color: #ccc; line-height: 1.65; margin: 0 0 8px; }
+  .kcard .k-examples { font-size: 1.3em; letter-spacing: 4px; }
+
+  /* ── 분류 맞히기 게임 ─────────────────────── */
+  .game-wrap { max-width: 620px; margin: 50px auto 10px; padding: 0 20px; }
+  .game-wrap h2 { font-size: 1.2em; text-align: center; margin-bottom: 4px; }
+  .game-wrap .sub { color: #888; font-size: 0.82em; text-align: center; margin-bottom: 22px; }
+  .game-card { background: #121012; border: 1px solid #262022; border-radius: 18px; padding: 28px 24px; text-align: center; }
+  .game-score { font-size: 0.78em; color: #888; margin-bottom: 14px; }
+  .game-organism { font-size: 3.4em; margin-bottom: 8px; }
+  .game-name { font-size: 1.05em; font-weight: 800; margin-bottom: 20px; }
+  .game-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .game-opt { border: 1.5px solid #2f2f31; background: #1a1a1c; color: #ccc; padding: 10px 6px; border-radius: 9px; font-size: 0.8em; font-weight: 700; cursor: pointer; }
+  .game-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.15); color: #a7f3d0; }
+  .game-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.15); color: #fda4af; }
+  .game-opt:disabled { cursor: default; }
+  .game-fb { min-height: 40px; margin-top: 16px; font-size: 0.8em; color: #bbb; line-height: 1.6; }
+  .game-next { margin-top: 10px; border: none; background: var(--accent); color: #fff; font-weight: 800; padding: 10px 20px; border-radius: 9px; font-size: 0.82em; cursor: pointer; display: none; }
+  .game-done { display: none; }
+  .game-done .gd-score { font-size: 1.6em; font-weight: 900; color: #fff; margin: 8px 0; }
+  .game-retry { border: 1.5px solid var(--accent); background: rgba(168,85,247,0.14); color: #d8b4fe; font-weight: 800; padding: 10px 18px; border-radius: 9px; font-size: 0.82em; cursor: pointer; margin-top: 8px; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅱ. 생물의 구성과 다양성<span class="sep">/</span>2. 생물의 다양성<span class="sep">/</span><b>생물의 분류</b>
+    </div>
+    <a class="hub-link" href="index.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅱ-2-3 · 교과서 60쪽</div>
+    <h1>지구의 모든 생물을<br>다섯 무리로 나눈다면</h1>
+    <p class="lead">과학자들은 생물을 세포의 구조, 양분을 얻는 방법, 이동 여부 등을 기준으로 크게 다섯 개의 무리(계)로 나눈다. 카드를 눌러 각 계의 특징을 확인하고, 아래 게임에서 직접 분류해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>생물을 원핵생물계, 원생생물계, 균계, 식물계, 동물계의 5계로 분류하고, 각 계에 속하는 생물의 공통적인 특징을 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="kingdoms-wrap" id="kingdomsWrap"></div>
+
+  <div class="game-wrap">
+    <h2>직접 분류해 보기</h2>
+    <div class="sub">생물이 나오면 알맞은 계를 골라보자.</div>
+    <div class="game-card">
+      <div class="game-score" id="gameScore"></div>
+      <div id="gamePlay">
+        <div class="game-organism" id="gameEmoji"></div>
+        <div class="game-name" id="gameName"></div>
+        <div class="game-opts" id="gameOpts"></div>
+        <div class="game-fb" id="gameFb"></div>
+        <button class="game-next" id="gameNextBtn">다음 문제 →</button>
+      </div>
+      <div class="game-done" id="gameDone">
+        <div>모든 생물을 분류했어요!</div>
+        <div class="gd-score" id="gdScore"></div>
+        <button class="game-retry" onclick="startGame()">다시 도전하기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="classification-methods.html"><span class="k">이전 소단원</span><span class="t">← 생물의 분류 방법</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">생물다양성보전의 필요성 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 생물의 구성과 다양성</footer>
+
+<script>
+/* ────────────────────────────────
+   5계 데이터
+   ──────────────────────────────── */
+const KINGDOMS = [
+  { key:'monera', c:'var(--k1)', icon:'🧫', name:'원핵생물계', trait:'핵막이 없는 세포',
+    detail:'유전물질을 둘러싸는 핵막이 없는 원핵세포로 이루어진 단세포생물이다. 지구에서 가장 먼저 나타난 생물 무리로 알려져 있다.', ex:'🦠 🦠' },
+  { key:'protista', c:'var(--k2)', icon:'🦠', name:'원생생물계', trait:'단순한 진핵생물',
+    detail:'핵막을 가진 진핵세포로 이루어져 있지만, 몸의 구조가 단순한 생물 무리이다. 대부분 단세포이거나 간단한 형태의 다세포생물이다.', ex:'🔵 🌿' },
+  { key:'fungi', c:'var(--k3)', icon:'🍄', name:'균계', trait:'양분을 흡수해 살아감',
+    detail:'대부분 균사로 이루어진 다세포생물로, 광합성을 하지 못한다. 죽은 생물을 분해하거나 다른 생물에 붙어살면서 양분을 얻는다.', ex:'🍄 🍞' },
+  { key:'plant', c:'var(--k4)', icon:'🌻', name:'식물계', trait:'광합성으로 스스로 양분 생성',
+    detail:'세포벽과 엽록체를 가진 다세포생물이다. 광합성을 통해 스스로 양분을 만들며, 대부분 한곳에 뿌리를 내려 이동하지 않는다.', ex:'🌻 🌲' },
+  { key:'animal', c:'var(--k5)', icon:'🐫', name:'동물계', trait:'스스로 이동, 광합성 못 함',
+    detail:'세포벽이 없는 다세포생물로, 광합성을 하지 못해 다른 생물을 먹이로 삼는다. 대부분 근육과 신경을 이용해 스스로 이동할 수 있다.', ex:'🐫 🦑' },
+];
+
+let openKingdom = null;
+function renderKingdoms(){
+  const wrap = document.getElementById('kingdomsWrap');
+  wrap.innerHTML = '';
+  KINGDOMS.forEach(k => {
+    const card = document.createElement('div');
+    card.className = 'kcard' + (k.key === openKingdom ? ' open' : '');
+    card.style.setProperty('--c', k.c);
+    card.onclick = () => { openKingdom = (openKingdom === k.key) ? null : k.key; renderKingdoms(); };
+    card.innerHTML = `
+      <div class="k-icon">${k.icon}</div>
+      <div class="k-name">${k.name}</div>
+      <div class="k-trait">${k.trait}</div>
+      <div class="k-detail"><p>${k.detail}</p><div class="k-examples">${k.ex}</div></div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+renderKingdoms();
+
+/* ────────────────────────────────
+   분류 맞히기 게임
+   ──────────────────────────────── */
+const ORGANISMS = [
+  { emoji:'🧫', name:'젖산균', k:'monera' },
+  { emoji:'🧫', name:'위 나선균', k:'monera' },
+  { emoji:'🦠', name:'아메바', k:'protista' },
+  { emoji:'🦠', name:'유글레나', k:'protista' },
+  { emoji:'🍄', name:'표고버섯', k:'fungi' },
+  { emoji:'🍞', name:'누룩곰팡이', k:'fungi' },
+  { emoji:'🌻', name:'해바라기', k:'plant' },
+  { emoji:'🌲', name:'소나무', k:'plant' },
+  { emoji:'🐫', name:'낙타', k:'animal' },
+  { emoji:'🦑', name:'오징어', k:'animal' },
+];
+let order = [], gi = 0, score = 0;
+
+function shuffled(arr){ return [...arr].sort(() => Math.random() - 0.5); }
+
+function startGame(){
+  order = shuffled(ORGANISMS);
+  gi = 0; score = 0;
+  document.getElementById('gamePlay').style.display = 'block';
+  document.getElementById('gameDone').style.display = 'none';
+  showQuestion();
+}
+
+function showQuestion(){
+  const item = order[gi];
+  document.getElementById('gameScore').textContent = `문제 ${gi+1} / ${order.length}  ·  맞힌 개수 ${score}`;
+  document.getElementById('gameEmoji').textContent = item.emoji;
+  document.getElementById('gameName').textContent = item.name;
+  document.getElementById('gameFb').textContent = '';
+  document.getElementById('gameNextBtn').style.display = 'none';
+
+  const opts = document.getElementById('gameOpts');
+  opts.innerHTML = '';
+  shuffled(KINGDOMS).forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'game-opt';
+    btn.textContent = k.name;
+    btn.onclick = () => answer(k.key, btn);
+    opts.appendChild(btn);
+  });
+}
+
+function answer(chosenKey, btn){
+  const item = order[gi];
+  const correctKingdom = KINGDOMS.find(k => k.key === item.k);
+  const isCorrect = chosenKey === item.k;
+  if (isCorrect) score++;
+
+  document.querySelectorAll('.game-opt').forEach(o => {
+    o.disabled = true;
+    if (o.textContent === correctKingdom.name) o.classList.add('correct');
+    else if (o === btn && !isCorrect) o.classList.add('wrong');
+  });
+
+  document.getElementById('gameFb').textContent =
+    (isCorrect ? '✅ 정답! ' : '❌ 정답은 ' + correctKingdom.name + '. ') + correctKingdom.detail;
+  document.getElementById('gameNextBtn').style.display = 'inline-block';
+}
+
+document.getElementById('gameNextBtn').addEventListener('click', () => {
+  gi++;
+  if (gi >= order.length) {
+    document.getElementById('gamePlay').style.display = 'none';
+    document.getElementById('gameDone').style.display = 'block';
+    document.getElementById('gdScore').textContent = `${score} / ${order.length}`;
+  } else {
+    showQuestion();
+  }
+});
+startGame();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '핵막이 없는 세포로 이루어진 생물이 속하는 계는?',
+    opts: ['원핵생물계', '원생생물계', '균계', '식물계'], answer: 0,
+    fb: '핵막이 없는 원핵세포로 이루어진 생물은 "원핵생물계"에 속한다.' },
+  { q: '세포벽과 엽록체를 가지고 있으며 스스로 양분을 만들고, 대부분 이동하지 않는 생물이 속하는 계는?',
+    opts: ['균계', '동물계', '식물계', '원생생물계'], answer: 2,
+    fb: '광합성으로 스스로 양분을 만들고 이동하지 않는 특징은 "식물계"의 특징이다.' },
+  { q: '죽은 생물이나 다른 생물에서 양분을 얻으며, 대부분 균사로 이루어진 생물이 속하는 계는?',
+    opts: ['식물계', '균계', '동물계', '원핵생물계'], answer: 1,
+    fb: '균사로 이루어져 있고 스스로 양분을 만들지 못해 다른 곳에서 양분을 흡수하는 생물은 "균계"에 속한다.' },
+  { q: '다음 중 원생생물계에 속하는 생물의 예로 가장 알맞은 것은?',
+    opts: ['대장균', '유글레나', '소나무', '오징어'], answer: 1,
+    fb: '유글레나는 핵막을 가진 단순한 진핵생물로 "원생생물계"의 대표적인 예이다. 대장균은 원핵생물계, 소나무는 식물계, 오징어는 동물계에 속한다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

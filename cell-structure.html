@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세포 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --membrane-c: #f43f5e;
+    --nucleus-c: #a855f7;
+    --mito-c: #fb923c;
+    --wall-c: #22c55e;
+    --chloro-c: #10b981;
+    --vacuole-c: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid #262022; padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 {
+    font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px;
+    background: linear-gradient(100deg, #fff 30%, #d8b4fe 60%, var(--accent) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3;
+  }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box {
+    max-width: 620px; margin: 26px auto 0; text-align: left;
+    background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px;
+  }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  .track-switch {
+    max-width: 340px; margin: 34px auto 0; display: flex;
+    background: #141215; border: 1px solid #2a2a2c; border-radius: 12px; padding: 4px;
+  }
+  .track-btn { flex: 1; border: none; background: transparent; color: #999; padding: 10px 0; border-radius: 9px; font-size: 0.86em; font-weight: 700; cursor: pointer; transition: all .25s; }
+  .track-btn.on.animal { background: var(--membrane-c); color: #fff; box-shadow: 0 0 14px rgba(244,63,94,0.4); }
+  .track-btn.on.plant { background: var(--wall-c); color: #06281c; box-shadow: 0 0 14px rgba(34,197,94,0.4); }
+
+  /* ── 세포 다이어그램 ─────────────────────── */
+  .cell-wrap { max-width: 980px; margin: 40px auto 10px; padding: 0 20px; display: grid; grid-template-columns: 1fr 320px; gap: 28px; align-items: start; }
+  @media (max-width: 800px) { .cell-wrap { grid-template-columns: 1fr; } }
+
+  .cell-stage { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 20px; display: flex; align-items: center; justify-content: center; min-height: 340px; }
+  .cell-stage svg { width: 100%; max-width: 420px; height: auto; }
+  .organelle-shape { cursor: pointer; transition: filter .25s, transform .25s; transform-origin: center; }
+  .organelle-shape:hover { filter: brightness(1.25); }
+  .organelle-shape.active { filter: drop-shadow(0 0 10px currentColor) brightness(1.3); }
+
+  .legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
+    background: #141215; border: 1.5px solid #2a2a2c; border-radius: 10px; padding: 10px 12px;
+    color: #ccc; font-size: 0.84em; font-weight: 700; cursor: pointer; transition: all .2s;
+  }
+  .legend-item .sw { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; background: var(--c); }
+  .legend-item.active { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, #141215); color: #fff; }
+  .legend-item .only-tag { margin-left: auto; font-size: 0.68em; font-weight: 800; color: var(--c); background: color-mix(in srgb, var(--c) 20%, transparent); padding: 2px 7px; border-radius: 6px; }
+
+  .organ-detail {
+    max-width: 980px; margin: 6px auto 26px; padding: 0 20px;
+  }
+  .od-card { background: #121012; border: 1px solid #2a2a2c; border-radius: 16px; padding: 22px 26px; }
+  .od-card .sd-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .od-card .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+  .od-card h3 { margin: 0; font-size: 1.1em; color: #fff; }
+  .od-card p { color: #d0d0d0; font-size: 0.92em; line-height: 1.75; margin: 0; }
+
+  /* ── 공통점/차이점 카드 ──────────────────── */
+  .compare-wrap { max-width: 980px; margin: 0 auto 44px; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .compare-wrap { grid-template-columns: 1fr; } }
+  .compare-card { border-radius: 16px; padding: 18px 20px; border: 1px solid; }
+  .compare-card.common { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.28); }
+  .compare-card.plant-only { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.28); }
+  .compare-card .ct { font-size: 0.78em; font-weight: 800; letter-spacing: .5px; margin-bottom: 10px; }
+  .compare-card.common .ct { color: var(--accent); }
+  .compare-card.plant-only .ct { color: var(--wall-c); }
+  .compare-card ul { margin: 0; padding-left: 18px; color: #ddd; font-size: 0.86em; line-height: 1.9; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 0 auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  /* ── 하단 이전/다음 내비 ──────────────────── */
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn {
+    flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c;
+    background: #121012; color: #ccc; font-size: 0.82em;
+  }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅱ. 생물의 구성과 다양성<span class="sep">/</span>1. 생물의 구성<span class="sep">/</span><b>세포</b>
+    </div>
+    <a class="hub-link" href="index.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅱ-1-1 · 교과서 38쪽</div>
+    <h1>모든 생물은<br>세포로 이루어져 있다</h1>
+    <p class="lead">지구상의 모든 생물은 세포라는 작은 방으로 이루어져 있다. 동물세포와 식물세포를 눌러보며 어떤 구조를 공통으로 갖고, 어떤 구조가 서로 다른지 비교해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>세포막, 핵, 세포질 등 동물세포와 식물세포에 공통으로 있는 구조와 세포벽, 엽록체 등 식물세포에만 있는 구조를 구분하여 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="track-switch">
+    <button class="track-btn on animal" id="btn-animal" onclick="setTrack('animal')">🔴 동물세포</button>
+    <button class="track-btn plant" id="btn-plant" onclick="setTrack('plant')">🟢 식물세포</button>
+  </div>
+
+  <div class="cell-wrap">
+    <div class="cell-stage" id="cellStage"></div>
+    <div class="legend" id="legendArea"></div>
+  </div>
+
+  <div class="organ-detail">
+    <div class="od-card" id="odCard"></div>
+  </div>
+
+  <div class="compare-wrap">
+    <div class="compare-card common">
+      <div class="ct">🟣 동물세포 · 식물세포 공통</div>
+      <ul><li>세포막 — 물질 출입 조절</li><li>핵 — 유전물질 보관, 생명활동 조절</li><li>세포질 — 여러 소기관이 들어있는 공간</li><li>미토콘드리아 — 세포호흡으로 에너지 생성</li></ul>
+    </div>
+    <div class="compare-card plant-only">
+      <div class="ct">🟢 식물세포에만 있음</div>
+      <ul><li>세포벽 — 세포를 보호하고 모양 유지</li><li>엽록체 — 광합성으로 양분 생성</li><li>큰 액포 — 물·색소·노폐물 저장</li></ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <a class="nav-btn next" href="organization-levels.html"><span class="k">다음 소단원</span><span class="t">생물의 구성 단계 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 생물의 구성과 다양성</footer>
+
+<script>
+/* ────────────────────────────────
+   세포 데이터 (동물 / 식물)
+   ──────────────────────────────── */
+const ORGANELLES = {
+  membrane: { name:'세포막', c:'var(--membrane-c)', only:false,
+    desc:'세포의 가장 바깥을 둘러싸는 얇은 막으로, 세포 안과 밖으로 물질이 드나드는 것을 조절한다. 필요한 물질은 들여보내고 필요 없는 물질은 내보내는 문지기 역할을 한다.' },
+  nucleus: { name:'핵', c:'var(--nucleus-c)', only:false,
+    desc:'세포 안에서 가장 눈에 띄는 둥근 구조로, 유전물질(DNA)이 들어 있어 세포의 생명활동을 조절하는 사령탑이다.' },
+  cytoplasm: { name:'세포질', c:'#9ca3af', only:false,
+    desc:'핵을 둘러싸고 세포막 안쪽을 채우는 부분으로, 미토콘드리아를 비롯한 여러 세포 소기관이 이 안에 들어 있다.' },
+  mito: { name:'미토콘드리아', c:'var(--mito-c)', only:false,
+    desc:'세포호흡을 통해 생명활동에 필요한 에너지를 만들어내는 소기관. 활발히 움직이는 세포일수록 미토콘드리아가 많다.' },
+  wall: { name:'세포벽', c:'var(--wall-c)', only:'식물만', plantOnly:true,
+    desc:'세포막 바깥을 둘러싼 두껍고 단단한 벽으로, 식물세포의 모양을 일정하게 유지시키고 세포를 보호한다. 동물세포에는 없다.' },
+  chloro: { name:'엽록체', c:'var(--chloro-c)', only:'식물만', plantOnly:true,
+    desc:'초록색을 띠는 소기관으로, 빛에너지를 이용해 광합성을 하여 스스로 양분을 만들어낸다. 동물세포에는 없다.' },
+  vacuole: { name:'액포', c:'var(--vacuole-c)', only:'식물만', plantOnly:true,
+    desc:'물, 색소, 노폐물 등을 저장하는 주머니 모양의 구조. 성숙한 식물세포일수록 액포가 크게 발달해 세포 대부분을 차지하기도 한다.' },
+};
+
+let currentTrack = 'animal';
+let currentKey = 'nucleus';
+
+function svgAnimal(){
+  return `
+  <svg viewBox="0 0 300 260">
+    <ellipse class="organelle-shape" data-k="membrane" cx="150" cy="130" rx="128" ry="108" fill="none" stroke="var(--membrane-c)" stroke-width="5" style="color:var(--membrane-c)"/>
+    <ellipse class="organelle-shape" data-k="cytoplasm" cx="150" cy="130" rx="122" ry="102" fill="#2a2226" style="color:#9ca3af" opacity="0.55"/>
+    <circle class="organelle-shape" data-k="nucleus" cx="140" cy="118" r="42" fill="var(--nucleus-c)" style="color:var(--nucleus-c)" opacity="0.9"/>
+    <circle cx="150" cy="112" r="6" fill="#2a1a40" opacity="0.7"/>
+    <circle cx="128" cy="128" r="4" fill="#2a1a40" opacity="0.7"/>
+    <ellipse class="organelle-shape" data-k="mito" cx="215" cy="80" rx="20" ry="11" fill="var(--mito-c)" style="color:var(--mito-c)" transform="rotate(-25 215 80)"/>
+    <ellipse class="organelle-shape" data-k="mito" cx="90" cy="185" rx="18" ry="10" fill="var(--mito-c)" style="color:var(--mito-c)" transform="rotate(20 90 185)"/>
+    <ellipse class="organelle-shape" data-k="mito" cx="215" cy="190" rx="16" ry="9" fill="var(--mito-c)" style="color:var(--mito-c)" transform="rotate(-10 215 190)"/>
+  </svg>`;
+}
+function svgPlant(){
+  return `
+  <svg viewBox="0 0 300 260">
+    <rect class="organelle-shape" data-k="wall" x="20" y="18" width="260" height="224" rx="18" fill="none" stroke="var(--wall-c)" stroke-width="8" style="color:var(--wall-c)"/>
+    <rect class="organelle-shape" data-k="membrane" x="32" y="30" width="236" height="200" rx="12" fill="none" stroke="var(--membrane-c)" stroke-width="4" style="color:var(--membrane-c)"/>
+    <rect class="organelle-shape" data-k="cytoplasm" x="36" y="34" width="228" height="192" rx="10" fill="#20281f" style="color:#9ca3af" opacity="0.5"/>
+    <rect class="organelle-shape" data-k="vacuole" x="70" y="90" width="150" height="115" rx="16" fill="var(--vacuole-c)" style="color:var(--vacuole-c)" opacity="0.55"/>
+    <circle class="organelle-shape" data-k="nucleus" cx="78" cy="65" r="26" fill="var(--nucleus-c)" style="color:var(--nucleus-c)" opacity="0.9"/>
+    <ellipse class="organelle-shape" data-k="chloro" cx="230" cy="60" rx="14" ry="9" fill="var(--chloro-c)" style="color:var(--chloro-c)" transform="rotate(20 230 60)"/>
+    <ellipse class="organelle-shape" data-k="chloro" cx="245" cy="95" rx="13" ry="8" fill="var(--chloro-c)" style="color:var(--chloro-c)" transform="rotate(-15 245 95)"/>
+    <ellipse class="organelle-shape" data-k="chloro" cx="55" cy="200" rx="13" ry="8" fill="var(--chloro-c)" style="color:var(--chloro-c)" transform="rotate(10 55 200)"/>
+    <ellipse class="organelle-shape" data-k="mito" cx="230" cy="180" rx="15" ry="8" fill="var(--mito-c)" style="color:var(--mito-c)" transform="rotate(-20 230 180)"/>
+  </svg>`;
+}
+
+function keysForTrack(t){
+  return t === 'animal'
+    ? ['membrane','nucleus','cytoplasm','mito']
+    : ['wall','membrane','nucleus','cytoplasm','vacuole','chloro','mito'];
+}
+
+function setTrack(t){
+  currentTrack = t;
+  document.getElementById('btn-animal').classList.toggle('on', t==='animal');
+  document.getElementById('btn-plant').classList.toggle('on', t==='plant');
+  currentKey = t === 'animal' ? 'nucleus' : 'chloro';
+  render();
+}
+
+function render(){
+  document.getElementById('cellStage').innerHTML = currentTrack === 'animal' ? svgAnimal() : svgPlant();
+
+  const legend = document.getElementById('legendArea');
+  legend.innerHTML = '';
+  keysForTrack(currentTrack).forEach(k => {
+    const o = ORGANELLES[k];
+    const item = document.createElement('div');
+    item.className = 'legend-item' + (k === currentKey ? ' active' : '');
+    item.style.setProperty('--c', o.c);
+    item.onclick = () => { currentKey = k; render(); };
+    item.innerHTML = `<span class="sw"></span>${o.name}${o.plantOnly ? `<span class="only-tag">${o.only}</span>` : ''}`;
+    legend.appendChild(item);
+  });
+
+  document.querySelectorAll('.organelle-shape').forEach(el => {
+    el.classList.toggle('active', el.dataset.k === currentKey);
+    el.onclick = () => { currentKey = el.dataset.k; render(); };
+  });
+
+  const cur = ORGANELLES[currentKey];
+  const od = document.getElementById('odCard');
+  od.style.setProperty('--c', cur.c);
+  od.innerHTML = `
+    <div class="sd-title"><span class="dot"></span><h3>${cur.name}</h3>${cur.plantOnly ? `<span style="font-size:.75em;color:var(--wall-c);font-weight:700">${cur.only} 있음</span>` : ''}</div>
+    <p>${cur.desc}</p>
+  `;
+}
+render();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '세포에서 유전물질(DNA)이 들어 있어 생명활동을 조절하는 부분은?',
+    opts: ['세포막', '핵', '세포질', '미토콘드리아'], answer: 1,
+    fb: '유전물질을 담고 세포의 생명활동을 조절하는 것은 "핵"이다.' },
+  { q: '다음 중 식물세포에만 있고 동물세포에는 없는 구조는?',
+    opts: ['세포막', '미토콘드리아', '엽록체', '핵'], answer: 2,
+    fb: '엽록체는 광합성을 담당하는 소기관으로 식물세포에만 있다. 세포막, 미토콘드리아, 핵은 동물세포와 식물세포에 공통으로 있다.' },
+  { q: '빛에너지를 이용해 광합성을 하여 양분을 만드는 세포 소기관은?',
+    opts: ['세포벽', '엽록체', '액포', '미토콘드리아'], answer: 1,
+    fb: '광합성이 일어나 양분을 만드는 곳은 "엽록체"이다. 미토콘드리아는 그 반대로 에너지를 "사용"하기 위해 세포호흡을 하는 곳이다.' },
+  { q: '세포막의 역할로 가장 알맞은 것은?',
+    opts: ['유전물질을 저장한다', '광합성을 수행한다', '물질의 출입을 조절한다', '세포의 모양을 단단하게 유지한다'], answer: 2,
+    fb: '세포막은 세포 안팎으로 물질이 드나드는 것을 조절하는 역할을 한다. 세포 모양을 단단히 유지하는 것은 식물세포의 "세포벽"이다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

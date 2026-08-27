@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생물다양성 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --genetic-c: #fb923c;
+    --species-c: #f43f5e;
+    --ecosys-c: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #fdba74 55%, #38bdf8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 다양성 카드 3종 ──────────────────────── */
+  .cards-wrap { max-width: 980px; margin: 44px auto 10px; padding: 0 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 800px) { .cards-wrap { grid-template-columns: 1fr; } }
+  .dcard { background: #121012; border: 1.5px solid #262022; border-radius: 18px; padding: 20px; cursor: pointer; transition: all .25s; }
+  .dcard:hover { border-color: color-mix(in srgb, var(--c) 50%, #262022); }
+  .dcard.open { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 15%, transparent); }
+  .dcard .showcase { height: 70px; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 14px; }
+  .dcard .showcase svg { height: 46px; }
+  .dcard .dc-title { font-size: 1.02em; font-weight: 800; color: var(--c); margin-bottom: 6px; }
+  .dcard .dc-short { font-size: 0.82em; color: #999; line-height: 1.55; }
+  .dcard .dc-detail { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .dcard.open .dc-detail { max-height: 220px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #2f2f31; }
+  .dcard .dc-detail p { margin: 0 0 8px; font-size: 0.84em; line-height: 1.7; color: #ddd; }
+  .dcard .dc-detail .ex-tag { display: inline-block; font-size: 0.68em; font-weight: 800; color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); padding: 3px 8px; border-radius: 6px; margin-bottom: 6px; }
+  .dcard .toggle-hint { font-size: 0.7em; color: #666; margin-top: 10px; }
+
+  .bridge-note { max-width: 620px; margin: 26px auto 0; text-align: center; padding: 0 20px; }
+  .bridge-note p { color: #888; font-size: 0.84em; line-height: 1.7; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 50px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅱ. 생물의 구성과 다양성<span class="sep">/</span>2. 생물의 다양성<span class="sep">/</span><b>생물다양성</b>
+    </div>
+    <a class="hub-link" href="index.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅱ-2-1 · 교과서 50쪽</div>
+    <h1>다양하다는 것은<br>세 가지 방식으로 다양하다</h1>
+    <p class="lead">우리는 흔히 "생물다양성"을 종류가 많다는 뜻으로만 생각하지만, 사실 생물다양성은 세 가지 층위에서 살펴볼 수 있다. 카드를 눌러 각각의 의미와 예시를 확인해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>생물다양성을 유전적 다양성, 종다양성, 생태계 다양성의 세 가지 측면으로 나누어 설명하고, 각각의 예를 들 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="cards-wrap" id="cardsWrap"></div>
+
+  <div class="bridge-note">
+    <p>세 가지 다양성은 서로 연결되어 있다. 다양한 생태계가 있어야 그 안에서 다양한 종이 살 수 있고, 각 종 안에서도 유전적으로 다양한 개체가 있어야 환경 변화에도 살아남을 확률이 높아진다.</p>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 상황이 어떤 다양성에 해당하는지 골라보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="organization-levels.html"><span class="k">이전 소단원</span><span class="t">← 생물의 구성 단계</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">생물의 분류 방법 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 생물의 구성과 다양성</footer>
+
+<script>
+/* ────────────────────────────────
+   showcase SVG (모두 신규 제작 아이콘)
+   ──────────────────────────────── */
+function ladybug(spotColor, bodyColor){
+  return `<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="13" ry="11" fill="${bodyColor}"/><line x1="20" y1="11" x2="20" y2="33" stroke="#1a1a1c" stroke-width="1.5"/><circle cx="20" cy="10" r="5" fill="#2a2a2c"/><circle cx="14" cy="18" r="2" fill="${spotColor}"/><circle cx="27" cy="19" r="2.2" fill="${spotColor}"/><circle cx="17" cy="27" r="1.8" fill="${spotColor}"/><circle cx="24" cy="28" r="2" fill="${spotColor}"/></svg>`;
+}
+const geneticShowcase = `
+  ${ladybug('#1a1a1c', '#f43f5e')}
+  ${ladybug('#fde68a', '#fb923c')}
+  ${ladybug('#1a1a1c', '#facc15')}
+`;
+const speciesShowcase = `
+  <svg viewBox="0 0 40 40"><ellipse cx="20" cy="24" rx="10" ry="7" fill="#f43f5e"/><path d="M20 17 C10 8 4 12 10 20 C4 24 10 30 20 24" fill="none" stroke="#fda4af" stroke-width="1.6"/><path d="M20 17 C30 8 36 12 30 20 C36 24 30 30 20 24" fill="none" stroke="#fda4af" stroke-width="1.6"/></svg>
+  <svg viewBox="0 0 40 40"><ellipse cx="20" cy="20" rx="9" ry="12" fill="#34d399"/><circle cx="15" cy="12" r="3.4" fill="#34d399"/><circle cx="25" cy="12" r="3.4" fill="#34d399"/></svg>
+  <svg viewBox="0 0 40 40"><path d="M20 34 L20 18" stroke="#38bdf8" stroke-width="2.4"/><circle cx="20" cy="14" r="8" fill="#38bdf8"/></svg>
+`;
+const ecosysShowcase = `
+  <svg viewBox="0 0 40 40"><path d="M4 30 L14 12 L20 22 L26 10 L36 30 Z" fill="#a855f7"/></svg>
+  <svg viewBox="0 0 40 40"><path d="M4 26 Q12 18 20 26 Q28 34 36 26" fill="none" stroke="#38bdf8" stroke-width="2.6"/><path d="M4 32 Q12 24 20 32 Q28 40 36 32" fill="none" stroke="#38bdf8" stroke-width="1.8" opacity="0.6"/></svg>
+  <svg viewBox="0 0 40 40"><rect x="6" y="20" width="28" height="14" fill="#fbbf24" opacity="0.85"/><circle cx="20" cy="10" r="6" fill="#fde68a"/></svg>
+`;
+
+const DIVERSITY = [
+  { key:'genetic', c:'var(--genetic-c)', title:'유전적 다양성', short:'같은 종이라도 개체마다 다른 특징', showcase: geneticShowcase,
+    example:'예 · 무당벌레의 다양한 색과 무늬', body:'같은 종에 속하는 생물이라도 개체마다 가지고 있는 유전자가 조금씩 다르기 때문에 생김새, 색깔, 크기 등에서 차이가 나타난다. 같은 무당벌레 종이라도 색깔과 무늬가 저마다 다른 것이 대표적인 예이며, 사람마다 눈동자 색과 지문이 다른 것도 마찬가지 이유이다.' },
+  { key:'species', c:'var(--species-c)', title:'종다양성', short:'한 지역에 사는 생물 종류의 다양함', showcase: speciesShowcase,
+    example:'예 · 숲에 함께 사는 곤충·새·나무', body:'일정한 지역에 얼마나 많은 종류의 생물종이 살고 있는지, 그리고 각 종의 개체 수가 얼마나 고르게 분포하는지를 나타낸다. 열대우림처럼 다양한 곤충, 새, 식물이 함께 살아가는 곳은 종다양성이 높다고 말한다.' },
+  { key:'ecosys', c:'var(--ecosys-c)', title:'생태계 다양성', short:'한 지역 안 여러 환경의 생태계', showcase: ecosysShowcase,
+    example:'예 · 숲·갯벌·사막이 함께 있는 지역', body:'사막, 갯벌, 숲, 강, 초원처럼 서로 다른 환경 조건을 가진 생태계가 한 지역 안에 다양하게 존재하는 것을 말한다. 생태계마다 서식하는 생물의 종류와 특징이 다르기 때문에, 생태계가 다양할수록 그 지역 전체의 생물다양성도 높아진다.' },
+];
+
+let openKey = 'genetic';
+
+function renderCards(){
+  const wrap = document.getElementById('cardsWrap');
+  wrap.innerHTML = '';
+  DIVERSITY.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'dcard' + (d.key === openKey ? ' open' : '');
+    card.style.setProperty('--c', d.c);
+    card.onclick = () => { openKey = (openKey === d.key) ? null : d.key; renderCards(); };
+    card.innerHTML = `
+      <div class="showcase">${d.showcase}</div>
+      <div class="dc-title">${d.title}</div>
+      <div class="dc-short">${d.short}</div>
+      <div class="dc-detail">
+        <span class="ex-tag">${d.example}</span>
+        <p>${d.body}</p>
+      </div>
+      <div class="toggle-hint">${d.key === openKey ? '▲ 접기' : '▼ 눌러서 자세히 보기'}</div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+renderCards();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '한 마을 뒷산에 소나무, 참나무, 고사리, 다람쥐, 딱따구리 등 여러 생물이 함께 살고 있다. 이는 어떤 다양성의 예인가?',
+    opts: ['유전적 다양성', '종다양성', '생태계 다양성'], answer: 1,
+    fb: '한 지역에 얼마나 많은 "종류"의 생물이 함께 사는가에 대한 것이므로 "종다양성"의 예이다.' },
+  { q: '같은 종의 강아지라도 털 색깔과 무늬가 저마다 다른 것은 어떤 다양성 때문인가?',
+    opts: ['유전적 다양성', '종다양성', '생태계 다양성'], answer: 0,
+    fb: '같은 종 안에서 개체마다 유전자가 달라 생김새 차이가 나는 것이므로 "유전적 다양성"의 예이다.' },
+  { q: '한 지역 안에 사막, 갯벌, 숲이 함께 존재하는 것은 어떤 다양성의 예인가?',
+    opts: ['유전적 다양성', '종다양성', '생태계 다양성'], answer: 2,
+    fb: '서로 다른 환경의 생태계가 여러 개 존재하는 것이므로 "생태계 다양성"의 예이다.' },
+  { q: '생물다양성에 대한 설명으로 옳지 않은 것은?',
+    opts: [
+      '생물다양성은 유전적 다양성, 종다양성, 생태계 다양성으로 나눌 수 있다.',
+      '같은 종의 개체 수가 많을수록 무조건 종다양성이 높다.',
+      '생태계가 다양할수록 그 지역의 생물다양성도 높아지는 경향이 있다.',
+      '같은 종 안에서도 개체마다 유전자가 달라 다양한 특징이 나타날 수 있다.'
+    ], answer: 1,
+    fb: '종다양성은 단순히 개체 수가 많은 것이 아니라, 생물 "종류"가 얼마나 많고 개체 수가 고르게 분포하는지를 의미한다. 한 종만 개체 수가 많다면 오히려 종다양성은 낮을 수 있다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

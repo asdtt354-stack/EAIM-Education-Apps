@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>열의 이동 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --cold-c: #38bdf8;
+    --hot-c: #fb923c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #fdba74 60%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 탭 ───────────────────────────────────── */
+  .tab-row { max-width: 500px; margin: 40px auto 0; display: flex; gap: 8px; padding: 0 20px; }
+  .tab-btn { flex: 1; border: 1.5px solid #2a2a2c; background: #141215; color: #999; padding: 12px 8px; border-radius: 12px; font-size: 0.86em; font-weight: 800; cursor: pointer; transition: all .2s; }
+  .tab-btn.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, #141215); color: #fff; }
+
+  .sim-shell { max-width: 700px; margin: 20px auto 0; padding: 0 20px; }
+  .sim-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 20px; text-align: center; }
+  #modeCanvas { background: #0f1720; border-radius: 14px; max-width: 100%; }
+
+  .info-card { max-width: 700px; margin: 18px auto 0; padding: 0 20px; }
+  .info-inner { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 16px; padding: 18px 22px; }
+  .info-inner .i-title { font-size: 0.95em; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .info-inner p { margin: 0 0 8px; font-size: 0.85em; color: #ddd; line-height: 1.75; }
+  .info-inner .i-eg { font-size: 0.78em; color: #999; padding-top: 8px; border-top: 1px dashed #2f2f31; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅲ. 열<span class="sep">/</span>1. 열<span class="sep">/</span><b>열의 이동</b>
+    </div>
+    <a class="hub-link" href="../unit3-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅲ-1-3 · 교과서 88쪽</div>
+    <h1>열은 세 가지 방식으로<br>우리 곁에 다가온다</h1>
+    <p class="lead">뜨거운 국에 담긴 숟가락, 끓는 냄비 속 물, 태양의 따뜻함. 이 세 가지 상황은 모두 "열의 이동"이지만 그 방식은 서로 다르다. 탭을 눌러 전도, 대류, 복사를 하나씩 비교해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>열이 이동하는 세 가지 방식인 전도, 대류, 복사의 특징을 설명하고, 일상생활에서 그 예를 찾을 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="tab-row" id="tabRow"></div>
+
+  <div class="sim-shell">
+    <div class="sim-card">
+      <canvas id="modeCanvas" width="640" height="260"></canvas>
+    </div>
+  </div>
+
+  <div class="info-card"><div class="info-inner" id="infoInner"></div></div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="thermal-equilibrium.html"><span class="k">이전 소단원</span><span class="t">← 열평형</span></a>
+    <a class="nav-btn next" href="specific-heat.html"><span class="k">다음 소단원</span><span class="t">비열 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 열</footer>
+
+<script>
+/* ────────────────────────────────
+   모드 정의
+   ──────────────────────────────── */
+const MODES = {
+  conduction: { c:'#fb923c', label:'🔴 전도',
+    title:'전도 (Conduction)',
+    body:'물질을 이루는 입자가 이웃한 입자와 부딪히며 열에너지를 옆으로 옆으로 전달하는 방식이다. 입자 자체는 크게 이동하지 않고 제자리에서 진동하며, 주로 고체에서 잘 일어난다.',
+    eg:'예 · 뜨거운 국에 담가 둔 숟가락의 손잡이까지 점점 뜨거워지는 것' },
+  convection: { c:'#38bdf8', label:'🔵 대류',
+    title:'대류 (Convection)',
+    body:'액체나 기체에서 물질을 이루는 입자 덩어리가 직접 이동하면서 열을 전달하는 방식이다. 데워진 부분은 밀도가 작아져 위로 올라가고, 차가운 부분은 밀도가 커져 아래로 내려오며 순환한다.',
+    eg:'예 · 냄비 속 물을 끓일 때 아래쪽 물이 데워져 위로 올라가고, 위쪽의 차가운 물이 아래로 내려오는 것' },
+  radiation: { c:'#a855f7', label:'🟣 복사',
+    title:'복사 (Radiation)',
+    body:'다른 물질의 도움 없이 열이 파동의 형태로 직접 전달되는 방식이다. 중간에 아무 물질이 없는 진공 상태에서도 전달될 수 있다는 점이 전도, 대류와 크게 다르다.',
+    eg:'예 · 태양의 열이 물질이 거의 없는 우주 공간을 지나 지구까지 전달되는 것' },
+};
+
+let currentMode = 'conduction';
+const canvas = document.getElementById('modeCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+function renderTabs(){
+  const row = document.getElementById('tabRow');
+  row.innerHTML = '';
+  Object.entries(MODES).forEach(([key, m]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (key === currentMode ? ' on' : '');
+    btn.style.setProperty('--c', m.c);
+    btn.textContent = m.label;
+    btn.onclick = () => { currentMode = key; resetMode(); renderTabs(); renderInfo(); };
+    row.appendChild(btn);
+  });
+}
+function renderInfo(){
+  const m = MODES[currentMode];
+  document.getElementById('infoInner').innerHTML = `
+    <div class="i-title">${m.title}</div>
+    <p>${m.body}</p>
+    <div class="i-eg">${m.eg}</div>
+  `;
+}
+
+/* ────────────────────────────────
+   전도 시뮬레이션
+   ──────────────────────────────── */
+let condGrid = [];
+function initConduction(){
+  condGrid = [];
+  const cols = 14, rows = 4;
+  const marginX = 50, marginY = 60;
+  const gapX = (W - marginX*2) / (cols-1), gapY = (H - marginY*2) / (rows-1);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      condGrid.push({ gx: marginX + c*gapX, gy: marginY + r*gapY, col: c, heat: c===0 ? 1 : 0 });
+    }
+  }
+}
+function stepConduction(t){
+  // 왼쪽 열은 항상 heat=1 (열원), 오른쪽으로 확산
+  const cols = 14;
+  const heatByCol = new Array(cols).fill(0);
+  const countByCol = new Array(cols).fill(0);
+  condGrid.forEach(p => { heatByCol[p.col] += p.heat; countByCol[p.col]++; });
+  for (let c = 0; c < cols; c++) heatByCol[c] /= countByCol[c];
+
+  condGrid.forEach(p => {
+    if (p.col === 0) { p.heat = 1; return; }
+    const leftHeat = heatByCol[p.col-1];
+    p.heat += (leftHeat - p.heat) * 0.04;
+  });
+}
+function drawConduction(t){
+  ctx.clearRect(0,0,W,H);
+  ctx.font = '26px sans-serif'; ctx.fillText('🔥', 4, H/2+10);
+  condGrid.forEach(p => {
+    const amp = p.heat * 5;
+    const x = p.gx + Math.sin(t*0.02 + p.gy)*amp;
+    const y = p.gy + Math.cos(t*0.025 + p.gx)*amp;
+    const col = tempColor(p.heat*100);
+    ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2);
+    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 8; ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+}
+
+/* ────────────────────────────────
+   대류 시뮬레이션
+   ──────────────────────────────── */
+let convParticles = [];
+function initConvection(){
+  convParticles = [];
+  for (let i = 0; i < 40; i++) {
+    convParticles.push({ phase: Math.random()*4, speed: 0.006 + Math.random()*0.004, lane: Math.random() });
+  }
+}
+function pathPoint(phase, lane){
+  // 사각 순환 경로: 0~1 오른쪽아래→오른쪽위(가열되며 상승), 1~2 위쪽 이동, 2~3 왼쪽 하강, 3~4 아래쪽 이동
+  const left = 90, right = W-90, top = 55, bottom = H-45;
+  const p = phase % 4;
+  let x, y;
+  if (p < 1) { x = right - lane*14; y = bottom - (bottom-top)*p; }
+  else if (p < 2) { x = right - (right-left)*(p-1); y = top + lane*10; }
+  else if (p < 3) { x = left + lane*14; y = top + (bottom-top)*(p-2); }
+  else { x = left + (right-left)*(p-3); y = bottom - lane*10; }
+  return {x, y};
+}
+function stepConvection(){
+  convParticles.forEach(pt => { pt.phase = (pt.phase + pt.speed) % 4; });
+}
+function drawConvection(){
+  ctx.clearRect(0,0,W,H);
+  // 용기 테두리
+  ctx.strokeStyle = '#2a2a2c'; ctx.lineWidth = 2;
+  ctx.strokeRect(70, 40, W-140, H-70);
+  ctx.font = '24px sans-serif'; ctx.fillText('🔥', W/2-14, H-6);
+
+  convParticles.forEach(pt => {
+    const {x,y} = pathPoint(pt.phase, pt.lane);
+    // phase 0~1: 하단(뜨거움) → 상승; 온도는 phase 기준으로 대략 계산
+    let heat;
+    if (pt.phase < 1) heat = 90 - pt.phase*40;
+    else if (pt.phase < 2) heat = 50;
+    else if (pt.phase < 3) heat = 50 - (pt.phase-2)*20;
+    else heat = 30 + (pt.phase-3)*60;
+    const col = tempColor(heat);
+    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2);
+    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 7; ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+}
+
+/* ────────────────────────────────
+   복사 시뮬레이션
+   ──────────────────────────────── */
+let radWaves = [];
+let radStars = [];
+let radObjHeat = 0;
+function initRadiation(){
+  radWaves = [];
+  radObjHeat = 0;
+  radStars = [];
+  for (let i = 0; i < 30; i++) {
+    radStars.push({ x: 130 + Math.random()*(W-260), y: 30 + Math.random()*(H-60), r: Math.random()*1.4+0.4 });
+  }
+}
+let radFrame = 0;
+function stepRadiation(){
+  radFrame++;
+  if (radFrame % 26 === 0) radWaves.push({ r: 0 });
+  radWaves.forEach(w => w.r += 3.2);
+  radWaves = radWaves.filter(w => w.r < W - 140);
+  radObjHeat = Math.min(1, radObjHeat + 0.0016);
+}
+function drawRadiation(){
+  ctx.clearRect(0,0,W,H);
+  // 진공 표시(별)
+  ctx.fillStyle = '#333';
+  radStars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
+  ctx.fillStyle = '#555'; ctx.font = '11px sans-serif';
+  ctx.fillText('(물질이 거의 없는 빈 공간)', W/2-70, 22);
+
+  // 열원
+  ctx.font = '30px sans-serif'; ctx.fillText('☀️', 40, H/2+10);
+
+  // 파동
+  radWaves.forEach(w => {
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(251,146,60,${Math.max(0, 1 - w.r/(W-140))})`;
+    ctx.lineWidth = 2.4;
+    ctx.arc(80, H/2, w.r, -0.5, 0.5);
+    ctx.stroke();
+  });
+
+  // 대상 물체 (온도에 따라 색이 변함)
+  const objColor = tempColor(20 + radObjHeat*70);
+  ctx.beginPath();
+  ctx.arc(W-70, H/2, 26, 0, Math.PI*2);
+  ctx.fillStyle = objColor; ctx.shadowColor = objColor; ctx.shadowBlur = 14; ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#0a0708'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('물체', W-70, H/2+4);
+  ctx.textAlign = 'left';
+}
+
+/* ────────────────────────────────
+   공통 유틸 & 루프
+   ──────────────────────────────── */
+function tempColor(t){
+  const ratio = Math.max(0, Math.min(1, t/100));
+  const r = Math.round(56 + ratio*(251-56));
+  const g = Math.round(189 + ratio*(146-189));
+  const b = Math.round(248 + ratio*(60-248));
+  return `rgb(${r},${g},${b})`;
+}
+
+let frameT = 0;
+function resetMode(){
+  frameT = 0;
+  if (currentMode === 'conduction') initConduction();
+  else if (currentMode === 'convection') initConvection();
+  else initRadiation();
+}
+
+function loop(){
+  frameT++;
+  if (currentMode === 'conduction') { stepConduction(frameT); drawConduction(frameT); }
+  else if (currentMode === 'convection') { stepConvection(); drawConvection(); }
+  else { stepRadiation(); drawRadiation(); }
+  requestAnimationFrame(loop);
+}
+
+renderTabs();
+renderInfo();
+resetMode();
+loop();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '고체에서 입자가 이웃 입자와 부딪히며 열을 전달하고, 입자 자체는 크게 이동하지 않는 열의 이동 방식은?',
+    opts: ['전도', '대류', '복사', '증발'], answer: 0,
+    fb: '입자가 제자리에서 진동하며 옆 입자에게 열을 전달하는 방식이 "전도"이다.' },
+  { q: '데워진 물질이 직접 이동하며 열을 전달하는, 액체나 기체에서 잘 일어나는 방식은?',
+    opts: ['전도', '대류', '복사', '반사'], answer: 1,
+    fb: '데워진 부분이 위로 올라가고 차가운 부분이 아래로 내려오며 순환하는 방식이 "대류"이다.' },
+  { q: '중간에 물질(매개체)이 없어도 열이 전달될 수 있는 방식은?',
+    opts: ['전도', '대류', '복사', '전도와 대류 모두'], answer: 2,
+    fb: '"복사"는 물질의 도움 없이 파동 형태로 열이 직접 전달되므로 진공에서도 가능하다.' },
+  { q: '태양의 열이 진공인 우주 공간을 지나 지구까지 전달되는 것은 어떤 방식의 예인가?',
+    opts: ['전도', '대류', '복사', '열평형'], answer: 2,
+    fb: '진공을 통과해 전달되는 것은 매개체가 필요 없는 "복사"의 대표적인 예이다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

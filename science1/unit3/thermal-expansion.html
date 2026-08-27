@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>열팽창 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --solid-c: #94a3b8; --liquid-c: #38bdf8; --gas-c: #fb923c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #fdba74 60%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  .section-head { max-width: 780px; margin: 50px auto 18px; padding: 0 20px; }
+  .section-head .num { font-size: 0.72em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
+  .section-head h2 { margin: 0; font-size: 1.2em; }
+
+  /* ── 막대 팽창 시뮬레이션 ─────────────────── */
+  .rod-wrap { max-width: 700px; margin: 0 auto; padding: 0 20px; }
+  .rod-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 24px; text-align: center; }
+  #rodCanvas { background: #0f1720; border-radius: 14px; max-width: 100%; }
+  .rod-readout { display: flex; justify-content: center; gap: 30px; margin: 14px 0; }
+  .rr-item .rv { font-size: 1.3em; font-weight: 900; color: var(--main-color); }
+  .rr-item .rl { font-size: 0.72em; color: #888; }
+  .slider-row { max-width: 460px; margin: 14px auto 4px; }
+  input[type="range"] { width: 100%; accent-color: var(--main-color); height: 6px; }
+  .slider-scale { display: flex; justify-content: space-between; font-size: 0.7em; color: #666; margin-top: 4px; }
+
+  /* ── 상태별 비교 ──────────────────────────── */
+  .phase-wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media (max-width: 700px) { .phase-wrap { grid-template-columns: 1fr; } }
+  .phase-card { background: #121012; border: 1.5px solid; border-radius: 16px; padding: 14px; text-align: center; }
+  .phase-card.solid { border-color: rgba(148,163,184,0.4); }
+  .phase-card.liquid { border-color: rgba(56,189,248,0.4); }
+  .phase-card.gas { border-color: rgba(251,146,60,0.4); }
+  .phase-card canvas { background: #0f1720; border-radius: 10px; margin-bottom: 8px; }
+  .phase-card .pc-title { font-weight: 800; font-size: 0.86em; margin-bottom: 4px; }
+  .phase-card.solid .pc-title { color: var(--solid-c); }
+  .phase-card.liquid .pc-title { color: var(--liquid-c); }
+  .phase-card.gas .pc-title { color: var(--gas-c); }
+  .phase-card .pc-ratio { font-size: 0.72em; color: #999; }
+  .phase-btn-row { text-align: center; margin: 16px 0 0; }
+  .phase-btn { border: none; background: var(--accent); color: #fff; font-weight: 800; padding: 10px 22px; border-radius: 10px; font-size: 0.85em; cursor: pointer; }
+
+  /* ── 실생활 예 카드 ───────────────────────── */
+  .example-wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+  @media (max-width: 620px) { .example-wrap { grid-template-columns: 1fr; } }
+  .ex-card { background: #121012; border: 1.5px solid #262022; border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .ex-card .ex-icon { font-size: 1.6em; flex-shrink: 0; }
+  .ex-card .ex-title { font-weight: 800; font-size: 0.86em; margin-bottom: 4px; color: #fff; }
+  .ex-card .ex-desc { font-size: 0.78em; color: #999; line-height: 1.6; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅲ. 열<span class="sep">/</span>2. 비열과 열팽창<span class="sep">/</span><b>열팽창</b>
+    </div>
+    <a class="hub-link" href="../unit3-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅲ-2-2 · 교과서 100쪽</div>
+    <h1>뜨거워지면<br>물질은 몸집이 커진다</h1>
+    <p class="lead">여름철 전깃줄이 늘어지고, 다리 이음새에 틈이 있는 이유는 무엇일까? 온도를 높이면 입자 사이의 거리가 멀어지면서 물질의 부피가 커지는 "열팽창" 현상을 직접 확인해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>온도가 올라갈 때 입자 사이의 거리가 멀어져 물질의 부피가 커지는 열팽창 현상을 설명하고, 고체·액체·기체의 열팽창 정도를 비교할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>막대를 가열하면 길이가 늘어난다</h2></div>
+  <div class="rod-wrap">
+    <div class="rod-card">
+      <canvas id="rodCanvas" width="560" height="140"></canvas>
+      <div class="rod-readout">
+        <div class="rr-item"><div class="rv" id="rodTempVal">25°C</div><div class="rl">온도</div></div>
+        <div class="rr-item"><div class="rv" id="rodLenVal">100.0%</div><div class="rl">막대 길이(처음 대비)</div></div>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="rodSlider" min="0" max="150" value="25">
+        <div class="slider-scale"><span>0°C</span><span>75°C</span><span>150°C</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>고체·액체·기체, 어느 쪽이 더 많이 팽창할까?</h2></div>
+  <div class="phase-wrap" id="phaseWrap"></div>
+  <div class="phase-btn-row"><button class="phase-btn" onclick="togglePhaseHeat()" id="phaseBtn">☀️ 세 가지 모두 가열해 보기</button></div>
+
+  <div class="section-head"><div class="num">03</div><h2>일상 속 열팽창</h2></div>
+  <div class="example-wrap">
+    <div class="ex-card"><div class="ex-icon">🔌</div><div><div class="ex-title">여름철 늘어지는 전깃줄</div><div class="ex-desc">기온이 올라가면 금속으로 된 전깃줄이 열팽창으로 길어져 아래로 처진다.</div></div></div>
+    <div class="ex-card"><div class="ex-icon">🌉</div><div><div class="ex-title">다리 상판의 신축이음</div><div class="ex-desc">다리 상판 사이에 일부러 틈을 만들어, 계절에 따라 다리가 늘어나고 줄어들 공간을 확보한다.</div></div></div>
+    <div class="ex-card"><div class="ex-icon">🚆</div><div><div class="ex-title">기차 레일 사이의 틈</div><div class="ex-desc">레일도 여름철 열팽창으로 길어질 수 있어, 레일 사이에 약간의 틈을 두어 휘어짐을 방지한다.</div></div></div>
+    <div class="ex-card"><div class="ex-icon">🌡️</div><div><div class="ex-title">알코올 온도계</div><div class="ex-desc">온도계 속 액체가 온도에 따라 팽창·수축하며 관을 따라 오르내리는 것을 이용해 온도를 측정한다.</div></div></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="specific-heat.html"><span class="k">이전 소단원</span><span class="t">← 비열</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 대단원</span><span class="t">Ⅳ. 물질의 상태 변화 (준비 중) →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 열 · 전체 소단원 완료 🎉</footer>
+
+<script>
+/* ────────────────────────────────
+   1) 막대 열팽창 시뮬레이션
+   ──────────────────────────────── */
+const rodCanvas = document.getElementById('rodCanvas');
+const rctx = rodCanvas.getContext('2d');
+const RW = rodCanvas.width, RH = rodCanvas.height;
+const rodParticleCols = 12;
+let rodTemp = 25;
+
+function rodExpansionRatio(t){ return 1 + t * 0.0016; } // 시각적으로 과장한 팽창 계수
+
+function drawRod(){
+  rctx.clearRect(0,0,RW,RH);
+  const baseLen = 340;
+  const len = baseLen * rodExpansionRatio(rodTemp);
+  const startX = (RW - 420) / 2 + (420-len)/2 + 40;
+  const midY = RH/2;
+
+  // 고정 벽(왼쪽)
+  rctx.fillStyle = '#333';
+  rctx.fillRect(startX - 14, midY - 40, 8, 80);
+
+  // 막대
+  const color = tempColorRod(rodTemp);
+  rctx.fillStyle = color;
+  rctx.shadowColor = color; rctx.shadowBlur = 10;
+  rctx.fillRect(startX, midY - 14, len, 28);
+  rctx.shadowBlur = 0;
+
+  // 입자 점
+  rctx.fillStyle = 'rgba(10,7,8,0.5)';
+  for (let i = 0; i < rodParticleCols; i++) {
+    const x = startX + (len/(rodParticleCols-1))*i;
+    rctx.beginPath(); rctx.arc(x, midY, 3.4, 0, Math.PI*2); rctx.fill();
+  }
+
+  // 길이 표시 화살표
+  rctx.strokeStyle = '#666'; rctx.lineWidth = 1;
+  rctx.beginPath(); rctx.moveTo(startX, midY+34); rctx.lineTo(startX+len, midY+34); rctx.stroke();
+}
+function tempColorRod(t){
+  const ratio = Math.max(0, Math.min(1, t/150));
+  const r = Math.round(148 + ratio*(251-148));
+  const g = Math.round(163 + ratio*(146-163));
+  const b = Math.round(184 + ratio*(60-184));
+  return `rgb(${r},${g},${b})`;
+}
+
+const rodSlider = document.getElementById('rodSlider');
+rodSlider.addEventListener('input', () => {
+  rodTemp = +rodSlider.value;
+  document.getElementById('rodTempVal').textContent = rodTemp + '°C';
+  document.getElementById('rodLenVal').textContent = (rodExpansionRatio(rodTemp)*100).toFixed(1) + '%';
+  drawRod();
+});
+rodSlider.dispatchEvent(new Event('input'));
+
+/* ────────────────────────────────
+   2) 고체/액체/기체 팽창 비교
+   ──────────────────────────────── */
+const PHASES = [
+  { key:'solid', c:'var(--solid-c)', icon:'🔩', name:'고체', ratio:1.02, canvasId:'solidCanvas' },
+  { key:'liquid', c:'var(--liquid-c)', icon:'💧', name:'액체', ratio:1.10, canvasId:'liquidCanvas' },
+  { key:'gas', c:'var(--gas-c)', icon:'🎈', name:'기체', ratio:1.55, canvasId:'gasCanvas' },
+];
+let phaseHeated = false;
+
+function renderPhaseCards(){
+  const wrap = document.getElementById('phaseWrap');
+  wrap.innerHTML = PHASES.map(p => `
+    <div class="phase-card ${p.key}">
+      <canvas id="${p.canvasId}" width="220" height="130"></canvas>
+      <div class="pc-title">${p.icon} ${p.name}</div>
+      <div class="pc-ratio">${phaseHeated ? '부피 약 ' + Math.round((p.ratio-1)*100) + '% 증가' : '가열 전 (기준 부피)'}</div>
+    </div>
+  `).join('');
+}
+renderPhaseCards();
+
+function drawPhaseBox(canvasId, ratio, color, shape){
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  const cx = W/2, cy = H/2;
+  const baseSize = 46;
+  const size = baseSize * Math.sqrt(ratio);
+
+  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 10;
+  if (shape === 'square') {
+    ctx.fillRect(cx-size/2, cy-size/2, size, size);
+  } else if (shape === 'droplet') {
+    ctx.beginPath(); ctx.arc(cx, cy, size/2, 0, Math.PI*2); ctx.fill();
+  } else { // gas balloon
+    ctx.beginPath(); ctx.arc(cx, cy, size/2, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+  }
+  ctx.shadowBlur = 0;
+
+  // 기준 점선 테두리(가열 전 크기)
+  ctx.strokeStyle = '#3a3a3c'; ctx.setLineDash([3,3]); ctx.lineWidth = 1;
+  if (shape === 'square') ctx.strokeRect(cx-baseSize/2, cy-baseSize/2, baseSize, baseSize);
+  else { ctx.beginPath(); ctx.arc(cx, cy, baseSize/2, 0, Math.PI*2); ctx.stroke(); }
+  ctx.setLineDash([]);
+}
+
+function renderPhaseBoxes(){
+  drawPhaseBox('solidCanvas', phaseHeated ? PHASES[0].ratio : 1, '#94a3b8', 'square');
+  drawPhaseBox('liquidCanvas', phaseHeated ? PHASES[1].ratio : 1, '#38bdf8', 'droplet');
+  drawPhaseBox('gasCanvas', phaseHeated ? PHASES[2].ratio : 1, '#fb923c', 'gas');
+}
+renderPhaseBoxes();
+
+function togglePhaseHeat(){
+  phaseHeated = !phaseHeated;
+  document.getElementById('phaseBtn').textContent = phaseHeated ? '❄️ 가열 전으로 되돌리기' : '☀️ 세 가지 모두 가열해 보기';
+  renderPhaseCards();
+  renderPhaseBoxes();
+}
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '물질이 열을 받아 온도가 올라갈 때 입자 사이의 거리가 멀어지며 부피가 커지는 현상을 무엇이라 하는가?',
+    opts: ['열평형', '비열', '열팽창', '전도'], answer: 2,
+    fb: '온도가 올라가 부피가 커지는 현상을 "열팽창"이라고 한다.' },
+  { q: '고체, 액체, 기체 중 일반적으로 온도 변화에 따른 열팽창 정도가 가장 큰 것은?',
+    opts: ['고체', '액체', '기체', '셋 다 같다'], answer: 2,
+    fb: '입자 사이의 거리가 멀고 자유롭게 움직이는 기체가 온도 변화에 가장 민감하게 팽창한다.' },
+  { q: '여름철 전깃줄이 늘어져 아래로 처지는 현상은 무엇의 예인가?',
+    opts: ['열팽창', '열평형', '비열', '복사'], answer: 0,
+    fb: '기온이 오르면 금속 전깃줄이 열팽창으로 길어져 아래로 처지게 된다.' },
+  { q: '다리 상판 사이에 일부러 틈(신축이음)을 만들어 두는 까닭으로 가장 알맞은 것은?',
+    opts: ['다리를 가볍게 만들기 위해', '온도 변화에 따른 다리의 열팽창·수축 공간을 확보하기 위해', '빗물이 잘 빠지게 하기 위해', '건설 비용을 줄이기 위해'], answer: 1,
+    fb: '온도에 따라 다리 상판이 늘어나거나 줄어들 수 있는 공간을 미리 마련해 두는 것이다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+
+// 초기 그리기
+drawRod();
+</script>
+</body>
+</html>

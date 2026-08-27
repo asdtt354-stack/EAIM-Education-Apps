@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비열 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --water-c: #38bdf8;
+    --sand-c: #fb923c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #7dd3fc 15%, #fff 50%, #fdba74 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  .assume-note { max-width: 620px; margin: 16px auto 0; text-align: center; font-size: 0.78em; color: #888; padding: 0 20px; line-height: 1.6; }
+
+  /* ── 가열 실험 ────────────────────────────── */
+  .sim-wrap { max-width: 780px; margin: 40px auto 0; padding: 0 20px; }
+  .beakers-row { display: flex; justify-content: center; gap: 40px; margin-bottom: 20px; flex-wrap: wrap; }
+  .beaker-block { text-align: center; }
+  .beaker-name { font-weight: 800; font-size: 0.9em; margin-bottom: 8px; }
+  .beaker-name.water { color: var(--water-c); }
+  .beaker-name.sand { color: var(--sand-c); }
+  #beakerCanvas { background: #0f1720; border-radius: 14px; }
+  .temp-readout-row { display: flex; justify-content: center; gap: 40px; margin: 14px 0; }
+  .tr-item { text-align: center; }
+  .tr-item .tv { font-size: 1.5em; font-weight: 900; }
+  .tr-item.water .tv { color: var(--water-c); }
+  .tr-item.sand .tv { color: var(--sand-c); }
+  .tr-item .tl { font-size: 0.72em; color: #888; }
+
+  .controls-row { text-align: center; margin: 18px 0; }
+  .go-btn { border: none; background: var(--main-color); color: #fff; font-weight: 800; padding: 12px 26px; border-radius: 12px; font-size: 0.9em; cursor: pointer; box-shadow: 0 4px 16px rgba(244,63,94,0.4); }
+  .go-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+  .status-msg { margin-top: 10px; font-size: 0.85em; color: #999; }
+  .status-msg.done { color: #34d399; font-weight: 800; }
+
+  .graph-card { background: #121012; border: 1px solid #262022; border-radius: 16px; padding: 18px; text-align: center; margin-top: 10px; }
+  .graph-card .gc-title { font-size: 0.8em; color: #999; margin-bottom: 10px; }
+  #graphCanvas { background: #0f1720; border-radius: 10px; max-width: 100%; }
+  .legend-row { display: flex; justify-content: center; gap: 20px; margin-top: 10px; font-size: 0.76em; }
+  .legend-row span { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .conclusion-box { max-width: 620px; margin: 20px auto 0; padding: 16px 20px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.28); border-radius: 14px; text-align: center; font-size: 0.85em; color: #a7f3d0; line-height: 1.7; }
+
+  /* ── 개념 카드 ────────────────────────────── */
+  .concept-wrap { max-width: 620px; margin: 40px auto 0; padding: 0 20px; }
+  .concept-card { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 16px; padding: 18px 20px; }
+  .concept-card .cc-title { font-size: 0.9em; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .concept-card p { margin: 0 0 10px; font-size: 0.84em; color: #ddd; line-height: 1.75; }
+  .concept-card .cc-eg { font-size: 0.78em; color: #999; padding-top: 8px; border-top: 1px dashed #2f2f31; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅲ. 열<span class="sep">/</span>2. 비열과 열팽창<span class="sep">/</span><b>비열</b>
+    </div>
+    <a class="hub-link" href="../unit3-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅲ-2-1 · 교과서 96쪽</div>
+    <h1>같은 열을 줘도<br>물질마다 데워지는 속도가 다르다</h1>
+    <p class="lead">물과 모래에 같은 세기로 똑같은 시간 동안 열을 가하면 어느 쪽이 더 빨리 뜨거워질까? 실험으로 직접 확인하고, 그 이유를 "비열"이라는 개념으로 알아보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>물질의 종류에 따라 같은 열량을 가했을 때 온도가 올라가는 정도가 다름을 알고, 이를 비열의 차이로 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="assume-note">※ 물과 모래는 질량(양)이 같다고 가정하고, 같은 세기의 열원으로 같은 시간 동안 가열한다.</div>
+
+  <div class="sim-wrap">
+    <div class="beakers-row">
+      <div class="beaker-block"><div class="beaker-name water">💧 물</div></div>
+      <div class="beaker-block"><div class="beaker-name sand">🏖️ 모래</div></div>
+    </div>
+    <div style="display:flex;justify-content:center;">
+      <canvas id="beakerCanvas" width="500" height="200"></canvas>
+    </div>
+
+    <div class="temp-readout-row">
+      <div class="tr-item water"><div class="tv" id="waterTemp">25°C</div><div class="tl">물의 온도</div></div>
+      <div class="tr-item sand"><div class="tv" id="sandTemp">25°C</div><div class="tl">모래의 온도</div></div>
+    </div>
+
+    <div class="controls-row">
+      <button class="go-btn" id="goBtn" onclick="startHeating()">동시에 가열 시작 🔥</button>
+      <div class="status-msg" id="statusMsg">버튼을 눌러 같은 세기로 동시에 가열해 보자.</div>
+    </div>
+
+    <div class="graph-card">
+      <div class="gc-title">가열 시간에 따른 온도 변화</div>
+      <canvas id="graphCanvas" width="560" height="200"></canvas>
+      <div class="legend-row">
+        <span><span class="legend-dot" style="background:var(--water-c)"></span>물</span>
+        <span><span class="legend-dot" style="background:var(--sand-c)"></span>모래</span>
+      </div>
+    </div>
+
+    <div class="conclusion-box" id="conclusionBox">같은 열을 받아도, 온도가 천천히 오르는 물질일수록 "비열이 크다"고 말한다.</div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <div class="cc-title">🧮 비열이란?</div>
+      <p>어떤 물질 1 g의 온도를 1°C 높이는 데 필요한 열량을 그 물질의 "비열"이라고 한다. 비열이 큰 물질일수록 온도를 올리기 어렵고(천천히 데워지고), 식히기도 어렵다(천천히 식는다).</p>
+      <div class="cc-eg">예 · 물은 비열이 매우 커서 데워지는 데 시간이 오래 걸리지만, 한번 데워지면 잘 식지 않아 찜질팩이나 난방수로 쓰인다. 모래나 금속은 비열이 작아 빨리 뜨거워지고 빨리 식는다.</div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="heat-transfer.html"><span class="k">이전 소단원</span><span class="t">← 열의 이동</span></a>
+    <a class="nav-btn next" href="thermal-expansion.html"><span class="k">다음 소단원</span><span class="t">열팽창 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 열</footer>
+
+<script>
+/* ────────────────────────────────
+   비커 안 입자 애니메이션
+   ──────────────────────────────── */
+function makeParticles(n, x0, y0, w, h){
+  const arr = [];
+  for (let i = 0; i < n; i++) {
+    arr.push({ x: x0 + Math.random()*(w-14)+7, y: y0 + Math.random()*(h-14)+7, dx:(Math.random()-0.5)*1.6, dy:(Math.random()-0.5)*1.6, r:4+Math.random()*1.4 });
+  }
+  return arr;
+}
+function stepParticles(particles, x0, y0, w, h, speedFactor){
+  particles.forEach(p => {
+    p.x += p.dx*speedFactor; p.y += p.dy*speedFactor;
+    if (p.x < x0+p.r || p.x > x0+w-p.r) p.dx *= -1;
+    if (p.y < y0+p.r || p.y > y0+h-p.r) p.dy *= -1;
+    p.x = Math.max(x0+p.r, Math.min(x0+w-p.r, p.x));
+    p.y = Math.max(y0+p.r, Math.min(y0+h-p.r, p.y));
+  });
+}
+function tempColor(t){
+  const ratio = Math.max(0, Math.min(1, (t-20)/80));
+  const r = Math.round(56 + ratio*(251-56));
+  const g = Math.round(189 + ratio*(146-189));
+  const b = Math.round(248 + ratio*(60-248));
+  return `rgb(${r},${g},${b})`;
+}
+function speedFromTemp(t){ return 0.3 + Math.max(0,(t-20))/80 * 2.2; }
+
+const canvas = document.getElementById('beakerCanvas');
+const ctx = canvas.getContext('2d');
+const CW = canvas.width, CH = canvas.height;
+const beakerW = 170, beakerH = 140;
+const waterX = 60, sandX = CW - 60 - beakerW, beakerY = 40;
+
+let waterParticles = makeParticles(26, waterX, beakerY, beakerW, beakerH);
+let sandParticles = makeParticles(26, sandX, beakerY, beakerW, beakerH);
+let waterTemp = 25, sandTemp = 25;
+let heating = false;
+
+function drawScene(){
+  ctx.clearRect(0,0,CW,CH);
+  // 비커 테두리
+  [ [waterX,'#38bdf8'], [sandX,'#fb923c'] ].forEach(([x,color]) => {
+    ctx.strokeStyle = '#2a2a2c'; ctx.lineWidth = 2;
+    ctx.strokeRect(x, beakerY, beakerW, beakerH);
+  });
+  // 입자
+  [ [waterParticles, tempColor(waterTemp)], [sandParticles, tempColor(sandTemp)] ].forEach(([particles, color]) => {
+    particles.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 6; ctx.fill();
+    });
+  });
+  ctx.shadowBlur = 0;
+  // 불꽃
+  if (heating) {
+    ctx.font = '22px sans-serif';
+    ctx.fillText('🔥', waterX + beakerW/2 - 12, beakerY + beakerH + 30);
+    ctx.fillText('🔥', sandX + beakerW/2 - 12, beakerY + beakerH + 30);
+  }
+}
+
+function animateScene(){
+  stepParticles(waterParticles, waterX, beakerY, beakerW, beakerH, speedFromTemp(waterTemp));
+  stepParticles(sandParticles, sandX, beakerY, beakerW, beakerH, speedFromTemp(sandTemp));
+  drawScene();
+  requestAnimationFrame(animateScene);
+}
+animateScene();
+
+function renderReadout(){
+  document.getElementById('waterTemp').textContent = waterTemp.toFixed(1) + '°C';
+  document.getElementById('sandTemp').textContent = sandTemp.toFixed(1) + '°C';
+}
+renderReadout();
+
+/* ────────────────────────────────
+   그래프
+   ──────────────────────────────── */
+const graphCanvas = document.getElementById('graphCanvas');
+const gctx = graphCanvas.getContext('2d');
+const gw = graphCanvas.width, gh = graphCanvas.height;
+const padL = 42, padR = 14, padT = 14, padB = 26;
+let histW = [], histS = [];
+const maxPoints = 100;
+
+function drawGraph(){
+  gctx.clearRect(0,0,gw,gh);
+  gctx.strokeStyle = '#333'; gctx.lineWidth = 1;
+  gctx.beginPath(); gctx.moveTo(padL,padT); gctx.lineTo(padL,gh-padB); gctx.lineTo(gw-padR,gh-padB); gctx.stroke();
+  gctx.fillStyle = '#666'; gctx.font = '10px sans-serif';
+  gctx.fillText('온도(°C)', 4, padT+2);
+  gctx.fillText('가열 시간 →', gw-padR-60, gh-6);
+
+  const yMin=20, yMax=100;
+  const yFor = t => (gh-padB) - (t-yMin)/(yMax-yMin)*(gh-padB-padT);
+  const xFor = i => padL + (i/maxPoints)*(gw-padL-padR);
+
+  [20,40,60,80,100].forEach(v => {
+    const y = yFor(v);
+    gctx.strokeStyle = '#1c1c1e'; gctx.beginPath(); gctx.moveTo(padL,y); gctx.lineTo(gw-padR,y); gctx.stroke();
+    gctx.fillStyle = '#555'; gctx.fillText(v, 10, y+3);
+  });
+
+  function drawLine(hist, color){
+    if (hist.length < 2) return;
+    gctx.strokeStyle = color; gctx.lineWidth = 2.2; gctx.beginPath();
+    hist.forEach((v,i) => { const x=xFor(i), y=yFor(v); if(i===0) gctx.moveTo(x,y); else gctx.lineTo(x,y); });
+    gctx.stroke();
+  }
+  drawLine(histW, '#38bdf8');
+  drawLine(histS, '#fb923c');
+}
+drawGraph();
+
+/* ────────────────────────────────
+   가열 진행
+   ──────────────────────────────── */
+let heatInterval = null;
+function startHeating(){
+  if (heating) return;
+  heating = true;
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('statusMsg').textContent = '같은 세기로 동시에 가열하는 중...';
+
+  waterTemp = 25; sandTemp = 25;
+  histW = [waterTemp]; histS = [sandTemp];
+  drawGraph();
+
+  let steps = 0;
+  const totalSteps = 90;
+  heatInterval = setInterval(() => {
+    steps++;
+    // 같은 열량을 받지만, 물은 비열이 커서 천천히, 모래는 비열이 작아 빠르게 온도가 오름
+    waterTemp += 0.55;
+    sandTemp += 1.55;
+    if (sandTemp > 95) sandTemp = 95;
+    renderReadout();
+    histW.push(waterTemp); histS.push(sandTemp);
+    if (histW.length > maxPoints) { histW.shift(); histS.shift(); }
+    drawGraph();
+
+    if (steps >= totalSteps) {
+      clearInterval(heatInterval);
+      heating = false;
+      document.getElementById('goBtn').disabled = false;
+      document.getElementById('goBtn').textContent = '다시 실험하기 ↺';
+      document.getElementById('statusMsg').className = 'status-msg done';
+      document.getElementById('statusMsg').textContent = `✅ 같은 시간 가열했지만, 모래(${sandTemp.toFixed(1)}°C)가 물(${waterTemp.toFixed(1)}°C)보다 훨씬 많이 뜨거워졌어요!`;
+      document.getElementById('conclusionBox').textContent =
+        `물은 온도가 ${(waterTemp-25).toFixed(1)}°C밖에 오르지 않았지만, 모래는 ${(sandTemp-25).toFixed(1)}°C나 올랐다. 이는 물의 비열이 모래보다 훨씬 크기 때문이다 — 비열이 큰 물질일수록 데워지기 어렵다.`;
+    }
+  }, 50);
+}
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '어떤 물질 1 g의 온도를 1°C 높이는 데 필요한 열량을 무엇이라 하는가?',
+    opts: ['열평형', '비열', '열팽창', '온도'], answer: 1,
+    fb: '물질 1 g의 온도를 1°C 높이는 데 필요한 열량을 "비열"이라고 한다.' },
+  { q: '같은 열을 가했을 때, 비열이 큰 물질과 작은 물질 중 온도가 더 천천히 오르는 것은?',
+    opts: ['비열이 큰 물질', '비열이 작은 물질', '둘 다 같은 속도로 오른다', '비열과는 관계없다'], answer: 0,
+    fb: '비열이 클수록 온도를 올리기 어려워 천천히 데워진다.' },
+  { q: '물과 모래에 같은 세기로 같은 시간 동안 열을 가했을 때, 온도가 더 많이 오르는 것은?',
+    opts: ['물', '모래', '둘 다 똑같이 오른다', '알 수 없다'], answer: 1,
+    fb: '모래는 물보다 비열이 작아서 같은 열을 받아도 온도가 더 많이 오른다.' },
+  { q: '물이 찜질팩이나 난방수로 많이 쓰이는 까닭으로 가장 알맞은 것은?',
+    opts: ['비열이 작아 빨리 식기 때문에', '비열이 커서 한번 데워지면 잘 식지 않기 때문에', '색깔이 투명하기 때문에', '가격이 저렴하기 때문에'], answer: 1,
+    fb: '물은 비열이 커서 데우는 데 시간이 걸리지만, 한번 데워지면 열을 오래 유지해 잘 식지 않는다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>입자의 운동 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --ink-c: #f472b6;
+    --water-c: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #f9a8d4 60%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  .section-head { max-width: 700px; margin: 50px auto 18px; padding: 0 20px; }
+  .section-head .num { font-size: 0.72em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
+  .section-head h2 { margin: 0; font-size: 1.2em; }
+
+  /* ── 시뮬레이션 공통 ──────────────────────── */
+  .sim-wrap { max-width: 700px; margin: 0 auto; padding: 0 20px; }
+  .sim-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 22px; text-align: center; }
+  canvas { background: #0f1720; border-radius: 14px; max-width: 100%; }
+  .controls-row { margin-top: 16px; }
+  .go-btn { border: none; background: var(--main-color); color: #fff; font-weight: 800; padding: 11px 22px; border-radius: 12px; font-size: 0.86em; cursor: pointer; box-shadow: 0 4px 14px rgba(244,63,94,0.35); }
+  .go-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+  .status-msg { margin-top: 10px; font-size: 0.82em; color: #999; min-height: 18px; }
+
+  .concept-note { max-width: 620px; margin: 14px auto 0; text-align: center; font-size: 0.82em; color: #999; padding: 0 20px; line-height: 1.7; }
+
+  /* ── 결론 카드 ────────────────────────────── */
+  .conclusion-wrap { max-width: 620px; margin: 46px auto 0; padding: 0 20px; }
+  .conclusion-card { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 16px; padding: 20px 22px; text-align: center; }
+  .conclusion-card .cc-title { font-size: 0.95em; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .conclusion-card p { margin: 0; font-size: 0.85em; color: #e5d8fb; line-height: 1.75; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅳ. 물질의 상태 변화<span class="sep">/</span>1. 입자의 운동과 물질의 상태<span class="sep">/</span><b>입자의 운동</b>
+    </div>
+    <a class="hub-link" href="../unit4-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅳ-1-1 · 교과서 116쪽</div>
+    <h1>가만히 두어도<br>입자는 쉬지 않는다</h1>
+    <p class="lead">향수 냄새는 왜 방 안 전체로 퍼질까? 젖은 빨래는 왜 저절로 마를까? 두 현상 모두, 우리 눈에 보이지 않는 입자가 스스로 끊임없이 움직이고 있다는 증거이다.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>확산과 증발 현상을 관찰하여, 물질을 이루는 입자가 스스로 끊임없이 움직이고 있음을 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>확산 — 향수 냄새가 퍼지는 이유</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="diffCanvas" width="440" height="240"></canvas>
+      <div class="controls-row">
+        <button class="go-btn" id="diffBtn" onclick="startDiffusion()">🌸 향수 뿌리기</button>
+      </div>
+      <div class="status-msg" id="diffStatus">버튼을 누르면 왼쪽에 향수 입자가 퍼지기 시작한다.</div>
+    </div>
+  </div>
+  <div class="concept-note">향수 입자는 한곳에 뭉쳐 있다가, 시간이 지나면서 스스로 움직여 방 전체로 퍼져 나간다. 이렇게 입자가 스스로 움직여 퍼지는 현상을 <b>확산</b>이라고 한다.</div>
+
+  <div class="section-head"><div class="num">02</div><h2>증발 — 물웅덩이가 마르는 이유</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="evapCanvas" width="440" height="240"></canvas>
+      <div class="controls-row">
+        <button class="go-btn" id="evapBtn" onclick="startEvaporation()">☀️ 시간 흘려보내기</button>
+      </div>
+      <div class="status-msg" id="evapStatus">버튼을 누르면 물 표면의 입자가 하나씩 공기 중으로 날아간다.</div>
+    </div>
+  </div>
+  <div class="concept-note">액체 표면 근처의 입자 중 유난히 활발하게 움직이는 일부가 액체를 벗어나 기체가 되어 날아간다. 이렇게 액체 표면에서 저절로 기체로 변하는 현상을 <b>증발</b>이라고 한다.</div>
+
+  <div class="conclusion-wrap">
+    <div class="conclusion-card">
+      <div class="cc-title">🔑 확산과 증발이 알려주는 것</div>
+      <p>확산과 증발은 서로 다른 현상처럼 보이지만, 둘 다 "입자가 스스로, 끊임없이 움직이고 있다"는 같은 사실을 보여준다. 입자의 운동은 우리 눈에 보이지 않지만, 이런 현상들을 통해 그 존재를 확인할 수 있다.</p>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <a class="nav-btn next" href="matter-states.html"><span class="k">다음 소단원</span><span class="t">물질의 상태 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 상태 변화</footer>
+
+<script>
+/* ────────────────────────────────
+   1) 확산 시뮬레이션
+   ──────────────────────────────── */
+const diffCanvas = document.getElementById('diffCanvas');
+const dctx = diffCanvas.getContext('2d');
+const DW = diffCanvas.width, DH = diffCanvas.height;
+let diffParticles = [];
+let diffRunning = false;
+
+function initDiffusion(){
+  diffParticles = [];
+  for (let i = 0; i < 60; i++) {
+    diffParticles.push({
+      x: 40 + Math.random()*30,
+      y: DH/2 + (Math.random()-0.5)*60,
+      dx: (Math.random()-0.5)*1.6,
+      dy: (Math.random()-0.5)*1.6,
+    });
+  }
+}
+initDiffusion();
+
+function drawDiffusion(){
+  dctx.clearRect(0,0,DW,DH);
+  dctx.strokeStyle = '#262022'; dctx.strokeRect(6,6,DW-12,DH-12);
+  diffParticles.forEach(p => {
+    dctx.beginPath(); dctx.arc(p.x,p.y,4,0,Math.PI*2);
+    dctx.fillStyle = '#f472b6'; dctx.shadowColor = '#f472b6'; dctx.shadowBlur = 6; dctx.fill();
+  });
+  dctx.shadowBlur = 0;
+}
+drawDiffusion();
+
+function stepDiffusion(){
+  diffParticles.forEach(p => {
+    p.x += p.dx; p.y += p.dy;
+    if (Math.random() < 0.02) p.dx += (Math.random()-0.5)*0.6;
+    if (Math.random() < 0.02) p.dy += (Math.random()-0.5)*0.6;
+    if (p.x < 10 || p.x > DW-10) p.dx *= -1;
+    if (p.y < 10 || p.y > DH-10) p.dy *= -1;
+    p.x = Math.max(10, Math.min(DW-10, p.x));
+    p.y = Math.max(10, Math.min(DH-10, p.y));
+  });
+}
+
+function startDiffusion(){
+  if (diffRunning) { initDiffusion(); drawDiffusion(); document.getElementById('diffStatus').textContent = '버튼을 누르면 왼쪽에 향수 입자가 퍼지기 시작한다.'; document.getElementById('diffBtn').textContent = '🌸 향수 뿌리기'; diffRunning = false; return; }
+  diffRunning = true;
+  document.getElementById('diffBtn').textContent = '↺ 다시 뿌리기';
+  document.getElementById('diffStatus').textContent = '입자가 스스로 움직이며 점점 퍼지고 있어요...';
+  function loop(){
+    if (!diffRunning) return;
+    stepDiffusion();
+    drawDiffusion();
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ────────────────────────────────
+   2) 증발 시뮬레이션
+   ──────────────────────────────── */
+const evapCanvas = document.getElementById('evapCanvas');
+const ectx = evapCanvas.getContext('2d');
+const EW = evapCanvas.width, EH = evapCanvas.height;
+let evapParticles = [];
+let vaporParticles = [];
+let evapRunning = false;
+let waterTop = EH - 100;
+
+function initEvaporation(){
+  evapParticles = [];
+  vaporParticles = [];
+  waterTop = EH - 100;
+  for (let i = 0; i < 70; i++) {
+    evapParticles.push({
+      x: 20 + Math.random()*(EW-40),
+      y: waterTop + Math.random()*(EH-20-waterTop),
+      dx: (Math.random()-0.5)*1.2,
+      dy: (Math.random()-0.5)*1.2,
+    });
+  }
+}
+initEvaporation();
+
+function drawEvaporation(){
+  ectx.clearRect(0,0,EW,EH);
+  ectx.strokeStyle = '#262022'; ectx.strokeRect(6,6,EW-12,EH-12);
+  // 수면선
+  ectx.strokeStyle = '#38bdf8'; ectx.setLineDash([3,3]); ectx.lineWidth = 1;
+  ectx.beginPath(); ectx.moveTo(10, waterTop); ectx.lineTo(EW-10, waterTop); ectx.stroke();
+  ectx.setLineDash([]);
+
+  evapParticles.forEach(p => {
+    ectx.beginPath(); ectx.arc(p.x,p.y,4.2,0,Math.PI*2);
+    ectx.fillStyle = '#38bdf8'; ectx.shadowColor = '#38bdf8'; ectx.shadowBlur = 5; ectx.fill();
+  });
+  vaporParticles.forEach(p => {
+    ectx.beginPath(); ectx.arc(p.x,p.y,3.4,0,Math.PI*2);
+    ectx.fillStyle = `rgba(199,210,254,${p.life})`; ectx.fill();
+  });
+  ectx.shadowBlur = 0;
+
+  ectx.fillStyle = '#666'; ectx.font = '10px sans-serif';
+  ectx.fillText('물', 12, waterTop + 14);
+  ectx.fillText('공기', 12, waterTop - 8);
+}
+drawEvaporation();
+
+function stepEvaporation(){
+  evapParticles.forEach(p => {
+    p.x += p.dx; p.y += p.dy;
+    if (p.x < 10 || p.x > EW-10) p.dx *= -1;
+    if (p.y < waterTop+4 || p.y > EH-10) p.dy *= -1;
+    p.x = Math.max(10, Math.min(EW-10, p.x));
+    p.y = Math.max(waterTop+4, Math.min(EH-10, p.y));
+  });
+
+  // 수면 근처 입자가 가끔 증발
+  if (Math.random() < 0.06 && evapParticles.length > 12) {
+    let idx = -1, best = Infinity;
+    evapParticles.forEach((p,i) => { if (p.y - waterTop < best) { best = p.y - waterTop; idx = i; } });
+    if (idx >= 0 && best < 18) {
+      const p = evapParticles.splice(idx,1)[0];
+      vaporParticles.push({ x:p.x, y:p.y, dy:-0.9-Math.random()*0.6, life:1 });
+    }
+  }
+  vaporParticles.forEach(p => { p.y += p.dy; p.life -= 0.012; });
+  vaporParticles = vaporParticles.filter(p => p.life > 0);
+
+  // 수위 조정 (입자 수에 비례)
+  const targetTop = EH - 20 - (evapParticles.length / 70) * 80;
+  waterTop += (targetTop - waterTop) * 0.05;
+}
+
+function startEvaporation(){
+  if (evapRunning) { initEvaporation(); drawEvaporation(); document.getElementById('evapStatus').textContent = '버튼을 누르면 물 표면의 입자가 하나씩 공기 중으로 날아간다.'; document.getElementById('evapBtn').textContent = '☀️ 시간 흘려보내기'; evapRunning = false; return; }
+  evapRunning = true;
+  document.getElementById('evapBtn').textContent = '↺ 다시 채우기';
+  document.getElementById('evapStatus').textContent = '물 표면의 입자가 하나둘 공기 중으로 날아가고 있어요...';
+  function loop(){
+    if (!evapRunning) return;
+    stepEvaporation();
+    drawEvaporation();
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '향수 냄새가 방 안 전체로 스스로 퍼져 나가는 현상을 무엇이라 하는가?',
+    opts: ['증발', '확산', '열팽창', '열평형'], answer: 1,
+    fb: '입자가 스스로 움직여 넓게 퍼지는 현상을 "확산"이라고 한다.' },
+  { q: '물웅덩이가 시간이 지나면서 저절로 마르는 것은 어떤 현상 때문인가?',
+    opts: ['확산', '증발', '융해', '응고'], answer: 1,
+    fb: '액체 표면의 입자가 스스로 기체로 변해 날아가는 현상을 "증발"이라고 한다.' },
+  { q: '확산과 증발이 공통적으로 보여주는 사실은 무엇인가?',
+    opts: ['입자는 항상 멈춰 있다', '입자는 스스로 끊임없이 움직인다', '입자는 눈으로 직접 볼 수 있다', '입자는 온도와 관계없다'], answer: 1,
+    fb: '두 현상 모두 입자가 외부의 힘 없이도 스스로 끊임없이 움직이고 있음을 보여준다.' },
+  { q: '확산은 입자가 어느 방향으로 퍼져 나가는 현상인가?',
+    opts: ['농도가 낮은 곳에서 높은 곳으로', '농도가 높은 곳에서 낮은 곳으로', '항상 위쪽으로만', '항상 아래쪽으로만'], answer: 1,
+    fb: '확산은 입자가 많이 모여 있는(농도가 높은) 곳에서 적게 있는(농도가 낮은) 곳으로 퍼져 나가는 현상이다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

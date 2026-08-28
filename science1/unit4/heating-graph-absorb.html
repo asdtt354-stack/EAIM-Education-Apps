@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>열에너지를 흡수하는 상태 변화 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #94a3b8 15%, #fff 50%, #fb923c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 시뮬레이션 ───────────────────────────── */
+  .sim-wrap { max-width: 780px; margin: 40px auto 0; padding: 0 20px; display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
+  @media (max-width: 700px) { .sim-wrap { grid-template-columns: 1fr; } }
+
+  .particle-card { background: #100d0e; border: 1px solid #262022; border-radius: 18px; padding: 14px; text-align: center; }
+  #particleCanvas { background: #0f1720; border-radius: 12px; max-width: 100%; }
+  .phase-label { margin-top: 10px; font-size: 0.86em; font-weight: 800; }
+
+  .graph-card { background: #100d0e; border: 1px solid #262022; border-radius: 18px; padding: 18px; }
+  #graphCanvas { background: #0f1720; border-radius: 12px; max-width: 100%; }
+
+  .readout-row { display: flex; justify-content: center; gap: 24px; margin: 14px 0; flex-wrap: wrap; }
+  .ro-item { text-align: center; }
+  .ro-item .rv { font-size: 1.3em; font-weight: 900; color: var(--main-color); }
+  .ro-item .rl { font-size: 0.72em; color: #888; }
+
+  .controls-row { text-align: center; margin: 18px 0 4px; }
+  .go-btn { border: none; background: var(--main-color); color: #fff; font-weight: 800; padding: 12px 24px; border-radius: 12px; font-size: 0.88em; cursor: pointer; box-shadow: 0 4px 16px rgba(244,63,94,0.4); }
+  .go-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+  .status-msg { text-align: center; margin-top: 8px; font-size: 0.82em; color: #999; min-height: 18px; }
+
+  /* ── 개념 카드 ────────────────────────────── */
+  .concept-wrap { max-width: 620px; margin: 40px auto 0; padding: 0 20px; }
+  .concept-card { background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.28); border-radius: 16px; padding: 20px 22px; text-align: center; }
+  .concept-card .cc-title { font-size: 0.95em; font-weight: 800; color: #fb923c; margin-bottom: 8px; }
+  .concept-card p { margin: 0; font-size: 0.85em; color: #fde4c8; line-height: 1.75; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅳ. 물질의 상태 변화<span class="sep">/</span>2. 상태 변화와 열에너지<span class="sep">/</span><b>열에너지를 흡수하는 상태 변화</b>
+    </div>
+    <a class="hub-link" href="../unit4-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅳ-2-1 · 교과서 136쪽</div>
+    <h1>계속 가열해도<br>온도가 멈추는 순간이 있다</h1>
+    <p class="lead">고체를 쉬지 않고 가열하면 온도는 계속 오를까? 얼음을 가열해서 수증기가 될 때까지, 온도-시간 그래프가 어떤 모양을 그리는지 직접 실험해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>고체를 계속 가열할 때 융해와 기화가 일어나는 동안 온도가 일정하게 유지되는 까닭을, 흡수한 열이 입자 배열을 바꾸는 데 쓰인다는 것으로 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="particle-card">
+      <canvas id="particleCanvas" width="160" height="160"></canvas>
+      <div class="phase-label" id="phaseLabel"></div>
+    </div>
+    <div class="graph-card">
+      <canvas id="graphCanvas" width="540" height="260"></canvas>
+    </div>
+  </div>
+
+  <div class="readout-row">
+    <div class="ro-item"><div class="rv" id="tempReadout">-20°C</div><div class="rl">현재 온도</div></div>
+  </div>
+
+  <div class="controls-row">
+    <button class="go-btn" id="goBtn" onclick="startHeatingSim()">🔥 계속 가열하기</button>
+    <div class="status-msg" id="statusMsg">버튼을 눌러 고체 상태(-20°C)부터 가열을 시작해 보자.</div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <div class="cc-title">🔑 왜 온도가 멈출까?</div>
+      <p>그래프가 평평해지는 구간(융해점, 끓는점)에서는 열을 계속 공급해도 온도가 오르지 않는다. 이 구간에서 흡수한 열에너지는 입자의 운동을 더 빠르게 하는 데(온도를 높이는 데) 쓰이지 않고, <b>입자의 배열을 바꾸는 데(상태를 바꾸는 데)</b> 쓰이기 때문이다.</p>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="particle-arrangement-change.html"><span class="k">이전 소단원</span><span class="t">← 상태 변화와 입자 배열</span></a>
+    <a class="nav-btn next" href="cooling-graph-release.html"><span class="k">다음 소단원</span><span class="t">열에너지를 방출하는 상태 변화 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 상태 변화</footer>
+
+<script>
+/* ────────────────────────────────
+   입자 배열 (이전 소단원과 유사한 보간 엔진)
+   ──────────────────────────────── */
+const pCanvas = document.getElementById('particleCanvas');
+const pctx = pCanvas.getContext('2d');
+const PW = pCanvas.width, PH = pCanvas.height;
+const pcx = PW/2, pcy = PH/2;
+const N = 16;
+let solidPos=[], liquidPos=[], gasPos=[];
+(function init(){
+  const cols=4, rows=4, bw=80, bh=80;
+  for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) solidPos.push({x:-bw/2+c*(bw/(cols-1)), y:-bh/2+r*(bh/(rows-1))});
+  for (let i=0;i<N;i++) {
+    liquidPos.push({x:(Math.random()-0.5)*90, y:(Math.random()-0.5)*90});
+    gasPos.push({x:(Math.random()-0.5)*150, y:(Math.random()-0.5)*150});
+  }
+})();
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+function drawParticles(mix, color){
+  // mix: 0=solid, 1=liquid, 2=liquid, 3=gas 형태의 연속값(0~3) 아님 -> 별도 처리
+}
+
+/* ────────────────────────────────
+   가열 시뮬레이션 상태 머신
+   ──────────────────────────────── */
+const MELT_T = 0, BOIL_T = 100;
+let temp = -20;
+let phase = 'solidHeating'; // solidHeating -> melting -> liquidHeating -> boiling -> gasHeating -> done
+let meltProg = 0, boilProg = 0;
+let history = [];
+let tick = 0;
+let running = false;
+
+const graphCanvas = document.getElementById('graphCanvas');
+const gctx = graphCanvas.getContext('2d');
+const gw = graphCanvas.width, gh = graphCanvas.height;
+const padL=48, padR=16, padT=16, padB=30;
+
+function phaseText(){
+  switch(phase){
+    case 'solidHeating': return '💎 고체를 가열하는 중';
+    case 'melting': return '💎→💧 융해 중 (온도 일정)';
+    case 'liquidHeating': return '💧 액체를 가열하는 중';
+    case 'boiling': return '💧→💨 기화 중 (온도 일정)';
+    case 'gasHeating': return '💨 기체를 가열하는 중';
+    case 'done': return '✅ 실험 종료';
+  }
+}
+
+function currentParticleMix(){
+  // 0 = 완전 고체, 1 = 완전 액체, 2 = 완전 기체, 그 사이 보간
+  if (phase === 'solidHeating') return 0;
+  if (phase === 'melting') return meltProg/100;
+  if (phase === 'liquidHeating') return 1;
+  if (phase === 'boiling') return 1 + boilProg/100;
+  return 2;
+}
+
+function drawParticleBox(){
+  pctx.clearRect(0,0,PW,PH);
+  const mix = currentParticleMix();
+  let pos = [], color;
+  if (mix <= 1) {
+    pos = solidPos.slice(0,N).map((s,i) => ({ x: lerp(s.x, liquidPos[i].x, mix), y: lerp(s.y, liquidPos[i].y, mix) }));
+    color = mix < 0.5 ? '#94a3b8' : '#38bdf8';
+  } else {
+    const local = mix-1;
+    pos = liquidPos.map((l,i) => ({ x: lerp(l.x, gasPos[i].x, local), y: lerp(l.y, gasPos[i].y, local) }));
+    color = '#fb923c';
+  }
+  pos.forEach(p => {
+    const x = pcx + Math.max(-PW/2+8, Math.min(PW/2-8, p.x*0.75));
+    const y = pcy + Math.max(-PH/2+8, Math.min(PH/2-8, p.y*0.75));
+    pctx.beginPath(); pctx.arc(x,y,5,0,Math.PI*2);
+    pctx.fillStyle = color; pctx.shadowColor = color; pctx.shadowBlur = 5; pctx.fill();
+  });
+  pctx.shadowBlur = 0;
+  document.getElementById('phaseLabel').textContent = phaseText();
+}
+
+function drawGraph(){
+  gctx.clearRect(0,0,gw,gh);
+  gctx.strokeStyle = '#333'; gctx.lineWidth = 1;
+  gctx.beginPath(); gctx.moveTo(padL,padT); gctx.lineTo(padL,gh-padB); gctx.lineTo(gw-padR,gh-padB); gctx.stroke();
+  gctx.fillStyle = '#666'; gctx.font = '10px sans-serif';
+  gctx.fillText('온도(°C)', 4, padT+2);
+  gctx.fillText('가열 시간 →', gw-padR-60, gh-8);
+
+  const yMin=-30, yMax=140;
+  const yFor = v => (gh-padB) - (v-yMin)/(yMax-yMin)*(gh-padB-padT);
+  const maxT = 260;
+  const xFor = i => padL + (i/maxT)*(gw-padL-padR);
+
+  // 융해점/끓는점 기준선
+  [ [MELT_T,'#38bdf8','융해점 0°C'], [BOIL_T,'#fb923c','끓는점 100°C'] ].forEach(([v,c,label]) => {
+    const y = yFor(v);
+    gctx.strokeStyle = c; gctx.setLineDash([3,3]); gctx.lineWidth = 1;
+    gctx.beginPath(); gctx.moveTo(padL,y); gctx.lineTo(gw-padR,y); gctx.stroke();
+    gctx.setLineDash([]);
+    gctx.fillStyle = c; gctx.font = '10px sans-serif';
+    gctx.fillText(label, gw-padR-92, y-4);
+  });
+
+  if (history.length > 1) {
+    gctx.strokeStyle = '#f43f5e'; gctx.lineWidth = 2.4; gctx.beginPath();
+    history.forEach((v,i) => { const x=xFor(i), y=yFor(v); if(i===0) gctx.moveTo(x,y); else gctx.lineTo(x,y); });
+    gctx.stroke();
+  }
+}
+
+function stepSim(){
+  tick++;
+  if (phase === 'solidHeating') {
+    temp += 0.7;
+    if (temp >= MELT_T) { temp = MELT_T; phase = 'melting'; }
+  } else if (phase === 'melting') {
+    meltProg += 1.6;
+    if (meltProg >= 100) { meltProg = 100; phase = 'liquidHeating'; }
+  } else if (phase === 'liquidHeating') {
+    temp += 0.55;
+    if (temp >= BOIL_T) { temp = BOIL_T; phase = 'boiling'; }
+  } else if (phase === 'boiling') {
+    boilProg += 1.6;
+    if (boilProg >= 100) { boilProg = 100; phase = 'gasHeating'; }
+  } else if (phase === 'gasHeating') {
+    temp += 0.55;
+    if (temp >= 130) { temp = 130; phase = 'done'; }
+  }
+
+  history.push(temp);
+  document.getElementById('tempReadout').textContent = temp.toFixed(1) + '°C';
+  drawParticleBox();
+  drawGraph();
+
+  if (phase === 'done') {
+    running = false;
+    document.getElementById('goBtn').disabled = false;
+    document.getElementById('goBtn').textContent = '↺ 다시 실험하기';
+    document.getElementById('statusMsg').textContent = '✅ 고체(-20°C)에서 기체(130°C)까지 가열을 마쳤어요. 그래프에서 평평한 두 구간을 확인해 보자!';
+  }
+}
+
+function startHeatingSim(){
+  if (running) return;
+  // 초기화
+  temp = -20; phase = 'solidHeating'; meltProg = 0; boilProg = 0; history = []; tick = 0;
+  running = true;
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('statusMsg').textContent = '일정한 세기로 계속 가열하는 중...';
+
+  const interval = setInterval(() => {
+    stepSim();
+    if (!running) clearInterval(interval);
+  }, 45);
+}
+
+drawParticleBox();
+drawGraph();
+document.getElementById('tempReadout').textContent = temp.toFixed(1) + '°C';
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '고체가 녹거나(융해) 액체가 끓는(기화) 동안, 물질의 온도는 어떻게 되는가?',
+    opts: ['계속 오른다', '계속 내려간다', '일정하게 유지된다', '불규칙하게 변한다'], answer: 2,
+    fb: '상태 변화가 일어나는 동안에는 열을 계속 가해도 온도가 오르지 않고 일정하게 유지된다.' },
+  { q: '온도-시간 그래프에서 온도가 변하지 않고 평평하게 이어지는 구간은 무엇을 의미하는가?',
+    opts: ['가열을 멈춘 구간', '상태 변화가 일어나고 있는 구간', '측정 오류 구간', '냉각이 일어나는 구간'], answer: 1,
+    fb: '그래프의 평평한 구간은 융해나 기화 같은 상태 변화가 진행되고 있는 구간이다.' },
+  { q: '상태 변화가 일어나는 동안 흡수한 열에너지는 어디에 쓰이는가?',
+    opts: ['입자의 개수를 늘리는 데', '입자의 배열을 바꾸는 데', '입자를 없애는 데', '아무 데도 쓰이지 않는다'], answer: 1,
+    fb: '이 구간에서 흡수한 열은 온도를 높이는 대신 입자의 배열(상태)을 바꾸는 데 쓰인다.' },
+  { q: '고체를 계속 가열했을 때 온도 변화 순서로 옳은 것은?',
+    opts: ['상승 → 융해(일정) → 상승 → 기화(일정) → 상승', '상승 → 하강 → 상승 → 하강', '항상 일정하게 유지된다', '기화(일정) → 상승 → 융해(일정)'], answer: 0,
+    fb: '고체를 계속 가열하면 온도가 오르다가 융해점에서 잠시 멈추고, 다시 오르다가 끓는점에서 또 멈춘 뒤 계속 오른다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

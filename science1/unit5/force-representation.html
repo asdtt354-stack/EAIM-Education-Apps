@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>힘의 표현 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #fda4af 60%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 힘의 3요소 카드 ──────────────────────── */
+  .elements-row { max-width: 620px; margin: 40px auto 0; padding: 0 20px; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  @media (max-width: 520px) { .elements-row { grid-template-columns: 1fr; } }
+  .element-card { background: #121012; border: 1.5px solid #262022; border-radius: 14px; padding: 14px; text-align: center; }
+  .element-card .e-icon { font-size: 1.5em; margin-bottom: 6px; }
+  .element-card .e-title { font-weight: 800; font-size: 0.86em; margin-bottom: 4px; color: var(--main-color); }
+  .element-card .e-desc { font-size: 0.74em; color: #999; line-height: 1.5; }
+
+  /* ── 드래그 시뮬레이션 ────────────────────── */
+  .sim-wrap { max-width: 620px; margin: 34px auto 0; padding: 0 20px; }
+  .sim-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 20px; text-align: center; }
+  #forceCanvas { background: #0f1720; border-radius: 14px; max-width: 100%; touch-action: none; cursor: crosshair; }
+  .sim-hint { font-size: 0.8em; color: #999; margin-top: 10px; }
+  .readout-row { display: flex; justify-content: center; gap: 26px; margin-top: 14px; flex-wrap: wrap; }
+  .ro-item .rv { font-size: 1.25em; font-weight: 900; color: var(--main-color); }
+  .ro-item .rl { font-size: 0.72em; color: #888; }
+  .reset-btn { margin-top: 14px; border: 1.5px solid #444; background: transparent; color: #aaa; padding: 8px 16px; border-radius: 9px; font-size: 0.78em; cursor: pointer; }
+
+  .preset-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  .preset-btn { border: 1.5px solid #2a2a2c; background: #141215; color: #ccc; padding: 8px 14px; border-radius: 9px; font-size: 0.78em; font-weight: 700; cursor: pointer; }
+  .preset-btn:hover { border-color: var(--accent); }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>1. 여러 가지 힘<span class="sep">/</span><b>힘의 표현</b>
+    </div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-1 · 교과서 156쪽</div>
+    <h1>눈에 보이지 않는 힘,<br>화살표 하나로 표현하기</h1>
+    <p class="lead">힘은 눈에 보이지 않지만, 화살표를 이용하면 힘의 세기와 방향을 한눈에 나타낼 수 있다. 물체를 직접 드래그해서 힘을 그려보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>힘의 3요소(작용점, 크기, 방향)를 알고, 힘을 화살표로 표현하는 방법을 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="elements-row">
+    <div class="element-card"><div class="e-icon">📍</div><div class="e-title">작용점</div><div class="e-desc">힘이 작용하는 점 (화살표의 시작점)</div></div>
+    <div class="element-card"><div class="e-icon">📏</div><div class="e-title">크기</div><div class="e-desc">힘의 세기 (화살표의 길이, 단위 N)</div></div>
+    <div class="element-card"><div class="e-icon">🧭</div><div class="e-title">방향</div><div class="e-desc">힘이 작용하는 방향 (화살표가 가리키는 쪽)</div></div>
+  </div>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="forceCanvas" width="420" height="280"></canvas>
+      <div class="sim-hint">📍 표시된 작용점에서 원하는 방향으로 드래그해 힘을 그려보자.</div>
+
+      <div class="readout-row">
+        <div class="ro-item"><div class="rv" id="magVal">0.0 N</div><div class="rl">힘의 크기</div></div>
+        <div class="ro-item"><div class="rv" id="dirVal">-</div><div class="rl">힘의 방향</div></div>
+      </div>
+
+      <div class="preset-row">
+        <button class="preset-btn" onclick="setPreset(0,5)">→ 오른쪽 5N</button>
+        <button class="preset-btn" onclick="setPreset(0,10)">→ 오른쪽 10N</button>
+        <button class="preset-btn" onclick="setPreset(-90,7)">↑ 위쪽 7N</button>
+        <button class="preset-btn" onclick="setPreset(135,6)">↙ 왼쪽 아래 6N</button>
+      </div>
+      <button class="reset-btn" onclick="clearArrow()">↺ 지우기</button>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <a class="nav-btn next" href="force-equilibrium.html"><span class="k">다음 소단원</span><span class="t">힘의 평형 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용</footer>
+
+<script>
+/* ────────────────────────────────
+   힘 벡터 드래그 시뮬레이션
+   ──────────────────────────────── */
+const canvas = document.getElementById('forceCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const anchorX = W/2, anchorY = H/2;
+
+let dragging = false;
+let tipX = null, tipY = null;
+
+function drawScene(){
+  ctx.clearRect(0,0,W,H);
+  // 격자
+  ctx.strokeStyle = '#1a1a1c'; ctx.lineWidth = 1;
+  for (let x=0;x<=W;x+=30){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y=0;y<=H;y+=30){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // 물체
+  ctx.fillStyle = '#2a2a2c';
+  ctx.fillRect(anchorX-26, anchorY-26, 52, 52);
+  ctx.strokeStyle = '#4a4a4c'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(anchorX-26, anchorY-26, 52, 52);
+
+  // 작용점
+  ctx.beginPath(); ctx.arc(anchorX, anchorY, 4, 0, Math.PI*2);
+  ctx.fillStyle = '#f43f5e'; ctx.fill();
+  ctx.font = '10px sans-serif'; ctx.fillStyle = '#888';
+  ctx.fillText('작용점', anchorX+8, anchorY-8);
+
+  // 화살표
+  if (tipX !== null) {
+    drawArrow(anchorX, anchorY, tipX, tipY, '#f43f5e');
+  }
+}
+
+function drawArrow(x0,y0,x1,y1,color){
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+  const angle = Math.atan2(y1-y0, x1-x0);
+  const headLen = 14;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x1-headLen*Math.cos(angle-Math.PI/6), y1-headLen*Math.sin(angle-Math.PI/6));
+  ctx.lineTo(x1-headLen*Math.cos(angle+Math.PI/6), y1-headLen*Math.sin(angle+Math.PI/6));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function updateReadout(){
+  if (tipX === null) {
+    document.getElementById('magVal').textContent = '0.0 N';
+    document.getElementById('dirVal').textContent = '-';
+    return;
+  }
+  const dx = tipX-anchorX, dy = tipY-anchorY;
+  const dist = Math.sqrt(dx*dx+dy*dy);
+  const mag = (dist/14).toFixed(1);
+  document.getElementById('magVal').textContent = mag + ' N';
+
+  let deg = Math.atan2(dy,dx) * 180/Math.PI; // -180~180, 0=오른쪽, +아래방향
+  const dirs = ['오른쪽','오른쪽 아래','아래','왼쪽 아래','왼쪽','왼쪽 위','위','오른쪽 위'];
+  let idx = Math.round(((deg+360)%360)/45) % 8;
+  document.getElementById('dirVal').textContent = dirs[idx];
+}
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W/rect.width, scaleY = H/rect.height;
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return { x: cx*scaleX, y: cy*scaleY };
+}
+
+function startDrag(e){
+  dragging = true;
+  const p = getPos(e);
+  tipX = p.x; tipY = p.y;
+  drawScene(); updateReadout();
+}
+function moveDrag(e){
+  if (!dragging) return;
+  const p = getPos(e);
+  tipX = p.x; tipY = p.y;
+  drawScene(); updateReadout();
+  e.preventDefault();
+}
+function endDrag(){ dragging = false; }
+
+canvas.addEventListener('mousedown', startDrag);
+canvas.addEventListener('mousemove', moveDrag);
+window.addEventListener('mouseup', endDrag);
+canvas.addEventListener('touchstart', startDrag);
+canvas.addEventListener('touchmove', moveDrag, {passive:false});
+window.addEventListener('touchend', endDrag);
+
+function clearArrow(){ tipX = null; tipY = null; drawScene(); updateReadout(); }
+
+function setPreset(angleDeg, magN){
+  const rad = angleDeg * Math.PI/180;
+  const dist = magN * 14;
+  tipX = anchorX + Math.cos(rad)*dist;
+  tipY = anchorY + Math.sin(rad)*dist;
+  drawScene(); updateReadout();
+}
+
+drawScene();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '힘을 화살표로 나타낼 때, 화살표의 길이는 무엇을 나타내는가?',
+    opts: ['힘의 방향', '힘의 작용점', '힘의 크기', '힘의 종류'], answer: 2,
+    fb: '화살표의 길이는 힘의 크기를 나타낸다. 화살표가 길수록 더 큰 힘이다.' },
+  { q: '힘을 화살표로 나타낼 때, 화살표가 시작되는 점은 무엇을 의미하는가?',
+    opts: ['힘의 방향', '힘의 작용점', '힘의 크기', '힘의 세기'], answer: 1,
+    fb: '화살표가 시작되는 점을 힘의 작용점이라고 하며, 힘이 실제로 작용하는 위치를 나타낸다.' },
+  { q: '힘을 화살표로 나타낼 때, 화살표가 가리키는 쪽은 무엇을 나타내는가?',
+    opts: ['힘의 크기', '힘의 작용점', '힘의 단위', '힘의 방향'], answer: 3,
+    fb: '화살표가 가리키는 쪽은 힘이 작용하는 방향을 나타낸다.' },
+  { q: '힘의 크기를 나타내는 단위는 무엇인가?',
+    opts: ['m (미터)', 'N (뉴턴)', 'kg (킬로그램)', '°C (섭씨도)'], answer: 1,
+    fb: '힘의 크기는 N(뉴턴)이라는 단위로 나타낸다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

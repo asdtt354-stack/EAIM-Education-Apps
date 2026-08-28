@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>여러 가지 상황에서 작용하는 힘 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fda4af 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .scene-wrap { max-width:700px; margin:40px auto 0; padding:0 20px; }
+  .scene-card { background:#121012; border:1.5px solid #262022; border-radius:18px; padding:22px; text-align:center; }
+  .scene-icon { font-size:3em; margin-bottom:10px; }
+  .scene-title { font-weight:800; font-size:1.05em; margin-bottom:14px; }
+  .force-opts { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:14px; }
+  .force-opt { border:1.5px solid #2a2a2c; background:#1a1a1c; color:#ccc; padding:9px 14px; border-radius:10px; font-size:0.82em; font-weight:700; cursor:pointer; }
+  .force-opt.picked { border-color:var(--accent); }
+  .force-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.14); color:#a7f3d0; }
+  .force-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.14); color:#fda4af; }
+  .scene-fb { font-size:0.82em; color:#bbb; line-height:1.7; min-height:20px; margin-top:8px; }
+  .scene-nav { display:flex; justify-content:space-between; margin-top:18px; }
+  .sn-btn { border:1.5px solid #444; background:transparent; color:#aaa; padding:8px 16px; border-radius:9px; font-size:0.8em; cursor:pointer; }
+  .sn-btn:disabled { opacity:0.3; cursor:default; }
+  .progress-dots { text-align:center; margin-top:14px; font-size:0.76em; color:#777; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>2. 힘과 물체의 운동<span class="sep">/</span><b>여러 가지 상황에서 작용하는 힘</b></div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-2-2 · 교과서 182쪽</div>
+    <h1>일상 속 장면에는<br>여러 힘이 함께 숨어 있다</h1>
+    <p class="lead">지금까지 배운 중력, 탄성력, 마�찰력, 부력이 실제 상황에서는 동시에 여러 개 작용한다. 장면을 보고 어떤 힘이 작용하는지 골라보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>여러 가지 상황에서 동시에 작용하는 힘의 종류를 찾아 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="scene-wrap">
+    <div class="scene-card">
+      <div class="scene-icon" id="sceneIcon"></div>
+      <div class="scene-title" id="sceneTitle"></div>
+      <div class="force-opts" id="forceOpts"></div>
+      <div class="scene-fb" id="sceneFb"></div>
+      <div class="scene-nav">
+        <button class="sn-btn" id="prevBtn" onclick="changeScene(-1)">← 이전</button>
+        <button class="sn-btn" id="nextBtn" onclick="changeScene(1)">다음 →</button>
+      </div>
+      <div class="progress-dots" id="progressDots"></div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="force-and-motion.html"><span class="k">이전 소단원</span><span class="t">← 힘이 작용할 때 물체의 운동</span></a>
+    <a class="nav-btn next" href="force-device-design.html"><span class="k">다음 소단원</span><span class="t">힘의 특징을 이용한 장치 설계하기 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용</footer>
+
+<script>
+const ALL_FORCES = ['중력','탄성력','마찰력','부력'];
+const SCENES = [
+  { icon:'🏊', title:'수영장에서 튜브를 타고 떠 있는 아이', correct:['중력','부력'],
+    fb:'튜브를 아래로 당기는 중력과, 물이 위로 밀어 올리는 부력이 함께 작용해 물 위에 떠 있을 수 있다.' },
+  { icon:'🛝', title:'미끄럼틀을 타고 내려오는 아이', correct:['중력','마찰력'],
+    fb:'아이를 아래로 당기는 중력과, 미끄럼틀 표면에서 운동을 방해하는 마찰력이 함께 작용한다.' },
+  { icon:'🏹', title:'활시위를 당겼다가 놓는 순간', correct:['탄성력','중력'],
+    fb:'당겨진 활시위가 원래대로 돌아가려는 탄성력이 화살을 밀어내고, 화살에는 중력도 함께 작용한다.' },
+  { icon:'🚗', title:'브레이크를 밟아 멈추는 자동차', correct:['마찰력','중력'],
+    fb:'타이어와 도로 사이의 마찰력이 자동차를 멈추게 하고, 자동차에는 항상 중력도 작용하고 있다.' },
+];
+let sceneIdx = 0;
+let picked = [];
+
+function renderScene(){
+  const s = SCENES[sceneIdx];
+  document.getElementById('sceneIcon').textContent = s.icon;
+  document.getElementById('sceneTitle').textContent = s.title;
+  picked = [];
+  const opts = document.getElementById('forceOpts');
+  opts.innerHTML = ALL_FORCES.map(f => `<button class="force-opt" data-f="${f}">${f}</button>`).join('');
+  opts.querySelectorAll('.force-opt').forEach(btn => {
+    btn.addEventListener('click', () => togglePick(btn, s));
+  });
+  document.getElementById('sceneFb').textContent = '작용하는 힘을 모두 골라보자 (정답 개수: ' + s.correct.length + '개)';
+  document.getElementById('prevBtn').disabled = sceneIdx === 0;
+  document.getElementById('nextBtn').disabled = sceneIdx === SCENES.length-1;
+  document.getElementById('progressDots').textContent = `${sceneIdx+1} / ${SCENES.length}`;
+}
+
+function togglePick(btn, s){
+  const f = btn.dataset.f;
+  if (picked.includes(f)) { picked = picked.filter(x=>x!==f); btn.classList.remove('picked'); }
+  else { picked.push(f); btn.classList.add('picked'); }
+
+  if (picked.length === s.correct.length) {
+    const opts = document.querySelectorAll('.force-opt');
+    const isCorrect = s.correct.every(f=>picked.includes(f)) && picked.every(f=>s.correct.includes(f));
+    opts.forEach(o => {
+      o.disabled = true;
+      if (s.correct.includes(o.dataset.f)) o.classList.add('correct');
+      else if (picked.includes(o.dataset.f)) o.classList.add('wrong');
+    });
+    document.getElementById('sceneFb').textContent = (isCorrect ? '✅ 정답! ' : '❌ 다시 확인해 보자. 정답: '+s.correct.join(', ')+'. ') + s.fb;
+  }
+}
+
+function changeScene(dir){
+  sceneIdx = Math.max(0, Math.min(SCENES.length-1, sceneIdx+dir));
+  renderScene();
+}
+renderScene();
+
+const QUIZ = [
+  { q:'수영장 튜브를 타고 물 위에 떠 있을 때 작용하는 두 힘은?', opts:['중력, 마찰력','중력, 부력','탄성력, 마찰력','부력, 탄성력'], answer:1, fb:'아래로 당기는 중력과 위로 밀어 올리는 부력이 함께 작용해 균형을 이루며 떠 있다.' },
+  { q:'브레이크를 밟아 자동차가 멈출 때 가장 중요하게 작용하는 힘은?', opts:['부력','탄성력','마찰력','중력'], answer:2, fb:'타이어와 도로 사이의 마찰력이 자동차의 운동을 방해해 멈추게 한다.' },
+  { q:'당겨진 활시위가 화살을 밀어내는 데 이용되는 힘은?', opts:['마찰력','탄성력','부력','중력'], answer:1, fb:'변형된 활시위가 원래 모양으로 돌아가려는 탄성력이 화살을 밀어낸다.' },
+  { q:'실제 상황에서 힘에 대한 설명으로 가장 알맞은 것은?', opts:['한 상황에는 항상 하나의 힘만 작용한다','여러 힘이 동시에 작용하는 경우가 많다','힘은 상황과 관계없이 항상 일정하다','힘은 눈으로 직접 볼 수 있다'], answer:1, fb:'실제 상황에서는 중력, 마찰력, 탄성력, 부력 등 여러 힘이 동시에 작용하는 경우가 많다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

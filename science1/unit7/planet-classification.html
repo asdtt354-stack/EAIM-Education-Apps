@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>태양계 행성 분류 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#05060a; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(5,6,10,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #1c1e26; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #2c2e3a; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .activity-wrap { max-width:900px; margin:44px auto 0; padding:0 20px; }
+  .criterion-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:26px; }
+  .crit-btn { border:1.5px solid #2c2e3a; background:#0d0e14; color:#999; padding:10px 18px; border-radius:10px; font-size:0.85em; font-weight:700; cursor:pointer; }
+  .crit-btn.on { border-color:var(--accent); background:rgba(168,85,247,0.16); color:#fff; }
+  .groups-board { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; min-height:150px; }
+  .group-col { background:#0d0e14; border:1.5px solid; border-radius:16px; padding:14px 16px; min-width:180px; flex:0 0 auto; }
+  .group-col .g-title { font-size:0.8em; font-weight:800; margin-bottom:12px; text-align:center; }
+  .group-col .g-planets { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .g-planet { font-size:1.8em; text-align:center; }
+  .g-planet .nm { display:block; font-size:0.32em; font-weight:700; color:#aaa; margin-top:2px; }
+  .crit-explain { max-width:620px; margin:22px auto 0; text-align:center; color:#999; font-size:0.84em; line-height:1.7; }
+
+  .quiz-wrap { max-width:760px; margin:50px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#161821; border:1.5px solid #262832; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #262832; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #1c1e26; background:#0d0e14; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅶ. 태양계<span class="sep">/</span>1. 태양계 구성 천체와 태양의 활동<span class="sep">/</span><b>태양계 행성 분류</b></div>
+    <a class="hub-link" href="../unit7-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅶ-1-2 · 교과서 234쪽</div>
+    <h1>같은 여덟 행성도<br>기준에 따라 다르게 묶인다</h1>
+    <p class="lead">지구를 기준으로 나눌 수도, 구성 물질을 기준으로 나눌 수도 있다. 기준 버튼을 눌러 행성들이 어떻게 재배열되는지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>태양계 행성을 지구 공전 궤도 기준(내행성·외행성)과 구성 물질 기준(지구형·목성형)으로 분류할 수 있다.</p></div>
+  </section>
+
+  <div class="activity-wrap">
+    <div class="criterion-row" id="critRow"></div>
+    <div class="groups-board" id="groupsBoard"></div>
+    <div class="crit-explain" id="critExplain"></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="solar-system-bodies.html"><span class="k">이전 소단원</span><span class="t">← 태양계 구성 천체</span></a>
+    <a class="nav-btn next" href="solar-activity.html"><span class="k">다음 소단원</span><span class="t">태양의 활동 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 태양계</footer>
+
+<script>
+const PLANETS = [
+  { key:'mercury', icon:'🪐', name:'수성', orbit:'inner', comp:'terrestrial' },
+  { key:'venus', icon:'🟠', name:'금성', orbit:'inner', comp:'terrestrial' },
+  { key:'earth', icon:'🌍', name:'지구', orbit:'inner', comp:'terrestrial' },
+  { key:'mars', icon:'🔴', name:'화성', orbit:'inner', comp:'terrestrial' },
+  { key:'jupiter', icon:'🟤', name:'목성', orbit:'outer', comp:'jovian' },
+  { key:'saturn', icon:'🪐', name:'토성', orbit:'outer', comp:'jovian' },
+  { key:'uranus', icon:'🔵', name:'천왕성', orbit:'outer', comp:'jovian' },
+  { key:'neptune', icon:'🔷', name:'해왕성', orbit:'outer', comp:'jovian' },
+];
+
+const CRITERIA = {
+  orbit: { label:'지구 공전 궤도 기준', field:'orbit',
+    groups:[ {v:'inner', name:'내행성 (지구보다 안쪽)', c:'#fb923c'}, {v:'outer', name:'외행성 (지구보다 바깥쪽)', c:'#38bdf8'} ],
+    explain:'지구의 공전 궤도보다 태양에 더 가까우면 "내행성"(수성, 금성), 더 멀면 "외행성"(화성부터 해왕성까지)이라고 한다.' },
+  comp: { label:'구성 물질 기준', field:'comp',
+    groups:[ {v:'terrestrial', name:'지구형 행성', c:'#f87171'}, {v:'jovian', name:'목성형 행성', c:'#a855f7'} ],
+    explain:'단단한 암석으로 이루어져 크기가 작고 밀도가 큰 행성을 "지구형 행성"(수성~화성), 기체로 이루어져 크기가 크고 밀도가 작은 행성을 "목성형 행성"(목성~해왕성)이라고 한다.' },
+};
+let currentCrit = 'orbit';
+
+function renderCritButtons(){
+  const row = document.getElementById('critRow'); row.innerHTML='';
+  Object.entries(CRITERIA).forEach(([key,c]) => {
+    const btn = document.createElement('button');
+    btn.className = 'crit-btn'+(key===currentCrit?' on':'');
+    btn.textContent = c.label;
+    btn.onclick = () => { currentCrit = key; renderAll(); };
+    row.appendChild(btn);
+  });
+}
+function renderBoard(){
+  const crit = CRITERIA[currentCrit];
+  const board = document.getElementById('groupsBoard'); board.innerHTML='';
+  crit.groups.forEach(g => {
+    const col = document.createElement('div');
+    col.className='group-col'; col.style.borderColor=g.c;
+    const members = PLANETS.filter(p=>p[crit.field]===g.v);
+    col.innerHTML = `<div class="g-title" style="color:${g.c}">${g.name}</div>
+      <div class="g-planets">${members.map(p=>`<div class="g-planet">${p.icon}<span class="nm">${p.name}</span></div>`).join('')}</div>`;
+    board.appendChild(col);
+  });
+  document.getElementById('critExplain').textContent = crit.explain;
+}
+function renderAll(){ renderCritButtons(); renderBoard(); }
+renderAll();
+
+const QUIZ = [
+  { q:'지구보다 태양에 더 가까이 있는 행성을 무엇이라 하는가?', opts:['외행성','내행성','목성형 행성','왜소행성'], answer:1, fb:'지구 공전 궤도보다 안쪽에 있는 행성을 "내행성"이라고 한다.' },
+  { q:'다음 중 목성형 행성이 아닌 것은?', opts:['목성','토성','화성','해왕성'], answer:2, fb:'화성은 지구형 행성이다. 목성형 행성은 목성, 토성, 천왕성, 해왕성이다.' },
+  { q:'지구형 행성의 일반적인 특징으로 옳은 것은?', opts:['크기가 크고 밀도가 작다','단단한 암석으로 이루어져 있고 밀도가 크다','고리를 가지고 있다','대부분 기체로 이루어져 있다'], answer:1, fb:'지구형 행성은 암석으로 이루어져 있어 크기는 작지만 밀도가 크다.' },
+  { q:'다음 중 내행성에 해당하는 것을 모두 고르면?', opts:['수성, 금성','화성, 목성','토성, 천왕성','금성, 화성'], answer:0, fb:'지구보다 태양에 가까운 수성과 금성이 내행성이다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>탄성력 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #86efac 60%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 용수철 시뮬레이션 ────────────────────── */
+  .sim-wrap { max-width: 620px; margin: 40px auto 0; padding: 0 20px; }
+  .sim-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 22px; text-align: center; }
+  #springCanvas { background: #0f1720; border-radius: 14px; max-width: 100%; touch-action: none; }
+  .sim-hint { font-size: 0.8em; color: #999; margin-top: 10px; }
+
+  .readout-row { display: flex; justify-content: center; gap: 26px; margin-top: 14px; flex-wrap: wrap; }
+  .ro-item .rv { font-size: 1.25em; font-weight: 900; color: var(--main-color); }
+  .ro-item .rl { font-size: 0.72em; color: #888; }
+  .state-tag { display: inline-block; margin-top: 12px; font-size: 0.78em; font-weight: 800; padding: 4px 12px; border-radius: 8px; }
+  .state-tag.stretch { color: #38bdf8; background: rgba(56,189,248,0.14); }
+  .state-tag.compress { color: #fb923c; background: rgba(251,146,60,0.14); }
+  .state-tag.none { color: #888; background: #1a1a1c; }
+
+  /* ── 실생활 예 ────────────────────────────── */
+  .example-wrap { max-width: 780px; margin: 40px auto 0; padding: 0 20px; display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  @media (max-width: 700px) { .example-wrap { grid-template-columns: repeat(2,1fr); } }
+  .ex-card { background: #121012; border: 1.5px solid #262022; border-radius: 16px; padding: 14px; text-align: center; }
+  .ex-card .ex-icon { font-size: 1.7em; margin-bottom: 6px; }
+  .ex-card .ex-title { font-weight: 800; font-size: 0.8em; }
+
+  /* ── 개념 카드 ────────────────────────────── */
+  .concept-wrap { max-width: 620px; margin: 30px auto 0; padding: 0 20px; }
+  .concept-card { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 16px; padding: 18px 22px; }
+  .concept-card ul { margin: 0; padding-left: 18px; font-size: 0.85em; color: #ddd; line-height: 1.9; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>1. 여러 가지 힘<span class="sep">/</span><b>탄성력</b>
+    </div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-4 · 교과서 164쪽</div>
+    <h1>당기면 당길수록<br>더 세게 되돌아온다</h1>
+    <p class="lead">용수철을 손잡이를 드래그해서 늘이거나 압축해 보자. 변형된 정도에 따라 원래대로 돌아가려는 힘, 탄성력이 어떻게 달라지는지 확인할 수 있다.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>탄성력은 변형된 물체가 원래 모양으로 되돌아가려는 힘으로, 변형된 방향과 반대로 작용하며 변형 정도가 클수록 커짐을 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="springCanvas" width="480" height="160"></canvas>
+      <div class="sim-hint">🟣 손잡이를 좌우로 드래그해서 용수철을 늘이거나 압축해 보자.</div>
+
+      <div class="readout-row">
+        <div class="ro-item"><div class="rv" id="deformVal">0.0 cm</div><div class="rl">변형량</div></div>
+        <div class="ro-item"><div class="rv" id="forceVal">0.0 N</div><div class="rl">탄성력의 크기</div></div>
+      </div>
+      <div class="state-tag none" id="stateTag">변형 없음</div>
+    </div>
+  </div>
+
+  <div class="example-wrap">
+    <div class="ex-card"><div class="ex-icon">🤸</div><div class="ex-title">트램펄린</div></div>
+    <div class="ex-card"><div class="ex-icon">🏹</div><div class="ex-title">활과 화살</div></div>
+    <div class="ex-card"><div class="ex-icon">🛏️</div><div class="ex-title">스프링 매트리스</div></div>
+    <div class="ex-card"><div class="ex-icon">🖊️</div><div class="ex-title">볼펜 스프링</div></div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <ul>
+        <li><b>탄성력</b>은 변형된 물체(용수철, 고무줄 등)가 원래의 모양으로 되돌아가려는 힘이다.</li>
+        <li>탄성력의 <b>방향</b>은 물체가 변형된 방향과 <b>반대</b>이다.</li>
+        <li>탄성력의 <b>크기</b>는 물체가 변형된 정도(변형량)가 클수록 커진다.</li>
+        <li>용수철을 원래 길이보다 <b>늘이면</b> 줄어들려는 방향으로, <b>압축하면</b> 늘어나려는 방향으로 탄성력이 작용한다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="gravity.html"><span class="k">이전 소단원</span><span class="t">← 중력</span></a>
+    <a class="nav-btn next" href="friction-force.html"><span class="k">다음 소단원</span><span class="t">마찰력 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용</footer>
+
+<script>
+/* ────────────────────────────────
+   용수철 드래그 시뮬레이션
+   ──────────────────────────────── */
+const canvas = document.getElementById('springCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const midY = H/2;
+const anchorX = 40;
+const naturalLen = 200;
+const minLen = 60, maxLen = 340;
+
+let handleX = anchorX + naturalLen;
+let dragging = false;
+
+function drawSpring(){
+  ctx.clearRect(0,0,W,H);
+  // 벽(고정 지점)
+  ctx.fillStyle = '#2a2a2c';
+  ctx.fillRect(anchorX-16, midY-40, 16, 80);
+
+  // 용수철(지그재그)
+  const len = handleX - anchorX;
+  const coils = 12;
+  ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(anchorX, midY);
+  for (let i=1;i<=coils;i++){
+    const x = anchorX + (len/coils)*i;
+    const y = midY + (i%2===0 ? -16 : 16);
+    ctx.lineTo(x,y);
+  }
+  ctx.lineTo(handleX, midY);
+  ctx.stroke();
+
+  // 손잡이
+  ctx.fillStyle = '#a855f7'; ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.arc(handleX, midY, 16, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // 자연 길이 기준선(점선)
+  ctx.strokeStyle = '#3a3a3c'; ctx.setLineDash([3,3]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(anchorX+naturalLen, 20); ctx.lineTo(anchorX+naturalLen, H-20); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#666'; ctx.font = '10px sans-serif';
+  ctx.fillText('자연 길이', anchorX+naturalLen-24, 14);
+
+  // 탄성력 화살표(변형 방향의 반대)
+  const deform = len - naturalLen;
+  if (Math.abs(deform) > 4) {
+    const dir = deform > 0 ? -1 : 1; // 늘어나면 왼쪽(줄어들려는 방향), 압축되면 오른쪽
+    const arrowLen = Math.min(70, Math.abs(deform)*0.6);
+    const ax0 = handleX, ay = midY - 34;
+    const ax1 = ax0 + arrowLen*dir;
+    ctx.strokeStyle = '#34d399'; ctx.fillStyle = '#34d399'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(ax0,ay); ctx.lineTo(ax1,ay); ctx.stroke();
+    const headLen = 10;
+    ctx.beginPath();
+    ctx.moveTo(ax1,ay);
+    ctx.lineTo(ax1-headLen*dir, ay-6);
+    ctx.lineTo(ax1-headLen*dir, ay+6);
+    ctx.closePath(); ctx.fill();
+    ctx.font = '11px sans-serif'; ctx.fillStyle = '#34d399';
+    ctx.fillText('탄성력', ax0 - (dir>0?-8:60), ay-8);
+  }
+}
+
+function updateReadout(){
+  const len = handleX - anchorX;
+  const deform = len - naturalLen;
+  document.getElementById('deformVal').textContent = (deform/10).toFixed(1) + ' cm';
+  document.getElementById('forceVal').textContent = (Math.abs(deform)/20).toFixed(1) + ' N';
+  const tag = document.getElementById('stateTag');
+  if (Math.abs(deform) < 4) { tag.className='state-tag none'; tag.textContent='변형 없음'; }
+  else if (deform > 0) { tag.className='state-tag stretch'; tag.textContent='늘어난 상태 (탄성력은 왼쪽으로)'; }
+  else { tag.className='state-tag compress'; tag.textContent='압축된 상태 (탄성력은 오른쪽으로)'; }
+}
+
+function getX(e){
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W/rect.width;
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  return cx*scaleX;
+}
+
+canvas.addEventListener('mousedown', e => { dragging = true; });
+canvas.addEventListener('touchstart', e => { dragging = true; });
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  handleX = Math.max(anchorX+minLen, Math.min(anchorX+maxLen, getX(e)));
+  drawSpring(); updateReadout();
+});
+canvas.addEventListener('touchmove', e => {
+  if (!dragging) return;
+  handleX = Math.max(anchorX+minLen, Math.min(anchorX+maxLen, getX(e)));
+  drawSpring(); updateReadout();
+  e.preventDefault();
+}, {passive:false});
+window.addEventListener('mouseup', () => dragging=false);
+window.addEventListener('touchend', () => dragging=false);
+
+drawSpring();
+updateReadout();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '변형된 물체가 원래 모양으로 되돌아가려는 힘을 무엇이라 하는가?',
+    opts: ['중력', '탄성력', '마찰력', '부력'], answer: 1,
+    fb: '변형된 물체가 원래 모양으로 되돌아가려는 힘을 "탄성력"이라고 한다.' },
+  { q: '탄성력의 방향은 물체가 변형된 방향과 어떤 관계인가?',
+    opts: ['같은 방향이다', '반대 방향이다', '수직인 방향이다', '관계가 없다'], answer: 1,
+    fb: '탄성력은 물체가 변형된 방향과 반대 방향으로 작용해 원래 모양으로 되돌리려 한다.' },
+  { q: '용수철을 더 세게 잡아당겨 변형량이 커질수록 탄성력의 크기는 어떻게 되는가?',
+    opts: ['작아진다', '변화 없다', '커진다', '0이 된다'], answer: 2,
+    fb: '변형된 정도(변형량)가 클수록 탄성력의 크기도 커진다.' },
+  { q: '다음 중 탄성력을 이용한 예로 보기 어려운 것은?',
+    opts: ['트램펄린에서 튀어 오르기', '활시위를 당겨 화살을 쏘기', '자석에 클립이 붙는 것', '스프링 매트리스에 눕기'], answer: 2,
+    fb: '자석에 클립이 붙는 것은 자기력에 의한 현상으로, 탄성력과는 관련이 없다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

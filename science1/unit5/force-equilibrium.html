@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>힘의 평형 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --left-c: #38bdf8;
+    --right-c: #fb923c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #38bdf8 15%, #fff 50%, #fb923c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 줄다리기 시뮬레이션 ──────────────────── */
+  .sim-wrap { max-width: 700px; margin: 40px auto 0; padding: 0 20px; }
+  .sim-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 22px; text-align: center; }
+  #tugCanvas { background: #0f1720; border-radius: 14px; max-width: 100%; }
+
+  .result-msg { margin-top: 14px; font-size: 1.05em; font-weight: 900; min-height: 26px; }
+  .result-msg.equil { color: #34d399; }
+  .result-msg.move { color: #fbbf24; }
+
+  .sliders-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 480px; margin: 18px auto 0; }
+  .slider-block .sb-label { font-size: 0.82em; font-weight: 800; margin-bottom: 6px; }
+  .slider-block.left .sb-label { color: var(--left-c); }
+  .slider-block.right .sb-label { color: var(--right-c); }
+  input[type="range"] { width: 100%; height: 6px; }
+  .slider-block.left input { accent-color: var(--left-c); }
+  .slider-block.right input { accent-color: var(--right-c); }
+  .sb-val { font-size: 0.78em; color: #aaa; margin-top: 4px; }
+
+  .condition-row { display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .cond-chip { font-size: 0.74em; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: #1a1a1c; color: #777; border: 1px solid #2a2a2c; }
+  .cond-chip.ok { color: #34d399; background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.3); }
+
+  /* ── 실생활 예 ────────────────────────────── */
+  .example-wrap { max-width: 780px; margin: 40px auto 0; padding: 0 20px; display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  @media (max-width: 700px) { .example-wrap { grid-template-columns: 1fr; } }
+  .ex-card { background: #121012; border: 1.5px solid #262022; border-radius: 16px; padding: 16px; text-align: center; }
+  .ex-card .ex-icon { font-size: 1.8em; margin-bottom: 8px; }
+  .ex-card .ex-title { font-weight: 800; font-size: 0.86em; margin-bottom: 6px; }
+  .ex-card .ex-desc { font-size: 0.76em; color: #999; line-height: 1.6; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>1. 여러 가지 힘<span class="sep">/</span><b>힘의 평형</b>
+    </div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-2 · 교과서 158쪽</div>
+    <h1>힘이 두 개라고<br>꼭 움직이는 건 아니다</h1>
+    <p class="lead">줄다리기에서 양쪽이 똑같은 힘으로 당기면 줄은 어느 쪽으로도 움직이지 않는다. 좌우 힘의 크기를 직접 조절하면서, 물체가 언제 가만히 있고 언제 움직이는지 확인해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>한 물체에 작용하는 두 힘이 평형을 이루는 조건을 알고, 힘이 평형을 이룰 때 물체의 운동 상태가 변하지 않음을 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="tugCanvas" width="440" height="180"></canvas>
+      <div class="result-msg" id="resultMsg"></div>
+
+      <div class="sliders-row">
+        <div class="slider-block left">
+          <div class="sb-label">🔵 왼쪽 힘</div>
+          <input type="range" id="leftSlider" min="0" max="10" value="5" step="0.5">
+          <div class="sb-val" id="leftVal">5.0 N</div>
+        </div>
+        <div class="slider-block right">
+          <div class="sb-label">🟠 오른쪽 힘</div>
+          <input type="range" id="rightSlider" min="0" max="10" value="5" step="0.5">
+          <div class="sb-val" id="rightVal">5.0 N</div>
+        </div>
+      </div>
+
+      <div class="condition-row" id="conditionRow"></div>
+    </div>
+  </div>
+
+  <div class="example-wrap">
+    <div class="ex-card"><div class="ex-icon">🪢</div><div class="ex-title">줄다리기</div><div class="ex-desc">양쪽 팀이 같은 힘으로 당기면 줄은 어느 쪽으로도 움직이지 않는다.</div></div>
+    <div class="ex-card"><div class="ex-icon">💡</div><div class="ex-title">천장에 매달린 전등</div><div class="ex-desc">전등을 아래로 당기는 중력과 줄이 위로 당기는 힘이 평형을 이뤄 멈춰 있다.</div></div>
+    <div class="ex-card"><div class="ex-icon">📖</div><div class="ex-title">책상 위의 책</div><div class="ex-desc">책을 아래로 당기는 중력과 책상이 위로 떠받치는 힘이 평형을 이룬다.</div></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="force-representation.html"><span class="k">이전 소단원</span><span class="t">← 힘의 표현</span></a>
+    <a class="nav-btn next" href="gravity.html"><span class="k">다음 소단원</span><span class="t">중력 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용</footer>
+
+<script>
+/* ────────────────────────────────
+   줄다리기 시뮬레이션
+   ──────────────────────────────── */
+const canvas = document.getElementById('tugCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const midY = H/2;
+let objX = W/2;
+
+const leftSlider = document.getElementById('leftSlider');
+const rightSlider = document.getElementById('rightSlider');
+
+function drawArrow(x0,y,len,color,dir){
+  const x1 = x0 + len*dir;
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke();
+  const headLen = 12;
+  ctx.beginPath();
+  ctx.moveTo(x1,y);
+  ctx.lineTo(x1-headLen*dir, y-7);
+  ctx.lineTo(x1-headLen*dir, y+7);
+  ctx.closePath(); ctx.fill();
+}
+
+function render(){
+  const L = +leftSlider.value, R = +rightSlider.value;
+  document.getElementById('leftVal').textContent = L.toFixed(1) + ' N';
+  document.getElementById('rightVal').textContent = R.toFixed(1) + ' N';
+
+  const net = R - L;
+  // 목표 위치(평형이면 중앙 유지, 아니면 큰 힘 방향으로 이동)
+  const targetX = W/2 + Math.max(-140, Math.min(140, net*14));
+  objX += (targetX - objX) * 0.15;
+
+  ctx.clearRect(0,0,W,H);
+  // 바닥선
+  ctx.strokeStyle = '#262022'; ctx.beginPath(); ctx.moveTo(20,midY+40); ctx.lineTo(W-20,midY+40); ctx.stroke();
+
+  // 화살표(물체 기준 좌우)
+  drawArrow(objX, midY, L*14, '#38bdf8', -1);
+  drawArrow(objX, midY, R*14, '#fb923c', 1);
+
+  // 물체
+  ctx.fillStyle = '#eee';
+  ctx.fillRect(objX-18, midY-18, 36, 36);
+  ctx.strokeStyle = '#666'; ctx.strokeRect(objX-18, midY-18, 36, 36);
+
+  const msg = document.getElementById('resultMsg');
+  if (Math.abs(net) < 0.3) {
+    msg.className = 'result-msg equil';
+    msg.textContent = '⚖️ 두 힘이 평형을 이루어 물체가 움직이지 않는다!';
+  } else {
+    msg.className = 'result-msg move';
+    msg.textContent = `➡️ 알짜힘 ${Math.abs(net).toFixed(1)}N이 ${net>0?'오른쪽':'왼쪽'}으로 작용해 물체가 그쪽으로 움직인다.`;
+  }
+
+  renderConditions(L,R);
+  requestAnimationFrame(render);
+}
+
+function renderConditions(L,R){
+  const sameSize = Math.abs(L-R) < 0.3;
+  const conds = [
+    { label:'크기가 같다', ok: sameSize },
+    { label:'방향이 반대다', ok: true },
+    { label:'같은 작용선 위에 있다', ok: true },
+  ];
+  document.getElementById('conditionRow').innerHTML = conds.map(c =>
+    `<span class="cond-chip ${c.ok?'ok':''}">${c.ok?'✓':'✕'} ${c.label}</span>`
+  ).join('');
+}
+
+leftSlider.addEventListener('input', ()=>{});
+rightSlider.addEventListener('input', ()=>{});
+render();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '한 물체에 작용하는 두 힘의 합력이 0이 되어 물체의 운동 상태가 변하지 않는 상태를 무엇이라 하는가?',
+    opts: ['힘의 평형', '힘의 표현', '탄성력', '마찰력'], answer: 0,
+    fb: '두 힘의 합력이 0이 되는 상태를 "힘의 평형"이라고 한다.' },
+  { q: '두 힘이 평형을 이루기 위한 조건으로 옳지 않은 것은?',
+    opts: ['두 힘의 크기가 같다', '두 힘의 방향이 서로 반대다', '두 힘이 같은 작용선 위에 있다', '두 힘의 방향이 서로 같다'], answer: 3,
+    fb: '두 힘의 방향이 서로 "반대"여야 평형을 이룰 수 있다. 방향이 같으면 오히려 힘이 더해진다.' },
+  { q: '책상 위에 가만히 놓인 책에 작용하는 두 힘의 평형 관계로 옳은 것은?',
+    opts: ['중력과 마찰력', '중력과 수직항력(책상이 떠받치는 힘)', '탄성력과 부력', '중력과 탄성력'], answer: 1,
+    fb: '책을 아래로 당기는 중력과, 책상이 책을 위로 떠받치는 힘(수직항력)이 평형을 이루어 책이 가만히 있다.' },
+  { q: '줄다리기에서 양쪽 팀이 정확히 같은 힘으로 당기고 있을 때, 줄은 어떻게 되는가?',
+    opts: ['힘이 센 쪽으로 서서히 움직인다', '양쪽으로 번갈아 움직인다', '움직이지 않는다', '줄이 끊어진다'], answer: 2,
+    fb: '양쪽 힘의 크기가 같고 방향이 반대이므로 힘의 평형을 이루어 줄은 움직이지 않는다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

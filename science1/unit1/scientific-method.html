@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>과학적 탐구 방법 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fda4af 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:780px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .stage-wrap { max-width:900px; margin:0 auto; padding:0 20px; }
+  .stage-track { display:flex; align-items:center; justify-content:center; gap:0; overflow-x:auto; padding:10px 0 22px; }
+  .stage-node { flex:0 0 auto; width:118px; text-align:center; cursor:pointer; padding:6px; }
+  .stage-icon { width:64px; height:64px; margin:0 auto 8px; border-radius:18px; display:flex; align-items:center; justify-content:center; background:#141215; border:2px solid #2a2a2c; font-size:1.6em; transition:all .3s; }
+  .stage-node.active .stage-icon { border-color:var(--main-color); box-shadow:0 0 0 4px rgba(244,63,94,0.15); transform:translateY(-3px); }
+  .stage-name { font-size:0.78em; font-weight:800; color:#ccc; }
+  .stage-node.active .stage-name { color:var(--main-color); }
+  .stage-arrow { flex:0 0 auto; width:24px; color:#3a3a3c; font-size:1.1em; }
+  .stage-detail { background:#121012; border:1px solid #262022; border-radius:16px; padding:22px 26px; }
+  .stage-detail h3 { margin:0 0 8px; font-size:1.1em; }
+  .stage-detail p { color:#d0d0d0; font-size:0.9em; line-height:1.75; margin:0; }
+
+  .activity-wrap { max-width:700px; margin:0 auto; padding:0 20px; }
+  .scenario-box { background:#121012; border:1px solid #262022; border-radius:16px; padding:20px 22px; text-align:center; }
+  .scenario-box .sq { font-size:0.95em; font-weight:700; margin-bottom:16px; }
+  .var-row { display:flex; flex-direction:column; gap:10px; text-align:left; }
+  .var-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#1a1a1c; border:1.5px solid #2f2f31; border-radius:10px; font-size:0.86em; }
+  .var-item .vt { flex:1; }
+  .var-select { background:#0d0d0e; color:#ccc; border:1px solid #333; border-radius:6px; padding:4px 8px; font-size:0.82em; }
+  .var-fb { margin-top:14px; font-size:0.84em; color:#bbb; min-height:20px; }
+  .check-btn { margin-top:10px; border:none; background:var(--accent); color:#fff; font-weight:800; padding:9px 18px; border-radius:9px; font-size:0.82em; cursor:pointer; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅰ. 과학과 인류의 지속가능한 삶<span class="sep">/</span><b>과학적 탐구 방법</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-1 · 교과서 14쪽</div>
+    <h1>과학자는<br>어떤 순서로 생각할까?</h1>
+    <p class="lead">궁금한 것을 발견하고, 답을 예상하고, 실험으로 확인하는 것. 과학적 탐구는 정해진 순서를 따라간다. 단계를 하나씩 눌러보고, 직접 변인도 구분해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>과학적 탐구의 일반적인 과정을 설명하고, 탐구 상황에서 조작변인·종속변인·통제변인을 구분할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>과학적 탐구의 6단계</h2></div>
+  <div class="stage-wrap">
+    <div class="stage-track" id="stageTrack"></div>
+    <div class="stage-detail" id="stageDetail"></div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>변인 구분해 보기</h2></div>
+  <div class="activity-wrap">
+    <div class="scenario-box">
+      <div class="sq">🌱 탐구 문제: "식물에 물을 많이 줄수록 키가 더 잘 자랄까?"</div>
+      <div class="var-row" id="varRow"></div>
+      <button class="check-btn" onclick="checkVars()">✅ 확인하기</button>
+      <div class="var-fb" id="varFb"></div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <a class="nav-btn next" href="science-and-civilization.html"><span class="k">다음 소단원</span><span class="t">과학과 인류 문명 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 과학과 인류의 지속가능한 삶</footer>
+
+<script>
+const STAGES = [
+  { icon:'❓', name:'문제 인식', title:'문제 인식', desc:'일상에서 궁금한 점이나 해결하고 싶은 문제를 찾아내는 단계이다. 예: "물을 많이 주면 식물이 더 잘 자랄까?"' },
+  { icon:'💡', name:'가설 설정', title:'가설 설정', desc:'문제에 대한 답을 미리 예상해 보는 단계이다. 예: "물을 많이 줄수록 식물의 키가 더 클 것이다."' },
+  { icon:'🧪', name:'탐구 설계', title:'탐구 설계', desc:'가설을 확인하기 위한 실험 방법을 계획하는 단계이다. 이때 조작변인, 종속변인, 통제변인을 명확히 정해야 한다.' },
+  { icon:'🔬', name:'탐구 수행', title:'탐구 수행', desc:'계획한 대로 실험을 실제로 진행하며 관찰하고 자료를 수집하는 단계이다.' },
+  { icon:'📊', name:'자료 해석', title:'자료 해석', desc:'수집한 자료를 정리하고 분석하여 어떤 경향이 있는지 파악하는 단계이다.' },
+  { icon:'✅', name:'결론 도출', title:'결론 도출', desc:'자료 해석을 바탕으로 가설이 맞았는지 판단하고 결론을 이끌어내는 단계이다.' },
+];
+let currentStage = 0;
+function renderStages(){
+  const track = document.getElementById('stageTrack'); track.innerHTML='';
+  STAGES.forEach((s,i) => {
+    const node = document.createElement('div');
+    node.className = 'stage-node'+(i===currentStage?' active':'');
+    node.onclick = () => { currentStage=i; renderStages(); };
+    node.innerHTML = `<div class="stage-icon">${s.icon}</div><div class="stage-name">${s.name}</div>`;
+    track.appendChild(node);
+    if (i<STAGES.length-1) { const a=document.createElement('div'); a.className='stage-arrow'; a.textContent='→'; track.appendChild(a); }
+  });
+  const cur = STAGES[currentStage];
+  document.getElementById('stageDetail').innerHTML = `<h3>${cur.title}</h3><p>${cur.desc}</p>`;
+}
+renderStages();
+
+const VARS = [
+  { key:'manipulated', label:'물을 주는 양', correct:'조작변인' },
+  { key:'dependent', label:'식물의 키(자란 정도)', correct:'종속변인' },
+  { key:'controlled', label:'식물의 종류, 햇빛의 양, 화분의 크기', correct:'통제변인' },
+];
+function renderVars(){
+  const row = document.getElementById('varRow'); row.innerHTML='';
+  VARS.forEach(v => {
+    row.innerHTML += `
+      <div class="var-item">
+        <span class="vt">${v.label}</span>
+        <select class="var-select" data-k="${v.key}">
+          <option value="">선택</option>
+          <option value="조작변인">조작변인</option>
+          <option value="종속변인">종속변인</option>
+          <option value="통제변인">통제변인</option>
+        </select>
+      </div>`;
+  });
+}
+renderVars();
+
+function checkVars(){
+  const selects = document.querySelectorAll('.var-select');
+  let allCorrect = true, allFilled = true;
+  selects.forEach(sel => {
+    const v = VARS.find(x=>x.key===sel.dataset.k);
+    if (!sel.value) allFilled = false;
+    if (sel.value !== v.correct) allCorrect = false;
+  });
+  const fb = document.getElementById('varFb');
+  if (!allFilled) { fb.textContent = '모든 항목을 선택해 주세요.'; return; }
+  fb.textContent = allCorrect
+    ? '✅ 정답! 물을 주는 양(내가 직접 바꾸는 것)=조작변인, 식물의 키(그 결과로 측정하는 것)=종속변인, 나머지 조건들(같게 유지해야 하는 것)=통제변인이다.'
+    : '❌ 다시 확인해 보자. 힌트: 내가 "직접 바꾸는" 것이 조작변인, "측정해서 관찰"하는 것이 종속변인, "같게 유지"해야 하는 것이 통제변인이다.';
+}
+
+const QUIZ = [
+  { q:'과학적 탐구에서 문제에 대한 답을 미리 예상해 보는 단계는?', opts:['문제 인식','가설 설정','자료 해석','결론 도출'], answer:1, fb:'예상되는 답을 세우는 단계가 "가설 설정"이다.' },
+  { q:'실험에서 연구자가 의도적으로 변화시키는 변인은?', opts:['통제변인','종속변인','조작변인','무관변인'], answer:2, fb:'연구자가 직접 바꾸는 변인을 "조작변인"이라고 한다.' },
+  { q:'실험에서 조작변인의 영향을 받아 변화하는, 결과로 측정하는 변인은?', opts:['통제변인','종속변인','조작변인','상수'], answer:1, fb:'조작변인의 결과로 나타나는 값을 "종속변인"이라고 한다.' },
+  { q:'실험에서 정확한 결과를 위해 같게 유지해야 하는 변인은?', opts:['조작변인','종속변인','통제변인','실험변인'], answer:2, fb:'조작변인 외에 같게 유지해야 하는 나머지 조건들을 "통제변인"이라고 한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

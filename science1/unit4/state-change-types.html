@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>물질의 상태 변화 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #94a3b8 15%, #fff 50%, #fb923c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  /* ── 다이어그램 ───────────────────────────── */
+  .diagram-wrap { max-width: 560px; margin: 44px auto 0; padding: 0 20px; text-align: center; }
+  #diagramSvg { width: 100%; height: auto; max-width: 460px; }
+  .node-label { font-size: 15px; font-weight: 800; fill: #fff; }
+  .arrow-path { stroke-width: 3; fill: none; cursor: pointer; transition: all .25s; }
+  .arrow-path.dim { opacity: 0.28; }
+  .arrow-path.active { stroke-width: 5.5; }
+  .arrow-hit { stroke: transparent; stroke-width: 16; fill: none; cursor: pointer; }
+  .arrow-label { font-size: 12px; font-weight: 800; cursor: pointer; }
+  .arrow-label.dim { opacity: 0.35; }
+
+  .term-row { max-width: 640px; margin: 18px auto 0; padding: 0 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .term-chip { border: 1.5px solid #2a2a2c; background: #141215; color: #ccc; padding: 8px 14px; border-radius: 10px; font-size: 0.82em; font-weight: 700; cursor: pointer; }
+  .term-chip.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, #141215); color: #fff; }
+
+  .info-card { max-width: 620px; margin: 20px auto 0; padding: 0 20px; }
+  .info-inner { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 16px; padding: 18px 22px; text-align: center; }
+  .info-inner .i-title { font-size: 1.05em; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .info-inner p { margin: 0 0 8px; font-size: 0.86em; color: #ddd; line-height: 1.75; }
+  .info-inner .i-eg { font-size: 0.8em; color: #999; padding-top: 8px; border-top: 1px dashed #2f2f31; }
+  .info-inner .i-heat { display: inline-block; margin-top: 8px; font-size: 0.74em; font-weight: 800; padding: 3px 10px; border-radius: 7px; }
+  .i-heat.absorb { color: #fb923c; background: rgba(251,146,60,0.16); }
+  .i-heat.release { color: #38bdf8; background: rgba(56,189,248,0.16); }
+
+  /* ── 흡열/발열 요약 ───────────────────────── */
+  .summary-wrap { max-width: 700px; margin: 46px auto 0; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .summary-wrap { grid-template-columns: 1fr; } }
+  .summary-card { border-radius: 16px; padding: 18px 20px; border: 1px solid; }
+  .summary-card.absorb { background: rgba(251,146,60,0.08); border-color: rgba(251,146,60,0.28); }
+  .summary-card.release { background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.28); }
+  .summary-card .sc-title { font-size: 0.88em; font-weight: 800; margin-bottom: 8px; }
+  .summary-card.absorb .sc-title { color: #fb923c; }
+  .summary-card.release .sc-title { color: #38bdf8; }
+  .summary-card ul { margin: 0; padding-left: 18px; font-size: 0.84em; color: #ddd; line-height: 1.9; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅳ. 물질의 상태 변화<span class="sep">/</span>1. 입자의 운동과 물질의 상태<span class="sep">/</span><b>물질의 상태 변화</b>
+    </div>
+    <a class="hub-link" href="../unit4-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅳ-1-3 · 교과서 124쪽</div>
+    <h1>고체·액체·기체는<br>서로 오갈 수 있다</h1>
+    <p class="lead">얼음이 녹고, 물이 끓고, 드라이아이스가 연기처럼 사라진다. 세 가지 상태 사이를 오가는 변화에는 저마다 이름이 있다. 삼각형의 화살표를 눌러 여섯 가지 변화를 하나씩 살펴보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>고체, 액체, 기체 사이의 상태 변화를 융해·응고·기화·액화·승화로 구분하여 설명하고, 각각의 예를 들 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="diagram-wrap">
+    <svg id="diagramSvg" viewBox="0 0 420 320" xmlns="http://www.w3.org/2000/svg">
+      <!-- 화살표(뒤에 렌더링) -->
+      <g id="arrowGroup"></g>
+      <!-- 노드 -->
+      <circle cx="210" cy="50" r="42" fill="#1a1a1c" stroke="#94a3b8" stroke-width="2.5"/>
+      <text x="210" y="56" text-anchor="middle" class="node-label">고체</text>
+      <circle cx="90" cy="270" r="42" fill="#1a1a1c" stroke="#38bdf8" stroke-width="2.5"/>
+      <text x="90" y="276" text-anchor="middle" class="node-label">액체</text>
+      <circle cx="330" cy="270" r="42" fill="#1a1a1c" stroke="#fb923c" stroke-width="2.5"/>
+      <text x="330" y="276" text-anchor="middle" class="node-label">기체</text>
+    </svg>
+  </div>
+
+  <div class="term-row" id="termRow"></div>
+  <div class="info-card"><div class="info-inner" id="infoInner"></div></div>
+
+  <div class="summary-wrap">
+    <div class="summary-card absorb">
+      <div class="sc-title">🔥 열을 흡수하는 변화 (흡열)</div>
+      <ul><li>융해 (고체→액체)</li><li>기화 (액체→기체)</li><li>승화 (고체→기체)</li></ul>
+    </div>
+    <div class="summary-card release">
+      <div class="sc-title">❄️ 열을 방출하는 변화 (발열)</div>
+      <ul><li>응고 (액체→고체)</li><li>액화 (기체→액체)</li><li>승화 (기체→고체)</li></ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="matter-states.html"><span class="k">이전 소단원</span><span class="t">← 물질의 상태</span></a>
+    <a class="nav-btn next" href="particle-arrangement-change.html"><span class="k">다음 소단원</span><span class="t">상태 변화와 입자 배열 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 상태 변화</footer>
+
+<script>
+/* ────────────────────────────────
+   6가지 상태 변화 데이터
+   ──────────────────────────────── */
+const TERMS = {
+  yunghae:  { name:'융해', c:'#a3d977', heat:'absorb', from:[210,50], to:[90,270], cp:[134,151],
+    body:'고체가 열을 흡수하여 액체로 변하는 현상이다.', eg:'예 · 얼음이 녹아 물이 되는 것' },
+  eunggo:   { name:'응고', c:'#94a3b8', heat:'release', from:[90,270], to:[210,50], cp:[166,169],
+    body:'액체가 열을 방출하여 고체로 변하는 현상이다.', eg:'예 · 물이 얼어 얼음이 되는 것' },
+  gihwa:    { name:'기화', c:'#fbbf24', heat:'absorb', from:[90,270], to:[330,270], cp:[210,252],
+    body:'액체가 열을 흡수하여 기체로 변하는 현상이다.', eg:'예 · 물이 끓어 수증기가 되는 것' },
+  aekhwa:   { name:'액화', c:'#38bdf8', heat:'release', from:[330,270], to:[90,270], cp:[210,288],
+    body:'기체가 열을 방출하여 액체로 변하는 현상이다.', eg:'예 · 차가운 컵 표면에 물방울이 맺히는 것' },
+  seunghwaSG: { name:'승화 (고체→기체)', c:'#c084fc', heat:'absorb', from:[210,50], to:[330,270], cp:[254,169],
+    body:'고체가 액체를 거치지 않고 열을 흡수하여 바로 기체로 변하는 현상이다.', eg:'예 · 드라이아이스가 하얀 연기처럼 사라지는 것' },
+  seunghwaGS: { name:'승화 (기체→고체)', c:'#f472b6', heat:'release', from:[330,270], to:[210,50], cp:[286,151],
+    body:'기체가 액체를 거치지 않고 열을 방출하여 바로 고체로 변하는 현상이다.', eg:'예 · 추운 날 유리창에 서리(성에)가 생기는 것' },
+};
+
+let activeTerm = 'yunghae';
+const arrowGroup = document.getElementById('arrowGroup');
+const svgNS = 'http://www.w3.org/2000/svg';
+
+function midQuad(p0, cp, p1, t){
+  const x = (1-t)*(1-t)*p0[0] + 2*(1-t)*t*cp[0] + t*t*p1[0];
+  const y = (1-t)*(1-t)*p0[1] + 2*(1-t)*t*cp[1] + t*t*p1[1];
+  return [x,y];
+}
+
+function renderDiagram(){
+  arrowGroup.innerHTML = '';
+  // 화살촉 마커
+  const defs = document.createElementNS(svgNS,'defs');
+  Object.entries(TERMS).forEach(([key,t]) => {
+    const marker = document.createElementNS(svgNS,'marker');
+    marker.setAttribute('id','arrow-'+key);
+    marker.setAttribute('markerWidth','8'); marker.setAttribute('markerHeight','8');
+    marker.setAttribute('refX','6'); marker.setAttribute('refY','3');
+    marker.setAttribute('orient','auto');
+    const poly = document.createElementNS(svgNS,'polygon');
+    poly.setAttribute('points','0,0 7,3 0,6');
+    poly.setAttribute('fill', t.c);
+    marker.appendChild(poly);
+    defs.appendChild(marker);
+  });
+  arrowGroup.appendChild(defs);
+
+  Object.entries(TERMS).forEach(([key,t]) => {
+    // 노드 반지름만큼 살짝 안쪽에서 시작/종료되도록 보정
+    const d = `M ${t.from[0]} ${t.from[1]} Q ${t.cp[0]} ${t.cp[1]} ${t.to[0]} ${t.to[1]}`;
+
+    const hit = document.createElementNS(svgNS,'path');
+    hit.setAttribute('d', d);
+    hit.setAttribute('class','arrow-hit');
+    hit.addEventListener('click', () => { activeTerm = key; renderDiagram(); renderTerms(); renderInfo(); });
+    arrowGroup.appendChild(hit);
+
+    const path = document.createElementNS(svgNS,'path');
+    path.setAttribute('d', d);
+    path.setAttribute('class','arrow-path' + (key===activeTerm ? ' active' : ' dim'));
+    path.setAttribute('stroke', t.c);
+    path.setAttribute('marker-end', `url(#arrow-${key})`);
+    arrowGroup.appendChild(path);
+
+    const [lx,ly] = midQuad(t.from, t.cp, t.to, 0.5);
+    const label = document.createElementNS(svgNS,'text');
+    label.setAttribute('x', lx); label.setAttribute('y', ly);
+    label.setAttribute('text-anchor','middle');
+    label.setAttribute('class','arrow-label' + (key===activeTerm ? '' : ' dim'));
+    label.setAttribute('fill', t.c);
+    label.textContent = t.name.replace(/ \(.*\)/,'');
+    label.style.cursor = 'pointer';
+    label.addEventListener('click', () => { activeTerm = key; renderDiagram(); renderTerms(); renderInfo(); });
+    arrowGroup.appendChild(label);
+  });
+}
+
+function renderTerms(){
+  const row = document.getElementById('termRow');
+  row.innerHTML = '';
+  Object.entries(TERMS).forEach(([key,t]) => {
+    const chip = document.createElement('button');
+    chip.className = 'term-chip' + (key===activeTerm ? ' on' : '');
+    chip.style.setProperty('--c', t.c);
+    chip.textContent = t.name;
+    chip.onclick = () => { activeTerm = key; renderDiagram(); renderTerms(); renderInfo(); };
+    row.appendChild(chip);
+  });
+}
+
+function renderInfo(){
+  const t = TERMS[activeTerm];
+  document.getElementById('infoInner').innerHTML = `
+    <div class="i-title" style="color:${t.c}">${t.name}</div>
+    <p>${t.body}</p>
+    <div class="i-eg">${t.eg}</div>
+    <div class="i-heat ${t.heat}">${t.heat === 'absorb' ? '🔥 열을 흡수하는 변화' : '❄️ 열을 방출하는 변화'}</div>
+  `;
+}
+
+renderDiagram();
+renderTerms();
+renderInfo();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '고체가 열을 흡수하여 액체로 변하는 현상은?',
+    opts: ['융해', '응고', '기화', '액화'], answer: 0,
+    fb: '고체 → 액체로 변하는 현상을 "융해"라고 한다.' },
+  { q: '기체가 열을 방출하여 액체로 변하는 현상은?',
+    opts: ['기화', '액화', '승화', '응고'], answer: 1,
+    fb: '기체 → 액체로 변하는 현상을 "액화"라고 한다. 차가운 컵 표면에 물방울이 맺히는 것이 그 예이다.' },
+  { q: '드라이아이스가 액체 상태를 거치지 않고 하얀 연기처럼 사라지는 현상은?',
+    opts: ['기화', '융해', '승화(고체→기체)', '액화'], answer: 2,
+    fb: '고체가 액체를 거치지 않고 바로 기체로 변하는 현상을 "승화"라고 한다.' },
+  { q: '다음 중 열을 방출하는(발열) 상태 변화가 아닌 것은?',
+    opts: ['응고', '액화', '승화(기체→고체)', '기화'], answer: 3,
+    fb: '기화(액체→기체)는 열을 흡수하는 변화이다. 응고, 액화, 승화(기체→고체)는 모두 열을 방출하는 변화이다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

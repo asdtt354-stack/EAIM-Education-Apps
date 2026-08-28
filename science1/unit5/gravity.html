@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>중력 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 30%, #c4b5fd 60%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  .section-head { max-width: 620px; margin: 50px auto 18px; padding: 0 20px; }
+  .section-head .num { font-size: 0.72em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
+  .section-head h2 { margin: 0; font-size: 1.2em; }
+
+  /* ── 낙하 시뮬레이션 ──────────────────────── */
+  .drop-wrap { max-width: 460px; margin: 0 auto; padding: 0 20px; }
+  .drop-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 20px; text-align: center; }
+  #dropCanvas { background: #0f1720; border-radius: 14px; max-width: 100%; }
+  .go-btn { border: none; background: var(--main-color); color: #fff; font-weight: 800; padding: 11px 22px; border-radius: 12px; font-size: 0.86em; cursor: pointer; box-shadow: 0 4px 14px rgba(244,63,94,0.35); margin-top: 14px; }
+  .go-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+  .drop-note { font-size: 0.8em; color: #999; margin-top: 10px; line-height: 1.6; }
+
+  /* ── 질량 vs 무게 ─────────────────────────── */
+  .compare-wrap { max-width: 620px; margin: 0 auto; padding: 0 20px; }
+  .planet-switch { display: flex; gap: 8px; justify-content: center; margin-bottom: 18px; }
+  .planet-btn { border: 1.5px solid #2a2a2c; background: #141215; color: #999; padding: 10px 20px; border-radius: 12px; font-size: 0.86em; font-weight: 800; cursor: pointer; }
+  .planet-btn.on { border-color: var(--accent); background: rgba(168,85,247,0.16); color: #fff; }
+
+  .mass-slider-row { max-width: 400px; margin: 0 auto 20px; text-align: center; }
+  .mass-slider-row .ms-label { font-size: 0.82em; color: #999; margin-bottom: 8px; }
+  input[type="range"] { width: 100%; height: 6px; accent-color: var(--accent); }
+
+  .compare-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cv-card { background: #121012; border: 1.5px solid #262022; border-radius: 16px; padding: 20px; text-align: center; }
+  .cv-card .cv-label { font-size: 0.76em; color: #888; margin-bottom: 8px; }
+  .cv-card .cv-value { font-size: 1.6em; font-weight: 900; }
+  .cv-card.mass .cv-value { color: #34d399; }
+  .cv-card.weight .cv-value { color: #fbbf24; }
+  .cv-card .cv-note { font-size: 0.72em; color: #777; margin-top: 6px; }
+
+  /* ── 개념 카드 ────────────────────────────── */
+  .concept-wrap { max-width: 620px; margin: 30px auto 0; padding: 0 20px; }
+  .concept-card { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 16px; padding: 18px 22px; }
+  .concept-card ul { margin: 0; padding-left: 18px; font-size: 0.85em; color: #ddd; line-height: 1.9; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>1. 여러 가지 힘<span class="sep">/</span><b>중력</b>
+    </div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-3 · 교과서 160쪽</div>
+    <h1>손을 놓으면<br>왜 항상 아래로 떨어질까?</h1>
+    <p class="lead">지구는 모든 물체를 끌어당긴다. 이 힘을 중력이라고 한다. 물체를 떨어뜨려 중력의 방향을 확인하고, 지구와 달에서 무게가 왜 다른지 비교해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>중력은 지구가 물체를 끌어당기는 힘으로 항상 지구 중심 방향으로 작용함을 알고, 질량과 무게의 차이를 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>물체를 떨어뜨려 보기</h2></div>
+  <div class="drop-wrap">
+    <div class="drop-card">
+      <canvas id="dropCanvas" width="240" height="260"></canvas>
+      <button class="go-btn" id="dropBtn" onclick="startDrop()">✋ 손을 놓기</button>
+      <div class="drop-note">중력은 항상 지구 중심 방향(연직 아래)으로 작용하기 때문에, 손을 놓은 물체는 항상 수직으로 떨어진다.</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>같은 질량, 다른 무게 — 지구 vs 달</h2></div>
+  <div class="compare-wrap">
+    <div class="planet-switch">
+      <button class="planet-btn on" id="btn-earth" onclick="setPlanet('earth')">🌍 지구</button>
+      <button class="planet-btn" id="btn-moon" onclick="setPlanet('moon')">🌙 달</button>
+    </div>
+    <div class="mass-slider-row">
+      <div class="ms-label">물체의 질량을 정해보자</div>
+      <input type="range" id="massSlider" min="1" max="20" value="10" step="1">
+    </div>
+    <div class="compare-cards">
+      <div class="cv-card mass"><div class="cv-label">질량 (장소와 무관)</div><div class="cv-value" id="massVal">10 kg</div><div class="cv-note">어디서 재도 같다</div></div>
+      <div class="cv-card weight"><div class="cv-label">무게 (중력의 크기)</div><div class="cv-value" id="weightVal">98 N</div><div class="cv-note" id="weightNote">지구에서 측정</div></div>
+    </div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <ul>
+        <li><b>중력</b>은 지구가 물체를 끌어당기는 힘으로, 항상 지구 중심 방향(연직 아래)으로 작용한다.</li>
+        <li>중력의 크기는 물체의 질량이 클수록 크다.</li>
+        <li><b>질량</b>은 물체가 가진 고유한 양으로 장소가 바뀌어도 변하지 않는다.</li>
+        <li><b>무게</b>는 그 물체에 작용하는 중력의 크기로, 측정하는 장소(중력의 세기)에 따라 달라진다. 달의 중력은 지구의 약 1/6이라 달에서 잰 몸무게는 지구보다 훨씬 가볍다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="force-equilibrium.html"><span class="k">이전 소단원</span><span class="t">← 힘의 평형</span></a>
+    <a class="nav-btn next" href="elastic-force.html"><span class="k">다음 소단원</span><span class="t">탄성력 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용</footer>
+
+<script>
+/* ────────────────────────────────
+   1) 낙하 시뮬레이션
+   ──────────────────────────────── */
+const dropCanvas = document.getElementById('dropCanvas');
+const dctx = dropCanvas.getContext('2d');
+const DW = dropCanvas.width, DH = dropCanvas.height;
+let ballY = 30, vy = 0, dropping = false;
+
+function drawDrop(){
+  dctx.clearRect(0,0,DW,DH);
+  // 바닥
+  dctx.strokeStyle = '#262022'; dctx.beginPath(); dctx.moveTo(10,DH-20); dctx.lineTo(DW-10,DH-20); dctx.stroke();
+  // 공
+  dctx.beginPath(); dctx.arc(DW/2, ballY, 14, 0, Math.PI*2);
+  dctx.fillStyle = '#a855f7'; dctx.shadowColor = '#a855f7'; dctx.shadowBlur = 8; dctx.fill();
+  dctx.shadowBlur = 0;
+  // 중력 화살표(항상 아래)
+  const ax = DW/2 + 40, ay0 = ballY - 10, ay1 = ballY + 30;
+  dctx.strokeStyle = '#f43f5e'; dctx.fillStyle = '#f43f5e'; dctx.lineWidth = 3;
+  dctx.beginPath(); dctx.moveTo(ax,ay0); dctx.lineTo(ax,ay1); dctx.stroke();
+  dctx.beginPath(); dctx.moveTo(ax,ay1); dctx.lineTo(ax-6,ay1-10); dctx.lineTo(ax+6,ay1-10); dctx.closePath(); dctx.fill();
+  dctx.font = '11px sans-serif'; dctx.fillStyle = '#f43f5e';
+  dctx.fillText('중력', ax+10, (ay0+ay1)/2+4);
+}
+drawDrop();
+
+function startDrop(){
+  if (dropping) { ballY = 30; vy = 0; drawDrop(); document.getElementById('dropBtn').textContent = '✋ 손을 놓기'; dropping = false; return; }
+  dropping = true;
+  document.getElementById('dropBtn').textContent = '↺ 다시 놓기';
+  function loop(){
+    if (!dropping) return;
+    vy += 0.6;
+    ballY += vy;
+    if (ballY > DH-34) { ballY = DH-34; dropping = false; }
+    drawDrop();
+    if (dropping) requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ────────────────────────────────
+   2) 질량 vs 무게
+   ──────────────────────────────── */
+let planet = 'earth';
+const G = { earth: 9.8, moon: 1.6 };
+
+function setPlanet(p){
+  planet = p;
+  document.getElementById('btn-earth').classList.toggle('on', p==='earth');
+  document.getElementById('btn-moon').classList.toggle('on', p==='moon');
+  updateCompare();
+}
+function updateCompare(){
+  const mass = +document.getElementById('massSlider').value;
+  document.getElementById('massVal').textContent = mass + ' kg';
+  const weight = (mass * G[planet]).toFixed(1);
+  document.getElementById('weightVal').textContent = weight + ' N';
+  document.getElementById('weightNote').textContent = planet === 'earth' ? '지구에서 측정 (g≈9.8)' : '달에서 측정 (g≈1.6, 지구의 약 1/6)';
+}
+document.getElementById('massSlider').addEventListener('input', updateCompare);
+updateCompare();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '지구가 물체를 끌어당기는 힘을 무엇이라 하는가?',
+    opts: ['탄성력', '마찰력', '중력', '부력'], answer: 2,
+    fb: '지구가 물체를 끌어당기는 힘을 "중력"이라고 한다.' },
+  { q: '중력의 방향은 항상 어느 쪽인가?',
+    opts: ['지구 중심 방향(연직 아래)', '물체가 움직이는 방향', '수평 방향', '방향이 일정하지 않다'], answer: 0,
+    fb: '중력은 항상 지구 중심을 향하는 방향, 즉 연직 아래 방향으로 작용한다.' },
+  { q: '달에서 잰 몸무게가 지구에서보다 가벼운 까닭은?',
+    opts: ['달에는 공기가 없어서', '달의 중력이 지구보다 작기 때문에', '달의 질량이 사람과 같기 때문에', '달에서는 시간이 다르게 흐르기 때문에'], answer: 1,
+    fb: '달의 중력은 지구의 약 1/6이라서, 같은 질량이라도 달에서 잰 무게(중력의 크기)는 훨씬 가볍다.' },
+  { q: '장소를 지구에서 달로 옮겨도 변하지 않는 것은?',
+    opts: ['무게', '질량', '중력의 크기', '몸무게(N)'], answer: 1,
+    fb: '질량은 물체가 가진 고유한 양으로 측정 장소가 바뀌어도 변하지 않는다. 무게는 그 장소의 중력에 따라 달라진다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

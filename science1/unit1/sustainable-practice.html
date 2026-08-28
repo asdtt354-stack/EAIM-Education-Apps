@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지속가능한 삶을 위한 활동 방안 실천하기 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#34d399; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#6ee7b7 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:620px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .practice-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .progress-shell { background:#141215; border:1px solid #2a2a2c; border-radius:20px; padding:22px 24px; }
+  .progress-msg { text-align:center; font-weight:800; font-size:1.02em; margin-bottom:6px; }
+  .progress-count { text-align:center; font-size:0.8em; color:#888; margin-bottom:14px; }
+  .progress-bar-outer { height:10px; border-radius:6px; background:#262022; overflow:hidden; margin-bottom:20px; }
+  .progress-bar-inner { height:100%; background:linear-gradient(90deg,#34d399,#a855f7); width:0%; transition:width .4s ease; }
+  .practice-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:#1a1a1c; border:1.5px solid #2a2a2c; margin-bottom:8px; cursor:pointer; }
+  .practice-item.checked { border-color:#34d399; background:rgba(52,211,153,0.1); }
+  .practice-item .p-check { width:22px; height:22px; border-radius:6px; border:2px solid #444; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.8em; }
+  .practice-item.checked .p-check { border-color:#34d399; background:#34d399; color:#06281c; }
+  .practice-item .p-icon { font-size:1.3em; }
+  .practice-item .p-text { font-size:0.86em; color:#ddd; }
+  .practice-item.checked .p-text { color:#a7f3d0; text-decoration:line-through; text-decoration-color:rgba(167,243,208,0.5); }
+
+  .card-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .maker-card { background:#100d0e; border:1px solid #262022; border-radius:20px; padding:22px; }
+  .maker-card select, .maker-card input {
+    width:100%; background:#1a1a1c; border:1.5px solid #2f2f31; border-radius:10px; color:#eee; padding:10px 12px; font-size:0.86em; font-family:inherit; margin-bottom:12px;
+  }
+  .maker-btn { border:none; background:var(--main-color); color:#06281c; font-weight:800; padding:10px 20px; border-radius:10px; font-size:0.84em; cursor:pointer; }
+  .pledge-preview { margin-top:18px; border-radius:18px; padding:26px 22px; text-align:center; background:linear-gradient(135deg, rgba(52,211,153,0.16), rgba(168,85,247,0.16)); border:1.5px solid rgba(52,211,153,0.35); display:none; }
+  .pledge-preview .pp-icon { font-size:2.4em; margin-bottom:10px; }
+  .pledge-preview .pp-label { font-size:0.7em; font-weight:800; color:#a7f3d0; letter-spacing:1px; margin-bottom:8px; }
+  .pledge-preview .pp-text { font-size:1.05em; font-weight:800; color:#fff; line-height:1.5; }
+  .pledge-preview .pp-sign { margin-top:14px; font-size:0.76em; color:#999; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅰ. 과학과 인류의 지속가능한 삶<span class="sep">/</span><b>지속가능한 삶을 위한 실천</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-5 · 교과서 30쪽</div>
+    <h1>지속가능한 삶은<br>작은 실천에서 시작된다</h1>
+    <p class="lead">지금까지 배운 지속가능발전의 의미를, 오늘 나의 하루에서 실천으로 옮겨보자. 체크리스트로 다짐하고, 나만의 실천 카드도 만들어 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>지속가능한 삶을 위해 일상에서 실천할 수 있는 방안을 찾아 스스로 계획하고 실천할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>나의 실천 체크리스트</h2></div>
+  <div class="practice-wrap">
+    <div class="progress-shell">
+      <div class="progress-msg" id="progressMsg"></div>
+      <div class="progress-count" id="progressCount"></div>
+      <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+      <div id="practiceList"></div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>나만의 실천 다짐 카드 만들기</h2></div>
+  <div class="card-wrap">
+    <div class="maker-card">
+      <select id="pledgeCategory">
+        <option value="🌍">🌍 환경 보호</option>
+        <option value="⚡">⚡ 에너지 절약</option>
+        <option value="♻️">♻️ 자원 재활용</option>
+        <option value="🚲">🚲 친환경 이동수단</option>
+      </select>
+      <input type="text" id="pledgeText" placeholder="예: 등굣길에 텀블러를 챙겨서 일회용 컵을 쓰지 않겠다.">
+      <button class="maker-btn" onclick="makeCard()">🎴 다짐 카드 만들기</button>
+      <div class="pledge-preview" id="pledgePreview"></div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="sustainable-technology.html"><span class="k">이전 소단원</span><span class="t">← 과학기술과 지속가능한 삶</span></a>
+    <span class="nav-btn next disabled"><span class="t">과학1 전체 완료 🎉</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 과학과 인류의 지속가능한 삶 · 과학1 전체 완료 🎉</footer>
+
+<script>
+const PRACTICES = [
+  { icon:'🚶', text:'가까운 거리는 걷거나 대중교통·자전거 이용하기' },
+  { icon:'💡', text:'사용하지 않는 전자기기 플러그 뽑기' },
+  { icon:'♻️', text:'재활용품 분리배출 철저히 하기' },
+  { icon:'🥤', text:'일회용품 대신 다회용기·텀블러 사용하기' },
+  { icon:'🌳', text:'나무 심기나 환경보호 캠페인에 참여하기' },
+  { icon:'📢', text:'지속가능발전에 대해 주변 사람들에게 알리기' },
+];
+let checked = new Set();
+function renderPractices(){
+  const list = document.getElementById('practiceList'); list.innerHTML='';
+  PRACTICES.forEach((p,i) => {
+    const item = document.createElement('div');
+    item.className = 'practice-item'+(checked.has(i)?' checked':'');
+    item.onclick = () => { checked.has(i) ? checked.delete(i) : checked.add(i); renderPractices(); };
+    item.innerHTML = `<div class="p-check">${checked.has(i)?'✓':''}</div><div class="p-icon">${p.icon}</div><div class="p-text">${p.text}</div>`;
+    list.appendChild(item);
+  });
+  const n = checked.size, total = PRACTICES.length;
+  document.getElementById('progressBar').style.width = (n/total*100)+'%';
+  document.getElementById('progressCount').textContent = `${n} / ${total}개 실천 중`;
+  let msg = '아직 시작 전이에요. 하나씩 눌러 다짐해 보자!';
+  if (n>=1 && n<=2) msg='좋은 시작이에요! 🌱';
+  else if (n>=3 && n<=4) msg='지속가능한 삶의 실천가가 되어가고 있어요! 🌿';
+  else if (n>=5 && n<total) msg='정말 잘하고 있어요! 조금만 더! 🌳';
+  else if (n===total) msg='완벽해요! 지속가능한 삶 실천 챔피언! 🏅';
+  document.getElementById('progressMsg').textContent = msg;
+}
+renderPractices();
+
+function makeCard(){
+  const cat = document.getElementById('pledgeCategory').value;
+  const text = document.getElementById('pledgeText').value.trim() || '나만의 다짐을 입력해 보세요.';
+  const preview = document.getElementById('pledgePreview');
+  preview.style.display = 'block';
+  preview.innerHTML = `
+    <div class="pp-icon">${cat}</div>
+    <div class="pp-label">지속가능한 삶을 위한 나의 다짐</div>
+    <div class="pp-text">"${text}"</div>
+    <div class="pp-sign">— EAIM 과학 수업</div>
+  `;
+}
+
+const QUIZ = [
+  { q:'지속가능한 삶을 위한 개인 실천 방법으로 옳지 않은 것은?', opts:['대중교통 이용하기','일회용품을 더 많이 사용하기','분리배출 철저히 하기','다회용기 사용하기'], answer:1, fb:'일회용품 사용을 늘리는 것은 지속가능한 삶에 도움이 되지 않는다. 오히려 줄여야 한다.' },
+  { q:'대중교통이나 자전거를 이용하는 것이 지속가능한 삶에 도움이 되는 까닭은?', opts:['이동 속도가 빨라서','자동차보다 온실가스 배출을 줄일 수 있어서','비용이 전혀 들지 않아서','법으로 정해져 있어서'], answer:1, fb:'자동차 대신 대중교통·자전거를 이용하면 온실가스 배출을 줄이는 데 도움이 된다.' },
+  { q:'사용하지 않는 전자기기의 플러그를 뽑는 실천이 도움이 되는 까닭은?', opts:['전자기기가 고장 나지 않아서','불필요한 대기전력(에너지) 낭비를 줄일 수 있어서','전자파를 막을 수 있어서','전자기기 수명이 늘어나서'], answer:1, fb:'대기전력 낭비를 줄이는 것은 에너지 절약, 즉 지속가능한 삶의 실천 방법 중 하나이다.' },
+  { q:'지속가능한 삶을 위한 실천에 대한 설명으로 가장 알맞은 것은?', opts:['국가만 할 수 있는 일이다','기업만 책임지면 된다','개인의 작은 실천도 의미가 있다','과학자만 할 수 있는 일이다'], answer:2, fb:'지속가능한 삶은 국가·기업의 노력뿐 아니라 개인의 작은 실천이 모여 함께 이루어진다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

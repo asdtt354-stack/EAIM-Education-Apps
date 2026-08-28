@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>물질의 상태 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+    --solid-c: #94a3b8; --liquid-c: #38bdf8; --gas-c: #fb923c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .crumb .sep { margin: 0 6px; color: #444; }
+  .hub-link { font-size: 0.72em; color: #aaa; text-decoration: none; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 30px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.7em, 4vw, 2.5em); margin: 0 0 14px; background: linear-gradient(100deg, #94a3b8 15%, #fff 50%, #fb923c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.7; margin: 0 auto; max-width: 560px; }
+
+  .goal-box { max-width: 620px; margin: 26px auto 0; text-align: left; background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px; padding: 16px 20px; }
+  .goal-box .label { font-size: 0.7em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .goal-box p { margin: 0; font-size: 0.86em; line-height: 1.65; color: #e5d8fb; }
+
+  .section-head { max-width: 700px; margin: 50px auto 18px; padding: 0 20px; }
+  .section-head .num { font-size: 0.72em; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
+  .section-head h2 { margin: 0; font-size: 1.2em; }
+
+  /* ── 탭 ───────────────────────────────────── */
+  .tab-row { max-width: 480px; margin: 0 auto; display: flex; gap: 8px; padding: 0 20px; }
+  .tab-btn { flex: 1; border: 1.5px solid #2a2a2c; background: #141215; color: #999; padding: 12px 8px; border-radius: 12px; font-size: 0.86em; font-weight: 800; cursor: pointer; transition: all .2s; }
+  .tab-btn.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, #141215); color: #fff; }
+
+  .sim-shell { max-width: 620px; margin: 18px auto 0; padding: 0 20px; }
+  .sim-card { background: #100d0e; border: 1px solid #262022; border-radius: 20px; padding: 20px; text-align: center; }
+  #stateCanvas { background: #0f1720; border-radius: 14px; max-width: 100%; }
+
+  .info-card { max-width: 620px; margin: 16px auto 0; padding: 0 20px; }
+  .info-inner { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.28); border-radius: 16px; padding: 18px 22px; }
+  .info-inner .i-title { font-size: 0.95em; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+  .info-inner p { margin: 0 0 10px; font-size: 0.85em; color: #ddd; line-height: 1.75; }
+  .prop-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .prop-chip { font-size: 0.74em; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: #1a1a1c; color: #ccc; }
+  .info-inner .i-eg { font-size: 0.78em; color: #999; padding-top: 8px; border-top: 1px dashed #2f2f31; }
+
+  /* ── 그릇 시뮬레이션 ──────────────────────── */
+  .container-wrap { max-width: 700px; margin: 0 auto; padding: 0 20px; }
+  .picker-row { display: flex; justify-content: center; gap: 22px; margin-bottom: 18px; flex-wrap: wrap; }
+  .picker-group { text-align: center; }
+  .picker-group .pg-label { font-size: 0.72em; color: #888; margin-bottom: 8px; }
+  .picker-btns { display: flex; gap: 6px; }
+  .picker-btn { border: 1.5px solid #2a2a2c; background: #141215; color: #999; padding: 8px 14px; border-radius: 9px; font-size: 0.8em; font-weight: 700; cursor: pointer; }
+  .picker-btn.on { border-color: var(--accent); background: rgba(168,85,247,0.16); color: #fff; }
+
+  #containerCanvas { background: #0f1720; border-radius: 14px; display: block; margin: 0 auto; max-width: 100%; }
+  .container-note { text-align: center; color: #999; font-size: 0.84em; margin-top: 14px; line-height: 1.7; }
+
+  /* ── 퀴즈 ─────────────────────────────────── */
+  .quiz-wrap { max-width: 760px; margin: 56px auto 40px; padding: 0 20px; }
+  .quiz-wrap h2 { font-size: 1.2em; color: #fff; margin-bottom: 4px; }
+  .quiz-wrap .sub { color: #888; font-size: 0.82em; margin-bottom: 22px; }
+  .q-card { background: #121012; border: 1px solid #262022; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .q-card .q-text { font-size: 0.92em; font-weight: 700; margin-bottom: 12px; color: #eee; }
+  .q-opts { display: flex; flex-direction: column; gap: 8px; }
+  .q-opt { text-align: left; background: #1a1a1c; border: 1.5px solid #2f2f31; color: #ccc; padding: 10px 14px; border-radius: 9px; font-size: 0.85em; cursor: pointer; }
+  .q-opt.correct { border-color: #34d399; background: rgba(52,211,153,0.12); color: #a7f3d0; }
+  .q-opt.wrong { border-color: #f43f5e; background: rgba(244,63,94,0.12); color: #fda4af; }
+  .q-opt:disabled { cursor: default; }
+  .q-fb { margin-top: 10px; font-size: 0.82em; line-height: 1.6; color: #bbb; display: none; padding-top: 10px; border-top: 1px dashed #2f2f31; }
+
+  .lesson-nav { max-width: 760px; margin: 0 auto 60px; padding: 0 20px; display: flex; justify-content: space-between; gap: 12px; }
+  .nav-btn { flex: 1; text-decoration: none; padding: 14px 18px; border-radius: 12px; border: 1px solid #2a2a2c; background: #121012; color: #ccc; font-size: 0.82em; }
+  .nav-btn .k { display: block; font-size: 0.72em; color: #777; margin-bottom: 4px; }
+  .nav-btn .t { font-weight: 800; color: #fff; }
+  .nav-btn.next { text-align: right; }
+  .nav-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb">
+      <b>과학1</b><span class="sep">/</span>Ⅳ. 물질의 상태 변화<span class="sep">/</span>1. 입자의 운동과 물질의 상태<span class="sep">/</span><b>물질의 상태</b>
+    </div>
+    <a class="hub-link" href="../unit4-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅳ-1-2 · 교과서 120쪽</div>
+    <h1>같은 물질도<br>세 가지 얼굴을 가진다</h1>
+    <p class="lead">얼음, 물, 수증기는 모두 같은 물질(물)이지만 모습이 다르다. 고체·액체·기체는 입자의 배열과 움직임이 어떻게 다른지, 그리고 그릇에 담았을 때 모양이 어떻게 달라지는지 확인해 보자.</p>
+
+    <div class="goal-box">
+      <div class="label">학습 목표</div>
+      <p>고체, 액체, 기체 상태에서 입자의 배열과 운동 상태를 비교하고, 각 상태의 모양과 부피가 어떻게 다른지 설명할 수 있다.</p>
+    </div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>입자의 배열과 운동 비교하기</h2></div>
+  <div class="tab-row" id="tabRow"></div>
+  <div class="sim-shell">
+    <div class="sim-card"><canvas id="stateCanvas" width="500" height="220"></canvas></div>
+  </div>
+  <div class="info-card"><div class="info-inner" id="infoInner"></div></div>
+
+  <div class="section-head"><div class="num">02</div><h2>그릇에 담으면 모양이 변할까?</h2></div>
+  <div class="container-wrap">
+    <div class="picker-row">
+      <div class="picker-group">
+        <div class="pg-label">물질의 상태</div>
+        <div class="picker-btns" id="materialBtns"></div>
+      </div>
+      <div class="picker-group">
+        <div class="pg-label">그릇 모양</div>
+        <div class="picker-btns" id="containerBtns"></div>
+      </div>
+    </div>
+    <canvas id="containerCanvas" width="440" height="260"></canvas>
+    <div class="container-note" id="containerNote"></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="particle-motion.html"><span class="k">이전 소단원</span><span class="t">← 입자의 운동</span></a>
+    <a class="nav-btn next" href="state-change-types.html"><span class="k">다음 소단원</span><span class="t">물질의 상태 변화 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 상태 변화</footer>
+
+<script>
+/* ────────────────────────────────
+   01) 상태별 입자 탭
+   ──────────────────────────────── */
+const STATES = {
+  solid: { c:'#94a3b8', label:'💎 고체', title:'고체',
+    body:'입자가 규칙적으로 촘촘하게 배열되어 있고, 서로의 위치를 크게 벗어나지 못한 채 제자리에서 진동만 한다.',
+    props:['모양: 일정함', '부피: 일정함', '입자 배열: 규칙적'],
+    eg:'예 · 얼음, 철, 나무' },
+  liquid: { c:'#38bdf8', label:'💧 액체', title:'액체',
+    body:'입자가 서로 가까이 붙어 있지만 배열이 불규칙하고, 어느 정도 자유롭게 위치를 바꾸며 흐를 수 있다.',
+    props:['모양: 담는 그릇에 따라 변함', '부피: 일정함', '입자 배열: 불규칙하지만 밀집'],
+    eg:'예 · 물, 식용유, 알코올' },
+  gas: { c:'#fb923c', label:'💨 기체', title:'기체',
+    body:'입자 사이의 거리가 매우 멀고, 입자가 사방으로 매우 빠르고 자유롭게 움직이며 공간 전체로 퍼진다.',
+    props:['모양: 담는 그릇에 따라 변함', '부피: 담는 그릇에 따라 변함', '입자 배열: 불규칙하고 매우 멂'],
+    eg:'예 · 수증기, 공기, 산소' },
+};
+
+let currentState = 'solid';
+const stateCanvas = document.getElementById('stateCanvas');
+const sctx = stateCanvas.getContext('2d');
+const SW = stateCanvas.width, SH = stateCanvas.height;
+let stateParticles = [];
+
+function renderTabs(){
+  const row = document.getElementById('tabRow');
+  row.innerHTML = '';
+  Object.entries(STATES).forEach(([key,s]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (key===currentState ? ' on' : '');
+    btn.style.setProperty('--c', s.c);
+    btn.textContent = s.label;
+    btn.onclick = () => { currentState = key; initStateParticles(); renderTabs(); renderInfo(); };
+    row.appendChild(btn);
+  });
+}
+function renderInfo(){
+  const s = STATES[currentState];
+  document.getElementById('infoInner').innerHTML = `
+    <div class="i-title">${s.title}</div>
+    <div class="prop-row">${s.props.map(p=>`<span class="prop-chip">${p}</span>`).join('')}</div>
+    <p>${s.body}</p>
+    <div class="i-eg">${s.eg}</div>
+  `;
+}
+
+function initStateParticles(){
+  stateParticles = [];
+  if (currentState === 'solid') {
+    const cols=10, rows=4, mx=60, my=50, gx=(SW-mx*2)/(cols-1), gy=(SH-my*2)/(rows-1);
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) stateParticles.push({gx:mx+c*gx, gy:my+r*gy, x:mx+c*gx, y:my+r*gy});
+  } else if (currentState === 'liquid') {
+    for (let i=0;i<50;i++) stateParticles.push({x:80+Math.random()*(SW-160), y:70+Math.random()*(SH-120), dx:(Math.random()-0.5)*1, dy:(Math.random()-0.5)*1});
+  } else {
+    for (let i=0;i<26;i++) stateParticles.push({x:20+Math.random()*(SW-40), y:20+Math.random()*(SH-40), dx:(Math.random()-0.5)*4, dy:(Math.random()-0.5)*4});
+  }
+}
+initStateParticles();
+
+function drawStateParticles(t){
+  sctx.clearRect(0,0,SW,SH);
+  sctx.strokeStyle = '#262022'; sctx.strokeRect(10,10,SW-20,SH-20);
+  const color = STATES[currentState].c;
+
+  if (currentState === 'solid') {
+    stateParticles.forEach(p => {
+      const x = p.gx + Math.sin(t*0.15+p.gy)*2.2;
+      const y = p.gy + Math.cos(t*0.17+p.gx)*2.2;
+      sctx.beginPath(); sctx.arc(x,y,6,0,Math.PI*2);
+      sctx.fillStyle = color; sctx.shadowColor = color; sctx.shadowBlur = 6; sctx.fill();
+    });
+  } else if (currentState === 'liquid') {
+    stateParticles.forEach(p => {
+      p.x += p.dx; p.y += p.dy;
+      if (Math.random()<0.02) p.dx += (Math.random()-0.5)*0.4;
+      if (Math.random()<0.02) p.dy += (Math.random()-0.5)*0.4;
+      p.dx = Math.max(-1.2, Math.min(1.2, p.dx));
+      p.dy = Math.max(-1.2, Math.min(1.2, p.dy));
+      if (p.x<75||p.x>SW-75) p.dx*=-1;
+      if (p.y<65||p.y>SH-45) p.dy*=-1;
+      p.x = Math.max(75, Math.min(SW-75, p.x));
+      p.y = Math.max(65, Math.min(SH-45, p.y));
+      sctx.beginPath(); sctx.arc(p.x,p.y,6,0,Math.PI*2);
+      sctx.fillStyle = color; sctx.shadowColor = color; sctx.shadowBlur = 6; sctx.fill();
+    });
+  } else {
+    stateParticles.forEach(p => {
+      p.x += p.dx; p.y += p.dy;
+      if (p.x<16||p.x>SW-16) p.dx*=-1;
+      if (p.y<16||p.y>SH-16) p.dy*=-1;
+      p.x = Math.max(16, Math.min(SW-16, p.x));
+      p.y = Math.max(16, Math.min(SH-16, p.y));
+      sctx.beginPath(); sctx.arc(p.x,p.y,5,0,Math.PI*2);
+      sctx.fillStyle = color; sctx.shadowColor = color; sctx.shadowBlur = 5; sctx.fill();
+    });
+  }
+  sctx.shadowBlur = 0;
+}
+
+let tFrame = 0;
+function loop1(){
+  tFrame++;
+  drawStateParticles(tFrame);
+  requestAnimationFrame(loop1);
+}
+renderTabs(); renderInfo(); loop1();
+
+/* ────────────────────────────────
+   02) 그릇 모양 시뮬레이션
+   ──────────────────────────────── */
+let material = 'solid';
+let containerShape = 'round';
+
+function renderPickers(){
+  const mWrap = document.getElementById('materialBtns');
+  mWrap.innerHTML = '';
+  [['solid','💎 고체'],['liquid','💧 액체'],['gas','💨 기체']].forEach(([key,label]) => {
+    const b = document.createElement('button');
+    b.className = 'picker-btn' + (key===material?' on':'');
+    b.textContent = label;
+    b.onclick = () => { material = key; renderPickers(); drawContainer(); };
+    mWrap.appendChild(b);
+  });
+  const cWrap = document.getElementById('containerBtns');
+  cWrap.innerHTML = '';
+  [['round','원형 그릇'],['star','별 모양 그릇']].forEach(([key,label]) => {
+    const b = document.createElement('button');
+    b.className = 'picker-btn' + (key===containerShape?' on':'');
+    b.textContent = label;
+    b.onclick = () => { containerShape = key; renderPickers(); drawContainer(); };
+    cWrap.appendChild(b);
+  });
+}
+
+function containerPath(ctx, cx, cy){
+  ctx.beginPath();
+  if (containerShape === 'round') {
+    ctx.arc(cx, cy, 90, 0, Math.PI*2);
+  } else {
+    const spikes=5, outerR=100, innerR=45;
+    let rot = Math.PI/2*3;
+    const step = Math.PI/spikes;
+    ctx.moveTo(cx, cy-outerR);
+    for (let i=0;i<spikes;i++){
+      let x = cx + Math.cos(rot)*outerR, y = cy + Math.sin(rot)*outerR;
+      ctx.lineTo(x,y); rot += step;
+      x = cx + Math.cos(rot)*innerR; y = cy + Math.sin(rot)*innerR;
+      ctx.lineTo(x,y); rot += step;
+    }
+    ctx.closePath();
+  }
+}
+
+const containerCanvas = document.getElementById('containerCanvas');
+const cctx = containerCanvas.getContext('2d');
+const CW = containerCanvas.width, CH = containerCanvas.height;
+const ccx = CW/2, ccy = CH/2 + 6;
+
+function drawContainer(){
+  cctx.clearRect(0,0,CW,CH);
+
+  // 그릇 테두리(항상 점선으로 표시)
+  cctx.save();
+  containerPath(cctx, ccx, ccy);
+  cctx.strokeStyle = '#3a3a3c'; cctx.setLineDash([4,4]); cctx.lineWidth = 2;
+  cctx.stroke();
+  cctx.setLineDash([]);
+  cctx.restore();
+
+  if (material === 'solid') {
+    // 고체: 그릇 모양과 상관없이 자기 모양(네모 블록)을 유지
+    cctx.fillStyle = '#94a3b8'; cctx.shadowColor = '#94a3b8'; cctx.shadowBlur = 10;
+    cctx.fillRect(ccx-40, ccy-30, 80, 60);
+    cctx.shadowBlur = 0;
+    document.getElementById('containerNote').textContent =
+      '고체는 그릇 모양과 관계없이 자신의 모양(네모)을 그대로 유지한다 — 모양도 부피도 변하지 않는다.';
+  } else if (material === 'liquid') {
+    // 액체: 그릇 바닥 모양을 따라가되, 일정 높이까지만(부피 일정)
+    cctx.save();
+    containerPath(cctx, ccx, ccy);
+    cctx.clip();
+    cctx.fillStyle = '#38bdf8'; cctx.shadowColor = '#38bdf8'; cctx.shadowBlur = 8;
+    cctx.fillRect(ccx-110, ccy+10, 220, 120);
+    cctx.shadowBlur = 0;
+    cctx.restore();
+    document.getElementById('containerNote').textContent =
+      '액체는 담는 그릇의 바닥 모양을 따라 흐르며 채워진다 — 모양은 그릇에 따라 변하지만, 전체 양(부피)은 변하지 않는다.';
+  } else {
+    // 기체: 그릇 전체를 가득 채움
+    cctx.save();
+    containerPath(cctx, ccx, ccy);
+    cctx.clip();
+    cctx.fillStyle = 'rgba(251,146,60,0.28)';
+    cctx.fillRect(0,0,CW,CH);
+    for (let i=0;i<40;i++) {
+      const x = ccx-100+Math.random()*200, y = ccy-100+Math.random()*200;
+      cctx.beginPath(); cctx.arc(x,y,3,0,Math.PI*2);
+      cctx.fillStyle = '#fb923c'; cctx.fill();
+    }
+    cctx.restore();
+    document.getElementById('containerNote').textContent =
+      '기체는 그릇의 구석구석까지 빈틈없이 가득 채운다 — 모양뿐 아니라 부피까지도 그릇에 맞춰 변한다.';
+  }
+}
+renderPickers();
+drawContainer();
+
+/* ────────────────────────────────
+   확인 퀴즈
+   ──────────────────────────────── */
+const QUIZ = [
+  { q: '담는 그릇이 바뀌어도 모양과 부피가 모두 일정하게 유지되는 물질의 상태는?',
+    opts: ['고체', '액체', '기체', '상태에 따라 다르다'], answer: 0,
+    fb: '고체는 입자가 규칙적으로 배열되어 있어 모양과 부피가 모두 일정하다.' },
+  { q: '담는 그릇에 따라 모양은 변하지만 부피는 일정한 물질의 상태는?',
+    opts: ['고체', '액체', '기체', '해당 없음'], answer: 1,
+    fb: '액체는 그릇의 바닥 모양을 따라 흐르지만 전체 양(부피)은 변하지 않는다.' },
+  { q: '그릇 전체를 빈틈없이 가득 채우며, 모양과 부피가 모두 변하는 물질의 상태는?',
+    opts: ['고체', '액체', '기체', '고체와 액체 모두'], answer: 2,
+    fb: '기체는 입자가 매우 자유롭게 움직여 그릇의 구석구석까지 가득 채운다.' },
+  { q: '고체를 이루는 입자에 대한 설명으로 가장 알맞은 것은?',
+    opts: ['입자가 규칙적으로 배열되어 제자리에서 진동한다', '입자가 매우 멀리 떨어져 자유롭게 날아다닌다', '입자 사이에 인력이 전혀 없다', '입자가 존재하지 않는다'], answer: 0,
+    fb: '고체의 입자는 규칙적으로 촘촘히 배열되어 제자리에서 진동만 한다.' },
+];
+
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  QUIZ.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const optsHtml = item.opts.map((o, oi) => `<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML = `<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+      const item = QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s => {
+        s.disabled = true;
+        if (+s.dataset.oi === item.answer) s.classList.add('correct');
+        else if (+s.dataset.oi === oi) s.classList.add('wrong');
+      });
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.style.display = 'block';
+      fb.textContent = (oi === item.answer ? '✅ 정답! ' : '❌ 다시 생각해 보자. ') + item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

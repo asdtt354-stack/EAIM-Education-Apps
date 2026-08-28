@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기체의 압력과 부피 관계 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fdba74 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .sim-wrap { max-width:620px; margin:40px auto 0; padding:0 20px; }
+  .sim-card { background:#100d0e; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #cylCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:400px; margin:16px auto 0; text-align:center; }
+  .slider-row .sl-label { font-size:0.82em; color:#999; margin-bottom:8px; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+
+  .readout-row { display:flex; justify-content:center; gap:26px; margin-top:16px; flex-wrap:wrap; }
+  .ro-item .rv { font-size:1.25em; font-weight:900; } .ro-item .rl { font-size:0.72em; color:#888; }
+  .ro-item.p .rv { color:#fb923c; } .ro-item.v .rv { color:#38bdf8; }
+
+  .graph-card { background:#100d0e; border:1px solid #262022; border-radius:16px; padding:18px; margin-top:20px; text-align:center; }
+  #boyleCanvas { background:#0f1720; border-radius:10px; max-width:100%; }
+
+  .concept-wrap { max-width:620px; margin:30px auto 0; padding:0 20px; }
+  .concept-card { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:18px 22px; }
+  .concept-card ul { margin:0; padding-left:18px; font-size:0.85em; color:#ddd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅵ. 기체의 성질<span class="sep">/</span>1. 기체의 압력과 부피 관계<span class="sep">/</span><b>기체의 압력과 부피 관계</b></div>
+    <a class="hub-link" href="../unit6-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅵ-1-2 · 교과서 200쪽</div>
+    <h1>피스톤을 누르면<br>기체는 압축된다</h1>
+    <p class="lead">주사기의 피스톤을 누르면 안의 공기는 어떻게 될까? 압력 슬라이더를 움직여 피스톤을 눌러보고, 압력과 부피가 어떤 관계인지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>일정한 온도에서 기체에 가하는 압력이 커질수록 부피가 작아짐을 실험을 통해 확인하고 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="cylCanvas" width="220" height="240"></canvas>
+      <div class="slider-row">
+        <div class="sl-label">피스톤에 가하는 압력</div>
+        <input type="range" id="pressureSlider" min="1" max="5" value="1" step="0.1">
+      </div>
+      <div class="readout-row">
+        <div class="ro-item p"><div class="rv" id="pVal">1.0 기압</div><div class="rl">압력</div></div>
+        <div class="ro-item v"><div class="rv" id="vVal">100%</div><div class="rl">부피</div></div>
+      </div>
+    </div>
+
+    <div class="graph-card">
+      <div style="font-size:0.8em;color:#999;margin-bottom:10px">압력-부피 그래프 (반비례 곡선)</div>
+      <canvas id="boyleCanvas" width="440" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <ul>
+        <li>일정한 온도에서 기체에 가하는 <b>압력이 커지면 부피는 작아진다.</b></li>
+        <li>반대로 압력이 작아지면 부피는 커진다.</li>
+        <li>압력과 부피는 서로 <b>반비례</b> 관계에 있다. (압력 × 부피 = 일정)</li>
+        <li>이는 압력이 커지면 입자 사이의 공간이 좁아지도록 입자들이 더 촘촘하게 눌리기 때문이다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="gas-pressure.html"><span class="k">이전 소단원</span><span class="t">← 기체의 압력</span></a>
+    <a class="nav-btn next" href="pressure-volume-daily-life.html"><span class="k">다음 소단원</span><span class="t">생활 속 기체의 압력과 부피 관계 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 기체의 성질</footer>
+
+<script>
+const cylCanvas = document.getElementById('cylCanvas');
+const cctx = cylCanvas.getContext('2d');
+const CW = cylCanvas.width, CH = cylCanvas.height;
+const cylTop = 30, cylBottom = CH-20, cylW = 100, cylX = (CW-cylW)/2;
+
+let particles = [];
+function initParticles(){
+  particles = [];
+  for (let i=0;i<18;i++) particles.push({ rx:Math.random(), ry:Math.random(), dx:(Math.random()-0.5)*2, dy:(Math.random()-0.5)*2 });
+}
+initParticles();
+
+function currentVolumeRatio(p){ return 1/p; } // 압력에 반비례(단순화)
+
+function drawCylinder(){
+  const p = +document.getElementById('pressureSlider').value;
+  const volRatio = currentVolumeRatio(p);
+  const pistonY = cylTop + (cylBottom-cylTop) * (1-volRatio);
+
+  cctx.clearRect(0,0,CW,CH);
+  // 실린더 벽
+  cctx.strokeStyle = '#4a4a4c'; cctx.lineWidth = 3;
+  cctx.strokeRect(cylX, cylTop, cylW, cylBottom-cylTop);
+
+  // 기체 영역
+  cctx.fillStyle = 'rgba(251,146,60,0.08)';
+  cctx.fillRect(cylX+2, pistonY, cylW-4, cylBottom-pistonY-2);
+
+  // 입자
+  particles.forEach(pt => {
+    pt.rx += pt.dx*0.01; pt.ry += pt.dy*0.01;
+    if (pt.rx<0.05||pt.rx>0.95) pt.dx*=-1;
+    if (pt.ry<0.05||pt.ry>0.95) pt.dy*=-1;
+    pt.rx = Math.max(0.05,Math.min(0.95,pt.rx));
+    pt.ry = Math.max(0.05,Math.min(0.95,pt.ry));
+    const x = cylX+6 + pt.rx*(cylW-12);
+    const y = pistonY+6 + pt.ry*(cylBottom-pistonY-12);
+    cctx.beginPath(); cctx.arc(x,y,4,0,Math.PI*2);
+    cctx.fillStyle = '#fb923c'; cctx.shadowColor = '#fb923c'; cctx.shadowBlur = 5; cctx.fill();
+  });
+  cctx.shadowBlur = 0;
+
+  // 피스톤
+  cctx.fillStyle = '#94a3b8';
+  cctx.fillRect(cylX-4, pistonY-10, cylW+8, 10);
+  cctx.fillStyle = '#666';
+  cctx.fillRect(cylX+cylW/2-3, 4, 6, pistonY-10);
+
+  document.getElementById('pVal').textContent = p.toFixed(1) + ' 기압';
+  document.getElementById('vVal').textContent = Math.round(volRatio*100) + '%';
+
+  drawBoyleGraph(p);
+}
+
+const boyleCanvas = document.getElementById('boyleCanvas');
+const bctx = boyleCanvas.getContext('2d');
+const bw = boyleCanvas.width, bh = boyleCanvas.height;
+const padL=40, padR=16, padT=16, padB=28;
+
+function drawBoyleGraph(currentP){
+  bctx.clearRect(0,0,bw,bh);
+  bctx.strokeStyle = '#333'; bctx.lineWidth=1;
+  bctx.beginPath(); bctx.moveTo(padL,padT); bctx.lineTo(padL,bh-padB); bctx.lineTo(bw-padR,bh-padB); bctx.stroke();
+  bctx.fillStyle = '#666'; bctx.font='10px sans-serif';
+  bctx.fillText('부피(%)', 4, padT+2);
+  bctx.fillText('압력(기압) →', bw-padR-70, bh-8);
+
+  const xFor = pVal => padL + ((pVal-1)/4)*(bw-padL-padR);
+  const yFor = volPct => (bh-padB) - (volPct/100)*(bh-padB-padT);
+
+  bctx.strokeStyle = '#fb923c'; bctx.lineWidth = 2.2; bctx.beginPath();
+  for (let p=1; p<=5; p+=0.05) {
+    const vol = (1/p)*100;
+    const x = xFor(p), y = yFor(vol);
+    if (p===1) bctx.moveTo(x,y); else bctx.lineTo(x,y);
+  }
+  bctx.stroke();
+
+  // 현재 위치 점
+  const cx = xFor(currentP), cy = yFor((1/currentP)*100);
+  bctx.beginPath(); bctx.arc(cx,cy,5,0,Math.PI*2);
+  bctx.fillStyle = '#f43f5e'; bctx.shadowColor='#f43f5e'; bctx.shadowBlur=8; bctx.fill();
+  bctx.shadowBlur = 0;
+}
+
+document.getElementById('pressureSlider').addEventListener('input', drawCylinder);
+
+function loop(){ drawCylinder(); requestAnimationFrame(loop); }
+loop();
+
+const QUIZ = [
+  { q:'일정한 온도에서 기체에 가하는 압력이 커지면 부피는 어떻게 되는가?', opts:['커진다','작아진다','변화 없다','불규칙하게 변한다'], answer:1, fb:'압력이 커지면 기체의 부피는 작아진다.' },
+  { q:'기체의 압력과 부피는 서로 어떤 관계에 있는가?', opts:['비례','반비례','관계없음','같은 값'], answer:1, fb:'압력과 부피는 서로 반비례 관계이다. 압력이 2배가 되면 부피는 절반이 된다.' },
+  { q:'압력이 작아질 때 기체의 부피 변화로 옳은 것은?', opts:['부피가 커진다','부피가 작아진다','부피가 0이 된다','부피는 변하지 않는다'], answer:0, fb:'압력이 작아지면 기체의 부피는 커진다.' },
+  { q:'주사기의 피스톤을 눌러 압력을 높였을 때 안의 공기 부피는?', opts:['늘어난다','줄어든다','변화 없다','공기가 사라진다'], answer:1, fb:'피스톤을 눌러 압력을 높이면 안의 공기 부피는 줄어든다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

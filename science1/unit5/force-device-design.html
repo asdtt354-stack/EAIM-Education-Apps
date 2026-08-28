@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>힘의 특징을 이용한 장치 설계하기 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fda4af 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:780px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .gallery-wrap { max-width:900px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:700px) { .gallery-wrap { grid-template-columns:repeat(2,1fr); } }
+  .g-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:14px; text-align:center; cursor:pointer; transition:all .25s; }
+  .g-card.open { border-color:var(--c); }
+  .g-card .g-icon { font-size:1.8em; margin-bottom:6px; }
+  .g-card .g-title { font-weight:800; font-size:0.82em; margin-bottom:4px; color:var(--c); }
+  .g-card .g-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .g-card.open .g-detail { max-height:120px; padding-top:8px; border-top:1px dashed #2f2f31; }
+  .g-card .g-detail p { font-size:0.74em; color:#ccc; line-height:1.6; margin:0; }
+
+  .design-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .design-card { background:#100d0e; border:1px solid #262022; border-radius:20px; padding:22px; }
+  .design-card label { display:block; font-size:0.8em; font-weight:800; color:#ccc; margin:14px 0 6px; }
+  .design-card select, .design-card textarea {
+    width:100%; background:#1a1a1c; border:1.5px solid #2f2f31; border-radius:10px; color:#eee; padding:10px 12px; font-size:0.86em; font-family:inherit;
+  }
+  .design-card textarea { min-height:70px; resize:vertical; }
+  .design-summary { margin-top:16px; padding:14px 16px; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:12px; font-size:0.84em; color:#e5d8fb; line-height:1.7; display:none; }
+  .design-btn { margin-top:14px; border:none; background:var(--accent); color:#fff; font-weight:800; padding:10px 20px; border-radius:10px; font-size:0.84em; cursor:pointer; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>2. 힘과 물체의 운동<span class="sep">/</span><b>힘의 특징을 이용한 장치 설계하기</b></div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-2-3 · 교과서 184쪽</div>
+    <h1>배운 힘으로<br>새로운 장치를 설계해 보자</h1>
+    <p class="lead">지금까지 배운 중력, 탄성력, 마찰력, 부력은 이미 우리 주변의 수많은 장치에 활용되고 있다. 실제 사례를 살펴보고, 나만의 장치를 직접 구상해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>힘의 특징을 이용해 실생활 문제를 해결하는 장치의 예를 알고, 힘의 원리를 적용해 새로운 장치를 설계할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>힘을 이용한 실제 장치들</h2></div>
+  <div class="gallery-wrap" id="galleryWrap"></div>
+
+  <div class="section-head"><div class="num">02</div><h2>나만의 장치 설계하기</h2></div>
+  <div class="design-wrap">
+    <div class="design-card">
+      <label>어떤 힘을 이용할까?</label>
+      <select id="designForce">
+        <option value="탄성력">탄성력</option>
+        <option value="마찰력">마찰력(줄이거나 늘리기)</option>
+        <option value="부력">부력</option>
+        <option value="중력">중력</option>
+      </select>
+
+      <label>어떤 문제를 해결하고 싶은가?</label>
+      <textarea id="designProblem" placeholder="예: 계단에서 무거운 짐을 옮기기 힘들다."></textarea>
+
+      <label>그 힘으로 어떻게 해결할까?</label>
+      <textarea id="designSolution" placeholder="예: 바퀴와 용수철을 이용해 짐을 부드럽게 밀어 올리는 장치를 만든다."></textarea>
+
+      <button class="design-btn" onclick="showSummary()">📋 내 설계 정리하기</button>
+      <div class="design-summary" id="designSummary"></div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="forces-in-situations.html"><span class="k">이전 소단원</span><span class="t">← 여러 가지 상황에서 작용하는 힘</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 대단원</span><span class="t">Ⅵ. 기체의 성질 (준비 중) →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용 · 전체 소단원 완료 🎉</footer>
+
+<script>
+const GALLERY = [
+  { icon:'🧗', c:'#38bdf8', title:'등산화 밑창', force:'마찰력', detail:'울퉁불퉁한 무늬로 마찰력을 크게 키워 미끄러지지 않게 한다.' },
+  { icon:'🛼', c:'#fb923c', title:'인라인스케이트 바퀴', force:'마찰력', detail:'매끄러운 바퀴로 마찰력을 줄여 빠르게 움직일 수 있게 한다.' },
+  { icon:'🪂', c:'#a855f7', title:'낙하산', force:'중력·공기저항', detail:'큰 천으로 공기의 저항을 늘려 중력에 의한 낙하 속도를 줄인다.' },
+  { icon:'⛑️', c:'#34d399', title:'구명조끼', force:'부력', detail:'몸에 공기를 채워 부피를 늘려 부력을 키워서 물에 뜨게 돕는다.' },
+  { icon:'🎯', c:'#f472b6', title:'양궁·새총', force:'탄성력', detail:'당겨진 활이나 고무줄이 원래대로 돌아가려는 탄성력으로 물체를 날려 보낸다.' },
+  { icon:'🚲', c:'#fbbf24', title:'자전거 브레이크', force:'마찰력', detail:'고무 패드가 바퀴에 닿아 마찰력을 발생시켜 속도를 줄인다.' },
+  { icon:'🛟', c:'#38bdf8', title:'튜브', force:'부력', detail:'공기를 넣어 부피를 키워 부력을 크게 만들어 몸이 뜨도록 돕는다.' },
+  { icon:'🔩', c:'#94a3b8', title:'스프링 저울', force:'탄성력', detail:'용수철이 늘어나는 정도(탄성력)를 이용해 물체의 무게를 측정한다.' },
+];
+let openIdx = null;
+function renderGallery(){
+  const wrap = document.getElementById('galleryWrap');
+  wrap.innerHTML = GALLERY.map((g,i) => `
+    <div class="g-card ${openIdx===i?'open':''}" style="--c:${g.c}" data-i="${i}">
+      <div class="g-icon">${g.icon}</div>
+      <div class="g-title">${g.title}</div>
+      <div class="g-detail"><p>${g.detail}</p></div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.g-card').forEach(card => {
+    card.addEventListener('click', () => { const i=+card.dataset.i; openIdx = openIdx===i?null:i; renderGallery(); });
+  });
+}
+renderGallery();
+
+function showSummary(){
+  const force = document.getElementById('designForce').value;
+  const problem = document.getElementById('designProblem').value.trim() || '(문제를 입력해 보세요)';
+  const solution = document.getElementById('designSolution').value.trim() || '(해결 방법을 입력해 보세요)';
+  const box = document.getElementById('designSummary');
+  box.style.display = 'block';
+  box.innerHTML = `<b>💡 나의 설계 요약</b><br>이용하는 힘: <b>${force}</b><br>해결하려는 문제: ${problem}<br>해결 방법: ${solution}`;
+}
+
+const QUIZ = [
+  { q:'등산화 밑창에 울퉁불퉁한 무늬를 넣어 이용하는 힘은?', opts:['탄성력','마찰력','부력','중력'], answer:1, fb:'무늬로 마찰력을 키워 미끄러지지 않게 한다.' },
+  { q:'구명조끼가 물에 뜨도록 돕는 원리로 이용되는 힘은?', opts:['부력','탄성력','마찰력','중력'], answer:0, fb:'몸의 부피를 늘려 부력을 키우는 원리를 이용한다.' },
+  { q:'스프링 저울이 물체의 무게를 측정할 수 있는 원리로 이용되는 힘은?', opts:['마찰력','부력','탄성력','중력만'], answer:2, fb:'용수철이 늘어나는 정도(탄성력)를 이용해 무게를 측정한다.' },
+  { q:'인라인스케이트 바퀴를 매끄럽게 만드는 까닭은?', opts:['마찰력을 늘리기 위해','마찰력을 줄이기 위해','부력을 늘리기 위해','탄성력을 없애기 위해'], answer:1, fb:'매끄러운 바퀴는 마찰력을 줄여 더 빠르고 부드럽게 움직이도록 한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

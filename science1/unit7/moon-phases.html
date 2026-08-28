@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달의 위상 변화 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#e5e7eb; --bg-dark:#05060a; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(5,6,10,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #1c1e26; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #2c2e3a; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#c4b5fd 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .sim-wrap { max-width:640px; margin:40px auto 0; padding:0 20px; }
+  .sim-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:20px; padding:22px; text-align:center; }
+  #phaseCanvas { background:#090a10; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:440px; margin:16px auto 0; text-align:center; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--accent); }
+  .slider-scale { display:flex; justify-content:space-between; font-size:0.7em; color:#888; margin-top:4px; }
+  .phase-name { font-size:1.15em; font-weight:900; color:var(--accent); margin-top:12px; }
+
+  .concept-wrap { max-width:620px; margin:30px auto 0; padding:0 20px; }
+  .concept-card { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:18px 22px; }
+  .concept-card ul { margin:0; padding-left:18px; font-size:0.85em; color:#ddd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#161821; border:1.5px solid #262832; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #262832; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #1c1e26; background:#0d0e14; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅶ. 태양계<span class="sep">/</span>2. 지구와 달의 운동<span class="sep">/</span><b>달의 위상 변화</b></div>
+    <a class="hub-link" href="../unit7-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅶ-2-3 · 교과서 248쪽</div>
+    <h1>같은 달인데<br>매일 모양이 달라 보인다</h1>
+    <p class="lead">달은 스스로 빛나지 않고 태양 빛을 반사한다. 달이 지구를 도는 위치에 따라 우리 눈에 보이는 밝은 부분의 모양이 달라진다. 슬라이더로 달을 공전시켜 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>달의 공전에 따라 태양-지구-달의 위치 관계가 달라지며, 이에 따라 달의 위상이 주기적으로 변함을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="phaseCanvas" width="440" height="280"></canvas>
+      <div class="slider-row">
+        <input type="range" id="phaseSlider" min="0" max="360" value="0" step="2">
+        <div class="slider-scale"><span>삭</span><span>상현</span><span>보름</span><span>하현</span><span>삭</span></div>
+      </div>
+      <div class="phase-name" id="phaseName"></div>
+    </div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <ul>
+        <li>달은 스스로 빛을 내지 못하고, 태양 빛을 반사해 밝게 보인다.</li>
+        <li>달이 지구를 도는 위치에 따라, 지구에서 보이는 달의 밝은 부분 모양(위상)이 달라진다.</li>
+        <li>삭(신월) → 초승달 → 상현달 → 보름달 → 하현달 → 그믐달의 순서로 약 한 달 주기로 반복된다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="earth-revolution.html"><span class="k">이전 소단원</span><span class="t">← 지구의 공전과 별자리 변화</span></a>
+    <a class="nav-btn next" href="eclipses.html"><span class="k">다음 소단원</span><span class="t">일식과 월식 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 태양계</footer>
+
+<script>
+const canvas = document.getElementById('phaseCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// 상단: 태양-지구-달 배치도 / 하단: 실제 보이는 달의 모습
+const diagCY = 90, earthX = W/2, orbitR = 70;
+const moonBigCX = W/2, moonBigCY = 210, moonBigR = 55;
+
+function phaseNameFor(deg){
+  if (deg < 10 || deg > 350) return '🌑 삭 (신월)';
+  if (deg < 80) return '🌒 초승달 (waxing crescent)';
+  if (deg < 100) return '🌓 상현달';
+  if (deg < 170) return '🌔 차오르는 달 (waxing gibbous)';
+  if (deg < 190) return '🌕 보름달';
+  if (deg < 260) return '🌖 이지러지는 달 (waning gibbous)';
+  if (deg < 280) return '🌗 하현달';
+  return '🌘 그믐달 (waning crescent)';
+}
+
+function draw(){
+  const deg = +document.getElementById('phaseSlider').value;
+  document.getElementById('phaseName').textContent = phaseNameFor(deg);
+  ctx.clearRect(0,0,W,H);
+
+  // ── 위쪽: 배치도 ──
+  ctx.font='10px sans-serif'; ctx.fillStyle='#666';
+  ctx.fillText('태양 → 지구 → 달의 위치 관계', 14, 16);
+  ctx.font='20px sans-serif'; ctx.fillText('☀️', 10, diagCY+8);
+  ctx.strokeStyle='rgba(251,191,36,0.25)'; ctx.lineWidth=1;
+  for (let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(40, diagCY-16+i*8); ctx.lineTo(earthX-orbitR-30, diagCY-16+i*8); ctx.stroke(); }
+
+  // 지구
+  ctx.beginPath(); ctx.arc(earthX, diagCY, 14, 0, Math.PI*2);
+  ctx.fillStyle='#38bdf8'; ctx.shadowColor='#38bdf8'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+
+  // 궤도
+  ctx.strokeStyle='#1c1e26'; ctx.setLineDash([2,3]);
+  ctx.beginPath(); ctx.arc(earthX,diagCY,orbitR,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+
+  // 달 위치 (0도 = 지구-태양 사이/삭, 180도 = 반대편/보름)
+  const rad = (deg-180) * Math.PI/180; // 0deg일 때 왼쪽(태양쪽)에 위치하도록 보정
+  const mx = earthX + Math.cos(rad)*orbitR;
+  const my = diagCY + Math.sin(rad)*orbitR*0.4; // 타원형 궤도처럼 보이게 y축 압축
+  ctx.beginPath(); ctx.arc(mx,my,7,0,Math.PI*2);
+  ctx.fillStyle='#e5e7eb'; ctx.fill();
+
+  // ── 아래쪽: 실제 보이는 달 모습 ──
+  ctx.font='10px sans-serif'; ctx.fillStyle='#666';
+  ctx.fillText('지구에서 보이는 달의 모습', moonBigCX-70, moonBigCY-moonBigR-14);
+
+  // 어두운 바탕
+  ctx.beginPath(); ctx.arc(moonBigCX, moonBigCY, moonBigR, 0, Math.PI*2);
+  ctx.fillStyle = '#1a1a20'; ctx.fill();
+  ctx.strokeStyle = '#333'; ctx.lineWidth=1; ctx.stroke();
+
+  // 밝은 부분 경로 (표준 달위상 렌더링 트릭)
+  const elong = deg * Math.PI/180;
+  const limbX = moonBigR * Math.cos(elong);
+  ctx.beginPath();
+  ctx.arc(moonBigCX, moonBigCY, moonBigR, -Math.PI/2, Math.PI/2, false);
+  ctx.ellipse(moonBigCX, moonBigCY, Math.abs(limbX), moonBigR, 0, Math.PI/2, -Math.PI/2, limbX > 0);
+  ctx.closePath();
+  ctx.fillStyle = '#f5f0dc';
+  ctx.fill();
+}
+document.getElementById('phaseSlider').addEventListener('input', draw);
+draw();
+
+const QUIZ = [
+  { q:'달이 스스로 빛나지 않고 밝게 보이는 까닭은?', opts:['달 자체가 빛을 낸다','태양 빛을 반사하기 때문에','지구가 달을 비추기 때문에','별빛을 반사하기 때문에'], answer:1, fb:'달은 스스로 빛나지 않고 태양 빛을 반사해 밝게 보인다.' },
+  { q:'태양-지구-달이 거의 일직선을 이루며 달이 태양과 같은 방향에 있을 때의 위상은?', opts:['보름달','삭(신월)','상현달','하현달'], answer:1, fb:'태양과 같은 방향에 있어 지구에서 밝은 면을 볼 수 없는 상태가 "삭(신월)"이다.' },
+  { q:'달이 지구를 기준으로 태양의 반대쪽에 있을 때의 위상은?', opts:['삭','상현달','보름달','그믐달'], answer:2, fb:'태양 반대쪽에 있으면 달의 전체 밝은 면이 지구를 향해 "보름달"이 된다.' },
+  { q:'달의 위상이 삭→초승달→상현달→보름달로 변하는 순서를 무엇이라 하는가?', opts:['월식','달의 공전에 따른 위상 변화','일식','자전'], answer:1, fb:'달이 지구를 공전하면서 태양-지구-달의 위치 관계가 바뀌어 위상이 주기적으로 변한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

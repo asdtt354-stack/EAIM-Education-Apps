@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생활 속 기체의 압력과 부피 관계 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fdba74 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .case-wrap { max-width:900px; margin:40px auto 0; padding:0 20px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:780px) { .case-wrap { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:520px) { .case-wrap { grid-template-columns:1fr; } }
+  .case-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:16px; cursor:pointer; transition:all .25s; }
+  .case-card.open { border-color:var(--accent); box-shadow:0 0 0 3px rgba(168,85,247,0.15); }
+  .case-card .cc-icon { font-size:1.9em; margin-bottom:8px; }
+  .case-card .cc-title { font-weight:800; font-size:0.88em; margin-bottom:6px; }
+  .case-card .cc-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .case-card.open .cc-detail { max-height:160px; padding-top:8px; border-top:1px dashed #2f2f31; }
+  .case-card .cc-detail p { font-size:0.78em; color:#ccc; line-height:1.65; margin:0; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅵ. 기체의 성질<span class="sep">/</span>1. 기체의 압력과 부피 관계<span class="sep">/</span><b>생활 속 압력과 부피 관계</b></div>
+    <a class="hub-link" href="../unit6-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅵ-1-3 · 교과서 204쪽</div>
+    <h1>압력이 바뀌면<br>우리 주변도 함께 바뀐다</h1>
+    <p class="lead">비행기를 타면 왜 과자봉지가 빵빵해질까? 압력과 부피의 반비례 관계가 우리 생활 속에서 어떻게 나타나는지 카드를 눌러 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>기체의 압력과 부피 관계가 적용되는 실생활 사례를 찾아 원리를 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="case-wrap" id="caseWrap"></div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="pressure-volume-relation.html"><span class="k">이전 소단원</span><span class="t">← 기체의 압력과 부피 관계</span></a>
+    <a class="nav-btn next" href="temperature-volume-relation.html"><span class="k">다음 소단원</span><span class="t">기체의 온도와 부피 관계 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 기체의 성질</footer>
+
+<script>
+const CASES = [
+  { icon:'✈️', title:'비행기 안 과자봉지', body:'비행기가 높이 올라가면 바깥 기압이 낮아지는데, 봉지 안 기체의 압력은 그대로라서 상대적으로 부피가 커져 봉지가 빵빵해진다.' },
+  { icon:'👂', title:'비행기 이착륙 시 귀가 먹먹함', body:'기압이 급격히 변하면서 귀 안쪽 공기의 부피가 변해 압박감이 느껴진다. 침을 삼키면 압력이 조절되어 완화된다.' },
+  { icon:'🏔️', title:'높은 산 정상의 과자봉지', body:'산 위로 올라갈수록 대기압이 낮아져, 봉지 안 기체의 부피가 상대적으로 커지면서 봉지가 부풀어 오른다.' },
+  { icon:'🤿', title:'잠수부의 압력 조절', body:'물속 깊이 들어갈수록 수압이 커져 몸속 기체의 부피가 줄어들 수 있어, 잠수부는 서서히 떠올라 압력에 적응해야 한다.' },
+  { icon:'📦', title:'진공포장 식품', body:'포장 안의 공기를 빼내 압력을 낮추면 내용물이 압력에 눌려 부피가 줄어들며 포장이 밀착된다.' },
+  { icon:'🎈', title:'풍선을 눌렀을 때', body:'풍선의 한쪽을 손으로 누르면 그 부분의 압력이 높아지고, 기체는 압력이 낮은 다른 쪽으로 이동해 부피가 변하며 모양이 바뀐다.' },
+];
+let openIdx = null;
+function render(){
+  const wrap = document.getElementById('caseWrap');
+  wrap.innerHTML = CASES.map((c,i) => `
+    <div class="case-card ${openIdx===i?'open':''}" data-i="${i}">
+      <div class="cc-icon">${c.icon}</div>
+      <div class="cc-title">${c.title}</div>
+      <div class="cc-detail"><p>${c.body}</p></div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.case-card').forEach(card => {
+    card.addEventListener('click', () => { const i=+card.dataset.i; openIdx = openIdx===i?null:i; render(); });
+  });
+}
+render();
+
+const QUIZ = [
+  { q:'비행기가 높이 올라가면 과자봉지가 부풀어 오르는 까닭은?', opts:['봉지 안 기체가 늘어나서','바깥 기압이 낮아져 상대적으로 봉지 안 기체의 부피가 커지기 때문에','비행기 안 온도가 매우 낮아서','봉지 재질이 변형되어서'], answer:1, fb:'고도가 높아질수록 바깥 기압이 낮아지고, 봉지 안 기체의 압력은 상대적으로 커 보이면서 부피가 늘어나 봉지가 부푼다.' },
+  { q:'물속 깊이 들어갈수록 수압이 커지면 몸속 기체의 부피는 어떻게 되는가?', opts:['커진다','줄어든다','변화 없다','기체가 사라진다'], answer:1, fb:'압력이 커지면 기체의 부피는 줄어든다.' },
+  { q:'진공포장 식품의 포장이 내용물에 밀착되는 원리는?', opts:['포장 안 압력을 낮춰 기체 부피를 줄이기 때문에','포장 안 온도를 높이기 때문에','내용물이 액체로 변하기 때문에','포장재가 저절로 수축하기 때문에'], answer:0, fb:'포장 안 공기를 빼 압력을 낮추면 부피가 줄어들어 포장이 밀착된다.' },
+  { q:'높은 산 정상에서 밀봉된 과자봉지가 부풀어 오르는 것과 같은 원리로 설명할 수 있는 것은?', opts:['뜨거운 물에 탁구공을 넣으면 펴진다','비행기 안에서 과자봉지가 부푼다','여름철 타이어 압력이 오른다','실온에 둔 음료수 캔이 터진다'], answer:1, fb:'모두 압력이 낮아지면서 기체의 부피가 커지는 같은 원리(압력-부피 반비례)로 설명할 수 있다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

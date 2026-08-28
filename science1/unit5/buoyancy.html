@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부력 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .sim-wrap { max-width:560px; margin:40px auto 0; padding:0 20px; }
+  .sim-card { background:#100d0e; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #buoyCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:400px; margin:16px auto 0; text-align:center; }
+  .slider-row .sl-label { font-size:0.82em; color:#999; margin-bottom:8px; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--accent); }
+
+  .bars-row { display:flex; justify-content:center; gap:30px; margin-top:20px; }
+  .bar-item { width:120px; }
+  .bar-item .bi-label { font-size:0.76em; color:#999; margin-bottom:6px; display:flex; justify-content:space-between; }
+  .bar-outer { height:12px; border-radius:6px; background:#1a1a1c; overflow:hidden; }
+  .bar-inner { height:100%; border-radius:6px; transition:width .2s; }
+  .bar-inner.gravity { background:#f43f5e; }
+  .bar-inner.buoyancy { background:#38bdf8; }
+  .float-msg { margin-top:14px; font-size:0.92em; font-weight:800; }
+  .float-msg.float { color:#38bdf8; } .float-msg.sink { color:#fb923c; }
+
+  .concept-wrap { max-width:620px; margin:30px auto 0; padding:0 20px; }
+  .concept-card { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:18px 22px; }
+  .concept-card ul { margin:0; padding-left:18px; font-size:0.85em; color:#ddd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>1. 여러 가지 힘<span class="sep">/</span><b>부력</b></div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-6 · 교과서 170쪽</div>
+    <h1>물속에서는<br>누구나 조금 가벼워진다</h1>
+    <p class="lead">나무는 물에 뜨고 돌은 가라앉는다. 물체의 밀도를 바꿔가며, 뜨고 가라앉는 것이 부력과 중력의 크기 싸움이라는 것을 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>부력은 액체나 기체 속 물체가 위로 받는 힘임을 알고, 중력과 부력의 크기 비교로 물체가 뜨고 가라앉는 것을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="buoyCanvas" width="300" height="240"></canvas>
+      <div class="slider-row">
+        <div class="sl-label">물체의 밀도 (물보다 낮을수록 잘 뜬다)</div>
+        <input type="range" id="densitySlider" min="1" max="20" value="6">
+      </div>
+      <div class="bars-row">
+        <div class="bar-item"><div class="bi-label"><span>중력</span><b id="gravityVal">-</b></div><div class="bar-outer"><div class="bar-inner gravity" id="gravityBar"></div></div></div>
+        <div class="bar-item"><div class="bi-label"><span>부력</span><b id="buoyVal">-</b></div><div class="bar-outer"><div class="bar-inner buoyancy" id="buoyBar"></div></div></div>
+      </div>
+      <div class="float-msg" id="floatMsg"></div>
+    </div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <ul>
+        <li><b>부력</b>은 액체나 기체 속에 있는 물체가 위쪽으로 받는 힘이다.</li>
+        <li>물체가 액체에 잠긴 부피가 클수록 부력도 커진다.</li>
+        <li><b>부력 &gt; 중력</b>이면 물체는 뜨고, <b>부력 &lt; 중력</b>이면 물체는 가라앉는다.</li>
+        <li>물보다 밀도가 작은 물체(나무 등)는 물에 뜨고, 밀도가 큰 물체(돌, 금속 등)는 가라앉는다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="friction-force.html"><span class="k">이전 소단원</span><span class="t">← 마찰력</span></a>
+    <a class="nav-btn next" href="force-and-motion.html"><span class="k">다음 소단원</span><span class="t">힘이 작용할 때 물체의 운동 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용</footer>
+
+<script>
+const canvas = document.getElementById('buoyCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const waterTop = 90;
+let objY = 130;
+
+function update(){
+  const density = +document.getElementById('densitySlider').value; // 1~20, 물 밀도=10 기준
+  const gravity = density * 1.0;
+  const buoyancy = 10 * 1.0; // 물의 밀도 기준 고정 부력(단순화)
+  document.getElementById('gravityVal').textContent = gravity.toFixed(1)+'N';
+  document.getElementById('buoyVal').textContent = buoyancy.toFixed(1)+'N';
+  document.getElementById('gravityBar').style.width = Math.min(100, gravity*5)+'%';
+  document.getElementById('buoyBar').style.width = Math.min(100, buoyancy*5)+'%';
+
+  const floats = gravity < buoyancy;
+  const target = floats ? waterTop-10 : H-40;
+  objY += (target - objY) * 0.08;
+
+  const msg = document.getElementById('floatMsg');
+  if (floats) { msg.className='float-msg float'; msg.textContent='🟦 부력 > 중력 → 물체가 뜬다!'; }
+  else { msg.className='float-msg sink'; msg.textContent='🟧 부력 < 중력 → 물체가 가라앉는다.'; }
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // 물
+  ctx.fillStyle = 'rgba(56,189,248,0.18)';
+  ctx.fillRect(0, waterTop, W, H-waterTop);
+  ctx.strokeStyle = '#38bdf8'; ctx.setLineDash([3,3]); ctx.beginPath();
+  ctx.moveTo(0,waterTop); ctx.lineTo(W,waterTop); ctx.stroke(); ctx.setLineDash([]);
+
+  // 물체
+  const density = +document.getElementById('densitySlider').value;
+  const color = density < 10 ? '#a3e635' : '#f97316';
+  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8;
+  ctx.fillRect(W/2-24, objY-20, 48, 40);
+  ctx.shadowBlur = 0;
+}
+
+document.getElementById('densitySlider').addEventListener('input', ()=>{});
+update();
+
+const QUIZ = [
+  { q:'액체나 기체 속에 있는 물체가 위쪽으로 받는 힘은?', opts:['중력','부력','탄성력','마찰력'], answer:1, fb:'액체나 기체 속 물체가 위로 받는 힘을 "부력"이라고 한다.' },
+  { q:'물체가 물에 뜨기 위한 조건으로 옳은 것은?', opts:['부력 < 중력','부력 = 0','부력 > 중력','중력이 0이어야 한다'], answer:2, fb:'부력이 중력보다 크면 물체는 위로 떠오른다.' },
+  { q:'다음 중 물에 뜰 가능성이 가장 높은 물체는?', opts:['철 조각','물보다 밀도가 큰 돌', '물보다 밀도가 작은 나무 조각', '납덩이'], answer:2, fb:'물보다 밀도가 작은 물체는 물에 뜬다. 나무는 대부분 물보다 밀도가 작다.' },
+  { q:'물체가 액체에 잠긴 부피가 커질수록 부력은 어떻게 되는가?', opts:['작아진다','커진다','변화 없다','0이 된다'], answer:1, fb:'액체에 잠긴 부피가 클수록 부력도 커진다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

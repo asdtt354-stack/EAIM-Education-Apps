@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마찰력 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fdba74 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .sim-wrap { max-width:620px; margin:40px auto 0; padding:0 20px; }
+  .sim-card { background:#100d0e; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #frictionCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+
+  .surface-row { display:flex; gap:8px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
+  .surface-btn { border:1.5px solid #2a2a2c; background:#141215; color:#999; padding:9px 16px; border-radius:10px; font-size:0.82em; font-weight:700; cursor:pointer; }
+  .surface-btn.on { border-color:var(--accent); background:rgba(168,85,247,0.16); color:#fff; }
+
+  .slider-row { max-width:400px; margin:18px auto 0; text-align:center; }
+  .slider-row .sl-label { font-size:0.82em; color:#999; margin-bottom:8px; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+
+  .push-btn { border:none; background:var(--main-color); color:#fff; font-weight:800; padding:11px 22px; border-radius:12px; font-size:0.86em; cursor:pointer; box-shadow:0 4px 14px rgba(244,63,94,0.35); margin-top:16px; }
+  .readout-row { display:flex; justify-content:center; gap:24px; margin-top:14px; flex-wrap:wrap; }
+  .ro-item .rv { font-size:1.2em; font-weight:900; color:var(--main-color); } .ro-item .rl { font-size:0.72em; color:#888; }
+  .result-msg { margin-top:10px; font-size:0.86em; font-weight:800; min-height:20px; }
+  .result-msg.move { color:#34d399; } .result-msg.stay { color:#fbbf24; }
+
+  .concept-wrap { max-width:620px; margin:34px auto 0; padding:0 20px; }
+  .concept-card { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:18px 22px; }
+  .concept-card ul { margin:0; padding-left:18px; font-size:0.85em; color:#ddd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅴ. 힘의 작용<span class="sep">/</span>1. 여러 가지 힘<span class="sep">/</span><b>마찰력</b></div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-5 · 교과서 168쪽</div>
+    <h1>미끄러운 곳보다<br>거친 곳에서 밀기 힘든 이유</h1>
+    <p class="lead">얼음판 위와 사포 위, 어느 쪽에서 상자를 밀기가 더 힘들까? 표면과 무게를 바꿔가며 마찰력이 어떻게 달라지는지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>마찰력은 물체의 운동을 방해하는 방향으로 작용하며, 접촉면이 거칠수록·물체가 무거울수록 커짐을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="frictionCanvas" width="440" height="160"></canvas>
+
+      <div class="surface-row" id="surfaceRow"></div>
+      <div class="slider-row">
+        <div class="sl-label">물체의 무게</div>
+        <input type="range" id="weightSlider" min="1" max="10" value="5">
+      </div>
+      <button class="push-btn" onclick="pushObject()">👉 밀어보기 (5N)</button>
+
+      <div class="readout-row">
+        <div class="ro-item"><div class="rv" id="frictionVal">-</div><div class="rl">마찰력</div></div>
+        <div class="ro-item"><div class="rv" id="pushVal">5.0 N</div><div class="rl">미는 힘</div></div>
+      </div>
+      <div class="result-msg" id="resultMsg"></div>
+    </div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <ul>
+        <li><b>마찰력</b>은 접촉한 두 물체가 서로 상대적으로 움직이려 할 때, 그 운동을 방해하는 방향으로 작용하는 힘이다.</li>
+        <li>접촉면이 <b>거칠수록</b> 마찰력이 커진다. (예: 얼음 &lt; 나무 &lt; 사포)</li>
+        <li>물체가 <b>무거울수록</b> 마찰력이 커진다.</li>
+        <li>미는 힘이 마찰력보다 커야 물체가 움직이기 시작한다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="elastic-force.html"><span class="k">이전 소단원</span><span class="t">← 탄성력</span></a>
+    <a class="nav-btn next" href="buoyancy.html"><span class="k">다음 소단원</span><span class="t">부력 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 힘의 작용</footer>
+
+<script>
+const SURFACES = [
+  { key:'ice', name:'🧊 얼음', coef:0.3 },
+  { key:'wood', name:'🪵 나무', coef:0.9 },
+  { key:'sand', name:'🧱 사포', coef:1.8 },
+];
+let surface = 'wood';
+let objX = 130;
+
+function renderSurfaceBtns(){
+  const row = document.getElementById('surfaceRow');
+  row.innerHTML = SURFACES.map(s => `<button class="surface-btn ${s.key===surface?'on':''}" data-k="${s.key}">${s.name}</button>`).join('');
+  row.querySelectorAll('.surface-btn').forEach(b => b.addEventListener('click', () => { surface = b.dataset.k; renderSurfaceBtns(); updateFriction(); }));
+}
+
+const canvas = document.getElementById('frictionCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height, floorY = H-40;
+
+function currentFriction(){
+  const s = SURFACES.find(s=>s.key===surface);
+  const weight = +document.getElementById('weightSlider').value;
+  return s.coef * weight * 0.9;
+}
+function updateFriction(){
+  document.getElementById('frictionVal').textContent = currentFriction().toFixed(1) + ' N';
+  draw();
+}
+document.getElementById('weightSlider').addEventListener('input', updateFriction);
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle = surface==='ice' ? '#38bdf8' : (surface==='wood' ? '#a16207' : '#f59e0b');
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(10,floorY); ctx.lineTo(W-10,floorY); ctx.stroke();
+  ctx.fillStyle = '#eee';
+  ctx.fillRect(objX-24, floorY-40, 48, 40);
+  ctx.strokeStyle = '#666'; ctx.strokeRect(objX-24, floorY-40, 48, 40);
+}
+draw();
+renderSurfaceBtns();
+updateFriction();
+
+function pushObject(){
+  const push = 5;
+  document.getElementById('pushVal').textContent = push.toFixed(1) + ' N';
+  const friction = currentFriction();
+  const msg = document.getElementById('resultMsg');
+  if (push > friction) {
+    msg.className = 'result-msg move';
+    msg.textContent = `✅ 미는 힘(${push}N)이 마찰력(${friction.toFixed(1)}N)보다 커서 물체가 움직인다!`;
+    let steps = 0;
+    const iv = setInterval(() => {
+      objX += 4; steps++;
+      draw();
+      if (steps > 30 || objX > W-40) { clearInterval(iv); objX = 130; draw(); }
+    }, 25);
+  } else {
+    msg.className = 'result-msg stay';
+    msg.textContent = `⛔ 미는 힘(${push}N)이 마찰력(${friction.toFixed(1)}N)보다 작아서 물체가 움직이지 않는다.`;
+  }
+}
+
+const QUIZ = [
+  { q:'접촉한 두 물체가 서로 움직이려 할 때, 그 운동을 방해하는 방향으로 작용하는 힘은?', opts:['중력','탄성력','마찰력','부력'], answer:2, fb:'운동을 방해하는 방향으로 작용하는 힘은 "마찰력"이다.' },
+  { q:'다음 중 마찰력이 가장 크게 작용할 것으로 예상되는 표면은?', opts:['매끄러운 얼음판','거친 사포','물기 있는 타일','반질반질한 대리석'], answer:1, fb:'표면이 거칠수록 마찰력이 커진다. 사포는 표면이 매우 거칠어 마찰력이 크다.' },
+  { q:'같은 표면에서 물체의 무게가 무거워지면 마찰력은 어떻게 되는가?', opts:['작아진다','커진다','변화 없다','0이 된다'], answer:1, fb:'물체가 무거울수록 마찰력도 커진다.' },
+  { q:'물체를 미는 힘이 마찰력보다 작을 때 물체는 어떻게 되는가?', opts:['빠르게 움직인다','천천히 움직인다','움직이지 않는다','반대로 움직인다'], answer:2, fb:'미는 힘이 마찰력보다 작으면 물체는 움직이지 않는다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

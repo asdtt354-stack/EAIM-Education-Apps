@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>일식과 월식 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#05060a; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(5,6,10,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #1c1e26; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #2c2e3a; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fda4af 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .tab-row { max-width:400px; margin:40px auto 0; display:flex; gap:8px; padding:0 20px; }
+  .tab-btn { flex:1; border:1.5px solid #2c2e3a; background:#0d0e14; color:#999; padding:12px 8px; border-radius:12px; font-size:0.86em; font-weight:800; cursor:pointer; }
+  .tab-btn.on { border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, #0d0e14); color:#fff; }
+
+  .sim-shell { max-width:620px; margin:18px auto 0; padding:0 20px; }
+  .sim-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:20px; padding:20px; text-align:center; }
+  #eclipseCanvas { background:#090a10; border-radius:14px; max-width:100%; }
+
+  .info-card { max-width:620px; margin:16px auto 0; padding:0 20px; }
+  .info-inner { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:18px 22px; text-align:center; }
+  .info-inner .i-title { font-size:1.05em; font-weight:800; color:var(--accent); margin-bottom:8px; }
+  .info-inner p { margin:0 0 8px; font-size:0.86em; color:#ddd; line-height:1.75; }
+  .info-inner .i-cond { font-size:0.78em; color:#999; padding-top:8px; border-top:1px dashed #262832; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#161821; border:1.5px solid #262832; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #262832; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #1c1e26; background:#0d0e14; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅶ. 태양계<span class="sep">/</span>2. 지구와 달의 운동<span class="sep">/</span><b>일식과 월식</b></div>
+    <a class="hub-link" href="../unit7-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅶ-2-4 · 교과서 251쪽</div>
+    <h1>셋이 일렬로 서면<br>그림자가 생긴다</h1>
+    <p class="lead">태양, 지구, 달이 일직선을 이루면 한쪽이 다른 쪽의 빛을 가리는 일이 생긴다. 순서가 어떻게 다른지에 따라 일식과 월식으로 나뉜다. 탭을 눌러 비교해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>일식과 월식이 일어나는 태양-지구-달의 배치를 알고, 각각 일어날 수 있는 달의 위상 조건을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="tab-row" id="tabRow"></div>
+
+  <div class="sim-shell">
+    <div class="sim-card"><canvas id="eclipseCanvas" width="500" height="180"></canvas></div>
+  </div>
+
+  <div class="info-card"><div class="info-inner" id="infoInner"></div></div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="moon-phases.html"><span class="k">이전 소단원</span><span class="t">← 달의 위상 변화</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 대단원</span><span class="t">과학1 전체 완료 🎉</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 태양계 · 전체 소단원 완료 🎉</footer>
+
+<script>
+const MODES = {
+  solar: { c:'#facc15', label:'☀️ 일식', title:'일식 (日蝕)',
+    order:'태양 — 달 — 지구',
+    body:'태양, 달, 지구가 순서대로 일직선을 이룰 때, 달이 태양을 가려서 지구의 일부 지역에서 태양이 가려져 보이는 현상이다.',
+    cond:'달이 "삭(신월)" 위상일 때만 일어날 수 있다. 낮에 관측된다.' },
+  lunar: { c:'#38bdf8', label:'🌙 월식', title:'월식 (月蝕)',
+    order:'태양 — 지구 — 달',
+    body:'태양, 지구, 달이 순서대로 일직선을 이룰 때, 지구의 그림자가 달을 가려서 달이 어둡게 보이는 현상이다.',
+    cond:'달이 "보름달" 위상일 때만 일어날 수 있다. 밤에 관측된다.' },
+};
+let currentMode = 'solar';
+
+function renderTabs(){
+  const row = document.getElementById('tabRow'); row.innerHTML='';
+  Object.entries(MODES).forEach(([key,m]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn'+(key===currentMode?' on':'');
+    btn.style.setProperty('--c', m.c);
+    btn.textContent = m.label;
+    btn.onclick = () => { currentMode = key; renderTabs(); renderInfo(); draw(); };
+    row.appendChild(btn);
+  });
+}
+function renderInfo(){
+  const m = MODES[currentMode];
+  document.getElementById('infoInner').innerHTML = `
+    <div class="i-title" style="color:${m.c}">${m.title}</div>
+    <p>배치 순서: <b>${m.order}</b></p>
+    <p>${m.body}</p>
+    <div class="i-cond">${m.cond}</div>
+  `;
+}
+
+const canvas = document.getElementById('eclipseCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height, midY = H/2;
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const sunX = 60, earthX = W/2, moonOffset = 90;
+
+  // 태양
+  ctx.beginPath(); ctx.arc(sunX, midY, 26, 0, Math.PI*2);
+  ctx.fillStyle='#fbbf24'; ctx.shadowColor='#fbbf24'; ctx.shadowBlur=16; ctx.fill(); ctx.shadowBlur=0;
+  ctx.fillStyle='#888'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('태양', sunX, midY+46);
+
+  if (currentMode === 'solar') {
+    const moonX = earthX - moonOffset, earthXPos = earthX + 60;
+    // 광선
+    ctx.strokeStyle='rgba(251,191,36,0.2)'; for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(sunX+26, midY+i*8); ctx.lineTo(earthXPos+30, midY+i*8); ctx.stroke(); }
+    // 달
+    ctx.beginPath(); ctx.arc(moonX, midY, 12, 0, Math.PI*2);
+    ctx.fillStyle='#e5e7eb'; ctx.fill();
+    ctx.fillStyle='#888'; ctx.fillText('달', moonX, midY+30);
+    // 지구
+    ctx.beginPath(); ctx.arc(earthXPos, midY, 20, 0, Math.PI*2);
+    ctx.fillStyle='#38bdf8'; ctx.fill();
+    ctx.fillStyle='#888'; ctx.fillText('지구', earthXPos, midY+38);
+    // 그림자(달 그림자가 지구에 닿는 부분 강조)
+    ctx.beginPath(); ctx.arc(earthXPos-16, midY, 6, 0, Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fill();
+  } else {
+    const earthXPos = earthX, moonX = earthX + 100;
+    ctx.strokeStyle='rgba(251,191,36,0.2)'; for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(sunX+26, midY+i*8); ctx.lineTo(moonX+20, midY+i*8); ctx.stroke(); }
+    // 지구
+    ctx.beginPath(); ctx.arc(earthXPos, midY, 22, 0, Math.PI*2);
+    ctx.fillStyle='#38bdf8'; ctx.fill();
+    ctx.fillStyle='#888'; ctx.fillText('지구', earthXPos, midY+40);
+    // 지구 그림자(원뿔형 단순화 삼각형)
+    ctx.beginPath();
+    ctx.moveTo(earthXPos+22, midY-14);
+    ctx.lineTo(moonX+30, midY-5);
+    ctx.lineTo(moonX+30, midY+5);
+    ctx.lineTo(earthXPos+22, midY+14);
+    ctx.closePath();
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fill();
+    // 달
+    ctx.beginPath(); ctx.arc(moonX, midY, 12, 0, Math.PI*2);
+    ctx.fillStyle='#9ca3af'; ctx.fill();
+    ctx.fillStyle='#888'; ctx.fillText('달', moonX, midY+30);
+  }
+  ctx.textAlign='left';
+}
+renderTabs(); renderInfo(); draw();
+
+const QUIZ = [
+  { q:'태양-달-지구가 일직선을 이루며 달이 태양을 가리는 현상은?', opts:['월식','일식','오로라','겉보기 운동'], answer:1, fb:'태양-달-지구 순서로 일직선을 이루며 달이 태양을 가리는 현상이 "일식"이다.' },
+  { q:'태양-지구-달이 일직선을 이루며 지구의 그림자가 달을 가리는 현상은?', opts:['일식','월식','공전','자전'], answer:1, fb:'태양-지구-달 순서로 일직선을 이루며 지구 그림자가 달을 가리는 현상이 "월식"이다.' },
+  { q:'일식은 달이 어떤 위상일 때 일어날 수 있는가?', opts:['보름달','상현달','삭(신월)','하현달'], answer:2, fb:'일식은 달이 태양과 같은 방향(삭)에 있을 때만 일어날 수 있다.' },
+  { q:'월식은 달이 어떤 위상일 때 일어날 수 있는가?', opts:['삭(신월)','보름달','상현달','그믐달'], answer:1, fb:'월식은 달이 태양 반대쪽(보름달)에 있을 때만 일어날 수 있다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

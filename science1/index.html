@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>과학1 - EAIM 과학 수업</title>
+<style>
+  :root {
+    --main-color: #f43f5e;
+    --bg-dark: #0a0708;
+    --accent: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; }
+  .crumb b { color: #ccc; font-weight: 600; }
+  .hub-link { font-size: 0.72em; color: #aaa; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+
+  .hero { padding: 56px 20px 20px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(2em, 5vw, 3em); margin: 0 0 14px; background: linear-gradient(100deg, #fff 25%, #fda4af 55%, var(--accent) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.75; margin: 0 auto; max-width: 580px; }
+
+  .progress-shell { max-width: 620px; margin: 30px auto 0; padding: 16px 22px; background: #121012; border: 1px solid #262022; border-radius: 16px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .progress-top .p-label { font-size: 0.82em; color: #ccc; font-weight: 700; }
+  .progress-top .p-count { font-size: 0.78em; color: #888; }
+  .progress-bar-outer { height: 9px; border-radius: 5px; background: #262022; overflow: hidden; }
+  .progress-bar-inner { height: 100%; background: linear-gradient(90deg, var(--accent), var(--main-color)); }
+
+  .unit-wrap { max-width: 920px; margin: 50px auto 60px; padding: 0 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 700px) { .unit-wrap { grid-template-columns: 1fr; } }
+
+  .ucard { display: flex; gap: 16px; align-items: flex-start; background: #121012; border: 1.5px solid #262022; border-radius: 18px; padding: 20px; transition: all .2s; }
+  .ucard.ready:hover { border-color: var(--main-color); transform: translateY(-3px); }
+  .ucard.pending { opacity: 0.5; cursor: default; }
+  .ucard .u-roman { font-size: 1.6em; font-weight: 900; color: var(--accent); flex-shrink: 0; width: 44px; text-align: center; }
+  .ucard .u-body { flex: 1; min-width: 0; }
+  .ucard .u-title { font-size: 1.02em; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .ucard .u-page { font-size: 0.72em; color: #777; margin-bottom: 8px; }
+  .ucard .u-desc { font-size: 0.8em; color: #999; line-height: 1.6; margin-bottom: 10px; }
+  .ucard .u-badge { display: inline-block; font-size: 0.66em; font-weight: 800; padding: 3px 9px; border-radius: 6px; }
+  .ucard.ready .u-badge { color: #34d399; background: rgba(52,211,153,0.14); }
+  .ucard.pending .u-badge { color: #888; background: #1a1a1c; }
+
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학1</b></div>
+    <a class="hub-link" href="my-record.html">📋 나의 학습 기록</a>
+    <a class="hub-link" href="../index.html">← 처음으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">2022 개정 교육과정 · 미래엔 중등과학1</div>
+    <h1>과학1</h1>
+    <p class="lead">교과서 순서 그대로, 대단원을 하나씩 눌러 학습을 시작해 보자.</p>
+  </section>
+
+  <div class="progress-shell">
+    <div class="progress-top"><span class="p-label">전체 진행률</span><span class="p-count" id="pCount"></span></div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="pBar"></div></div>
+  </div>
+
+  <div class="unit-wrap" id="unitWrap"></div>
+
+  <footer>EAIM 과학 수업 · 과학1</footer>
+
+<script>
+const UNITS = [
+  { roman:'Ⅰ', title:'과학과 인류의 지속가능한 삶', page:'12쪽 ~ 32쪽', desc:'과학적 탐구 방법, 첨단 과학기술과 지속가능한 삶', href:'unit1-hub.html' },
+  { roman:'Ⅱ', title:'생물의 구성과 다양성', page:'34쪽 ~ 74쪽', desc:'세포, 생물의 구성 단계, 생물다양성과 분류·보전', href:'unit2-hub.html' },
+  { roman:'Ⅲ', title:'열', page:'78쪽 ~ 108쪽', desc:'온도와 입자 운동, 열평형, 열의 이동, 비열, 열팽창', href:'unit3-hub.html' },
+  { roman:'Ⅳ', title:'물질의 상태 변화', page:'114쪽 ~ 148쪽', desc:'입자 운동과 물질의 상태, 상태 변화와 열에너지', href:'unit4-hub.html' },
+  { roman:'Ⅴ', title:'힘의 작용', page:'154쪽 ~ 190쪽', desc:'여러 가지 힘, 힘과 물체의 운동', href:'unit5-hub.html' },
+  { roman:'Ⅵ', title:'기체의 성질', page:'196쪽 ~ 220쪽', desc:'기체의 압력과 부피, 온도와 부피 관계', href:'unit6-hub.html' },
+  { roman:'Ⅶ', title:'태양계', page:'226쪽 ~ 258쪽', desc:'태양계 구성 천체, 지구와 달의 운동', href:'unit7-hub.html' },
+];
+
+function render(){
+  const wrap = document.getElementById('unitWrap');
+  wrap.innerHTML = UNITS.map(u => {
+    const ready = !!u.href;
+    const inner = `
+      <div class="u-roman">${u.roman}</div>
+      <div class="u-body">
+        <div class="u-title">${u.title}</div>
+        <div class="u-page">${u.page}</div>
+        <div class="u-desc">${u.desc}</div>
+        <span class="u-badge">${ready ? '학습 가능' : '준비중'}</span>
+      </div>
+    `;
+    return ready
+      ? `<a class="ucard ready" href="${u.href}">${inner}</a>`
+      : `<div class="ucard pending">${inner}</div>`;
+  }).join('');
+
+  const done = UNITS.filter(u => u.href).length;
+  document.getElementById('pCount').textContent = `${done} / ${UNITS.length}개 단원`;
+  document.getElementById('pBar').style.width = (done/UNITS.length*100) + '%';
+}
+render();
+</script>
+</body>
+</html>

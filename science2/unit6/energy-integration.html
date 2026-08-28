@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>소화, 순환, 호흡, 배설과 에너지 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#fbbf24; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fde68a 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .equation-wrap { max-width:620px; margin:40px auto 0; padding:0 20px; text-align:center; }
+  .equation-card { background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3); border-radius:16px; padding:20px; }
+  .equation-card .eq-title { font-size:0.76em; font-weight:800; color:var(--main-color); letter-spacing:1px; margin-bottom:10px; }
+  .equation-card .eq-formula { font-size:1.05em; font-weight:800; line-height:1.8; }
+  .equation-card .eq-formula span { padding:0 4px; }
+
+  .cycle-wrap { max-width:900px; margin:46px auto 0; padding:0 20px; }
+  .cycle-track { display:flex; align-items:center; justify-content:center; gap:0; overflow-x:auto; padding:10px 0 22px; }
+  .cycle-node { flex:0 0 auto; width:110px; text-align:center; cursor:pointer; padding:6px; }
+  .cycle-icon { width:70px; height:70px; margin:0 auto 8px; border-radius:18px; background:#141215; border:2px solid #2a2a2c; display:flex; align-items:center; justify-content:center; font-size:1.7em; transition:all .3s; }
+  .cycle-node.active .cycle-icon { border-color:var(--c); box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 15%, transparent); transform:translateY(-3px); }
+  .cycle-name { font-size:0.78em; font-weight:800; color:#ccc; }
+  .cycle-node.active .cycle-name { color:var(--c); }
+  .cycle-arrow { flex:0 0 auto; width:20px; color:#3a3a3c; font-size:1.1em; }
+  .cycle-detail { background:#121012; border:1px solid #262022; border-radius:16px; padding:22px 26px; }
+  .cycle-detail h3 { margin:0 0 8px; font-size:1.1em; }
+  .cycle-detail p { color:#d0d0d0; font-size:0.9em; line-height:1.75; margin:0; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅵ. 동물과 에너지<span class="sep">/</span>2. 호흡과 배설<span class="sep">/</span><b>소화, 순환, 호흡, 배설과 에너지</b></div>
+    <a class="hub-link" href="../unit6-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅵ-2-3 · 교과서 230쪽</div>
+    <h1>네 가지 계통이<br>힘을 합쳐 에너지를 만든다</h1>
+    <p class="lead">지금까지 따로 살펴본 소화·순환·호흡·배설계는 사실 하나의 목표를 위해 함께 일한다 — 바로 우리 몸이 쓸 에너지를 만드는 것이다.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>소화·순환·호흡·배설계가 서로 연계되어 세포호흡을 통해 에너지를 만들고 노폐물을 배출하는 과정을 통합적으로 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="equation-wrap">
+    <div class="equation-card">
+      <div class="eq-title">🔋 세포호흡</div>
+      <div class="eq-formula"><span style="color:#fbbf24">영양소</span> + <span style="color:#38bdf8">산소</span> → <span style="color:#f43f5e">에너지</span> + <span style="color:#94a3b8">이산화탄소</span> + <span style="color:#94a3b8">물</span></div>
+    </div>
+  </div>
+
+  <div class="cycle-wrap">
+    <div class="cycle-track" id="cycleTrack"></div>
+    <div class="cycle-detail" id="cycleDetail"></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="excretory-system.html"><span class="k">이전 소단원</span><span class="t">← 배설계의 구조와 기능</span></a>
+    <span class="nav-btn next disabled"><span class="t">과학2 Ⅵ단원 완료 🎉</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 동물과 에너지 · Ⅵ단원 완료 🎉</footer>
+
+<script>
+const CYCLE = [
+  { icon:'🍽️', c:'#f43f5e', name:'소화', title:'① 소화 — 영양소 흡수', body:'소화계가 음식물 속 영양소를 잘게 분해해 소장에서 흡수한다. 이 영양소가 세포호흡의 재료가 된다.' },
+  { icon:'❤️', c:'#38bdf8', name:'순환', title:'② 순환 — 운반', body:'순환계(심장, 혈관, 혈액)가 흡수된 영양소와 폐에서 얻은 산소를 온몸의 세포까지 실어 나른다.' },
+  { icon:'🫁', c:'#22d3ee', name:'호흡', title:'③ 호흡 — 산소 공급', body:'호흡계가 산소를 몸속으로 들여오고, 세포호흡 결과 생긴 이산화탄소를 몸 밖으로 내보낸다.' },
+  { icon:'🔋', c:'#fbbf24', name:'세포호흡', title:'④ 세포호흡 — 에너지 생성', body:'세포 속에서 영양소와 산소가 반응해 에너지를 만들어낸다. 이 에너지로 우리는 움직이고, 체온을 유지하고, 생각한다.' },
+  { icon:'🚽', c:'#34d399', name:'배설', title:'⑤ 배설 — 노폐물 배출', body:'세포호흡 과정에서 생긴 노폐물(이산화탄소, 물, 요소 등)을 호흡계와 배설계가 함께 몸 밖으로 내보낸다.' },
+];
+let currentCycle = 3;
+function renderCycle(){
+  const track = document.getElementById('cycleTrack'); track.innerHTML='';
+  CYCLE.forEach((c,i) => {
+    const node = document.createElement('div');
+    node.className = 'cycle-node'+(i===currentCycle?' active':'');
+    node.style.setProperty('--c', c.c);
+    node.onclick = () => { currentCycle=i; renderCycle(); };
+    node.innerHTML = `<div class="cycle-icon">${c.icon}</div><div class="cycle-name">${c.name}</div>`;
+    track.appendChild(node);
+    if (i<CYCLE.length-1) { const a=document.createElement('div'); a.className='cycle-arrow'; a.textContent='→'; track.appendChild(a); }
+  });
+  const cur = CYCLE[currentCycle];
+  document.getElementById('cycleDetail').innerHTML = `<h3 style="color:${cur.c}">${cur.title}</h3><p>${cur.body}</p>`;
+}
+renderCycle();
+
+const QUIZ = [
+  { q:'세포 속에서 영양소와 산소가 반응해 에너지를 만드는 과정을 무엇이라 하는가?', opts:['소화', '세포호흡', '배설', '순환'], answer:1, fb:'세포 안에서 영양소와 산소로 에너지를 만드는 과정을 "세포호흡"이라고 한다.' },
+  { q:'세포호흡의 결과로 생기는 노폐물이 아닌 것은?', opts:['이산화탄소', '물', '산소', '요소'], answer:2, fb:'산소는 세포호흡의 "재료"이지 노폐물이 아니다. 노폐물로는 이산화탄소, 물, 요소 등이 생긴다.' },
+  { q:'소화로 흡수한 영양소를 온몸의 세포까지 운반하는 계통은?', opts:['호흡계', '순환계', '배설계', '골격계'], answer:1, fb:'순환계(심장, 혈관, 혈액)가 영양소와 산소를 온몸으로 운반한다.' },
+  { q:'소화, 순환, 호흡, 배설계의 관계에 대한 설명으로 가장 알맞은 것은?', opts:['서로 관련 없이 독립적으로 작동한다', '네 계통이 함께 협력해 에너지를 만들고 노폐물을 처리한다', '소화계만 중요하고 나머지는 부수적이다', '순서 없이 무작위로 작동한다'], answer:1, fb:'네 계통은 서로 긴밀하게 협력해 영양소와 산소를 공급하고, 에너지를 만들고, 노폐물을 처리한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

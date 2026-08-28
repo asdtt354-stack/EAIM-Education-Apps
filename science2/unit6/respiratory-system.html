@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>호흡계의 구조와 기능 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .stage-wrap { max-width:900px; margin:0 auto; padding:0 20px; }
+  .stage-track { display:flex; align-items:center; justify-content:center; gap:0; overflow-x:auto; padding:10px 0 22px; }
+  .stage-node { flex:0 0 auto; width:96px; text-align:center; cursor:pointer; padding:6px; }
+  .stage-icon { width:66px; height:66px; margin:0 auto 8px; border-radius:16px; overflow:hidden; background:#141215; border:2px solid #2a2a2c; display:flex; align-items:center; justify-content:center; transition:all .3s; }
+  .stage-icon img { width:100%; height:100%; object-fit:cover; }
+  .stage-node.active .stage-icon { border-color:var(--main-color); box-shadow:0 0 0 4px rgba(56,189,248,0.15); transform:translateY(-3px); }
+  .stage-name { font-size:0.76em; font-weight:800; color:#ccc; }
+  .stage-node.active .stage-name { color:var(--main-color); }
+  .stage-arrow { flex:0 0 auto; width:18px; color:#3a3a3c; font-size:1.1em; }
+  .stage-detail { background:#121012; border:1px solid #262022; border-radius:16px; padding:22px 26px; display:flex; gap:20px; align-items:center; }
+  .stage-detail .sd-img { width:80px; height:80px; border-radius:14px; overflow:hidden; flex-shrink:0; background:#1a1a1c; }
+  .stage-detail .sd-img img { width:100%; height:100%; object-fit:cover; }
+  .stage-detail .sd-body h3 { margin:0 0 8px; font-size:1.05em; }
+  .stage-detail .sd-body p { color:#d0d0d0; font-size:0.87em; line-height:1.7; margin:0; }
+  @media (max-width:560px) { .stage-detail { flex-direction:column; text-align:center; } }
+
+  .gas-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .gas-card { background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.28); border-radius:16px; padding:20px 22px; text-align:center; }
+  .gas-card .gc-flow { font-size:0.92em; font-weight:800; margin-bottom:10px; }
+  .gas-card .gc-flow span.o2 { color:#38bdf8; } .gas-card .gc-flow span.co2 { color:#fb923c; }
+  .gas-card p { margin:0; font-size:0.86em; color:#cdeefd; line-height:1.75; }
+
+  .breath-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .breath-tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .breath-tab { flex:1; border:1.5px solid #2a2a2c; background:#141215; color:#999; padding:11px 8px; border-radius:10px; font-size:0.85em; font-weight:800; cursor:pointer; }
+  .breath-tab.on { border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, #141215); color:#fff; }
+  .breath-card { background:#121012; border:1px solid #262022; border-radius:16px; padding:20px 22px; }
+  .breath-card ul { margin:0; padding-left:18px; font-size:0.86em; color:#ddd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅵ. 동물과 에너지<span class="sep">/</span>2. 호흡과 배설<span class="sep">/</span><b>호흡계의 구조와 기능</b></div>
+    <a class="hub-link" href="../unit6-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅵ-2-1 · 교과서 222쪽</div>
+    <h1>숨을 쉴 때마다<br>몸속에서는 교환이 일어난다</h1>
+    <p class="lead">코로 들어온 공기는 기관과 기관지를 지나 폐 속 작은 주머니, 폐포까지 도착한다. 그곳에서 산소와 이산화탄소가 맞바뀐다.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>호흡계를 구성하는 기관의 구조와 기능을 설명하고, 폐포에서 일어나는 기체 교환과 호흡 운동의 원리를 말할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>공기가 지나는 길</h2></div>
+  <div class="stage-wrap">
+    <div class="stage-track" id="stageTrack"></div>
+    <div class="stage-detail" id="stageDetail"></div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>폐포에서 일어나는 기체 교환</h2></div>
+  <div class="gas-wrap">
+    <div class="gas-card">
+      <div class="gc-flow"><span class="o2">산소(O₂)</span> 폐포 → 모세혈관 &nbsp;|&nbsp; <span class="co2">이산화탄소(CO₂)</span> 모세혈관 → 폐포</div>
+      <p>폐포는 벽이 매우 얇고 모세혈관으로 둘러싸여 있다. 이 덕분에 산소는 폐포에서 혈액으로, 이산화탄소는 혈액에서 폐포로 빠르게 이동(확산)할 수 있다.</p>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">03</div><h2>어떻게 숨을 쉴까 — 들숨과 날숨</h2></div>
+  <div class="breath-wrap">
+    <div class="breath-tabs" id="breathTabs"></div>
+    <div class="breath-card" id="breathCard"></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="circulatory-system.html"><span class="k">이전 소단원</span><span class="t">← 순환계의 구조와 기능</span></a>
+    <a class="nav-btn next" href="excretory-system.html"><span class="k">다음 소단원</span><span class="t">배설계의 구조와 기능 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 동물과 에너지</footer>
+
+<script>
+const IMG = '../../';
+const STAGES = [
+  { name:'코·기관', img:IMG+'organ_trachea.png', title:'코와 기관', body:'코로 들어온 공기는 이물질이 걸러지고 따뜻해진 뒤, 목 아래 연골로 된 관인 기관을 지난다.' },
+  { name:'기관지', img:IMG+'organ_trachea.png', title:'기관지', body:'기관이 좌우 폐로 갈라지며 이어지는 관으로, 폐 속에서 점점 더 가늘게 갈라진다.' },
+  { name:'폐', img:IMG+'organ_lungs.png', title:'폐', body:'가슴 속 좌우에 있는 기관으로, 수많은 폐포로 이루어져 있어 표면적이 매우 넓다.' },
+  { name:'폐포', img:IMG+'respiratory.png', title:'폐포', body:'폐 속의 작은 공기주머니. 폐포가 많을수록 공기와 닿는 표면적이 커져 기체 교환이 효율적으로 일어난다.' },
+];
+let currentStage = 0;
+function renderStages(){
+  const track = document.getElementById('stageTrack'); track.innerHTML='';
+  STAGES.forEach((s,i) => {
+    const node = document.createElement('div');
+    node.className = 'stage-node'+(i===currentStage?' active':'');
+    node.onclick = () => { currentStage=i; renderStages(); };
+    node.innerHTML = `<div class="stage-icon"><img src="${s.img}" alt="${s.name}"></div><div class="stage-name">${s.name}</div>`;
+    track.appendChild(node);
+    if (i<STAGES.length-1) { const a=document.createElement('div'); a.className='stage-arrow'; a.textContent='→'; track.appendChild(a); }
+  });
+  const cur = STAGES[currentStage];
+  document.getElementById('stageDetail').innerHTML = `
+    <div class="sd-img"><img src="${cur.img}" alt="${cur.title}"></div>
+    <div class="sd-body"><h3>${cur.title}</h3><p>${cur.body}</p></div>
+  `;
+}
+renderStages();
+
+const BREATHS = {
+  inhale: { c:'#38bdf8', label:'⬇️ 들숨', points:[
+    '갈비뼈가 위로 올라가고, 횡격막은 아래로 내려간다.',
+    '가슴 속 공간(흉강)의 부피가 커진다.',
+    '흉강 안의 압력이 낮아져, 바깥의 공기가 폐 안으로 들어온다.',
+  ]},
+  exhale: { c:'#fb923c', label:'⬆️ 날숨', points:[
+    '갈비뼈가 아래로 내려가고, 횡격막은 위로 올라간다.',
+    '흉강의 부피가 작아진다.',
+    '흉강 안의 압력이 높아져, 폐 속 공기가 몸 밖으로 나간다.',
+  ]},
+};
+let currentBreath = 'inhale';
+function renderBreath(){
+  document.getElementById('breathTabs').innerHTML = Object.entries(BREATHS).map(([key,b]) =>
+    `<button class="breath-tab ${key===currentBreath?'on':''}" style="--c:${b.c}" data-k="${key}">${b.label}</button>`
+  ).join('');
+  document.querySelectorAll('.breath-tab').forEach(btn => {
+    btn.addEventListener('click', () => { currentBreath = btn.dataset.k; renderBreath(); });
+  });
+  const cur = BREATHS[currentBreath];
+  document.getElementById('breathCard').innerHTML = `<ul>${cur.points.map(p=>`<li>${p}</li>`).join('')}</ul>`;
+}
+renderBreath();
+
+const QUIZ = [
+  { q:'폐 속에서 기체 교환이 일어나는, 매우 작고 표면적이 넓은 공기주머니는?', opts:['기관', '기관지', '폐포', '횡격막'], answer:2, fb:'폐포는 폐 속의 작은 공기주머니로, 표면적이 넓어 기체 교환이 효율적으로 일어난다.' },
+  { q:'폐포에서 산소는 어느 방향으로 이동하는가?', opts:['모세혈관 → 폐포', '폐포 → 모세혈관', '이동하지 않는다', '폐포 → 기관지'], answer:1, fb:'산소는 폐포에서 모세혈관(혈액)으로 이동한다.' },
+  { q:'숨을 들이쉴 때(들숨) 흉강의 부피와 압력 변화로 옳은 것은?', opts:['부피 증가, 압력 감소', '부피 감소, 압력 증가', '부피와 압력 모두 변화 없음', '부피 감소, 압력 감소'], answer:0, fb:'들숨일 때 흉강의 부피가 커지고 압력은 낮아져 공기가 폐로 들어온다.' },
+  { q:'날숨일 때 갈비뼈와 횡격막의 움직임으로 옳은 것은?', opts:['갈비뼈는 올라가고 횡격막은 내려간다', '갈비뼈는 내려가고 횡격막은 올라간다', '둘 다 움직이지 않는다', '갈비뼈와 횡격막 모두 올라간다'], answer:1, fb:'날숨일 때는 갈비뼈가 내려가고 횡격막이 올라가 흉강의 부피가 작아진다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>소화계의 구조와 기능 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fda4af 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  /* 소화 기관 여행 트랙 */
+  .stage-wrap { max-width:900px; margin:0 auto; padding:0 20px; }
+  .stage-track { display:flex; align-items:center; justify-content:center; gap:0; overflow-x:auto; padding:10px 0 22px; }
+  .stage-node { flex:0 0 auto; width:96px; text-align:center; cursor:pointer; padding:6px; }
+  .stage-icon { width:66px; height:66px; margin:0 auto 8px; border-radius:16px; overflow:hidden; background:#141215; border:2px solid #2a2a2c; display:flex; align-items:center; justify-content:center; transition:all .3s; }
+  .stage-icon img { width:100%; height:100%; object-fit:cover; }
+  .stage-node.active .stage-icon { border-color:var(--main-color); box-shadow:0 0 0 4px rgba(244,63,94,0.15); transform:translateY(-3px); }
+  .stage-name { font-size:0.76em; font-weight:800; color:#ccc; }
+  .stage-node.active .stage-name { color:var(--main-color); }
+  .stage-arrow { flex:0 0 auto; width:18px; color:#3a3a3c; font-size:1.1em; }
+  .stage-detail { background:#121012; border:1px solid #262022; border-radius:16px; padding:22px 26px; display:flex; gap:20px; align-items:center; }
+  .stage-detail .sd-img { width:80px; height:80px; border-radius:14px; overflow:hidden; flex-shrink:0; background:#1a1a1c; }
+  .stage-detail .sd-img img { width:100%; height:100%; object-fit:cover; }
+  .stage-detail .sd-body h3 { margin:0 0 8px; font-size:1.05em; }
+  .stage-detail .sd-body p { color:#d0d0d0; font-size:0.87em; line-height:1.7; margin:0; }
+  @media (max-width:560px) { .stage-detail { flex-direction:column; text-align:center; } }
+
+  /* 소화 보조기관 */
+  .helper-wrap { max-width:700px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:560px) { .helper-wrap { grid-template-columns:1fr; } }
+  .h-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:14px; text-align:center; }
+  .h-card .h-img { width:56px; height:56px; margin:0 auto 8px; border-radius:12px; overflow:hidden; background:#1a1a1c; }
+  .h-card .h-img img { width:100%; height:100%; object-fit:cover; }
+  .h-card .h-name { font-weight:800; font-size:0.86em; margin-bottom:4px; }
+  .h-card .h-desc { font-size:0.74em; color:#999; line-height:1.5; }
+
+  /* 영양소-효소 카드 */
+  .enzyme-wrap { max-width:700px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:560px) { .enzyme-wrap { grid-template-columns:1fr; } }
+  .e-card { border-radius:14px; padding:14px; text-align:center; border:1.5px solid; }
+  .e-card.carb { background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.3); }
+  .e-card.protein { background:rgba(56,189,248,0.08); border-color:rgba(56,189,248,0.3); }
+  .e-card.fat { background:rgba(251,146,60,0.08); border-color:rgba(251,146,60,0.3); }
+  .e-card .e-nutrient { font-size:0.78em; color:#999; margin-bottom:4px; }
+  .e-card .e-enzyme { font-weight:800; font-size:0.94em; }
+
+  .atlas-cta { max-width:900px; margin:36px auto 0; padding:0 20px; }
+  .atlas-card { background:linear-gradient(135deg, rgba(244,63,94,0.10), rgba(168,85,247,0.10)); border:1px solid rgba(244,63,94,0.25); border-radius:18px; padding:22px 26px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .atlas-card .txt strong { display:block; font-size:1.02em; margin-bottom:4px; } .atlas-card .txt span { font-size:0.82em; color:#aaa; }
+  .atlas-card .go-btn { background:var(--main-color); color:#fff; text-decoration:none; font-weight:800; padding:12px 20px; border-radius:10px; font-size:0.85em; white-space:nowrap; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅵ. 동물과 에너지<span class="sep">/</span>1. 소화와 순환<span class="sep">/</span><b>소화계의 구조와 기능</b></div>
+    <a class="hub-link" href="../unit6-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅵ-1-2 · 교과서 206쪽</div>
+    <h1>입에 들어간 음식이<br>거치는 긴 여행</h1>
+    <p class="lead">한 입 베어 문 음식은 입에서 시작해 식도, 위, 소장, 대장을 거치며 잘게 쪼개지고 흡수된다. 소화 기관을 하나씩 눌러 그 여행을 따라가 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>소화계를 구성하는 기관들의 구조와 기능을 설명하고, 영양소가 소화 효소에 의해 분해되는 과정을 말할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>음식물의 여행 — 소화관</h2></div>
+  <div class="stage-wrap">
+    <div class="stage-track" id="stageTrack"></div>
+    <div class="stage-detail" id="stageDetail"></div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>소화를 돕는 기관</h2></div>
+  <div class="helper-wrap" id="helperWrap"></div>
+
+  <div class="section-head"><div class="num">03</div><h2>영양소를 분해하는 소화 효소</h2></div>
+  <div class="enzyme-wrap">
+    <div class="e-card carb"><div class="e-nutrient">🍚 탄수화물</div><div class="e-enzyme">아밀레이스</div></div>
+    <div class="e-card protein"><div class="e-nutrient">🥚 단백질</div><div class="e-enzyme">펩신 · 트립신</div></div>
+    <div class="e-card fat"><div class="e-nutrient">🧈 지방</div><div class="e-enzyme">라이페이스</div></div>
+  </div>
+
+  <div class="atlas-cta">
+    <div class="atlas-card">
+      <div class="txt"><strong>소화기관을 실제 인체 지도에서 보고 싶다면?</strong><span>인체 탐험대에서 위, 소장, 간 등을 자유롭게 클릭해 볼 수 있다.</span></div>
+      <a class="go-btn" href="../../anatomy.html">인체 지도 열기 →</a>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="nutrients.html"><span class="k">이전 소단원</span><span class="t">← 영양소</span></a>
+    <a class="nav-btn next" href="circulatory-system.html"><span class="k">다음 소단원</span><span class="t">순환계의 구조와 기능 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 동물과 에너지</footer>
+
+<script>
+const IMG = '../../';
+const STAGES = [
+  { name:'입', img:IMG+'organ_mouth.png', title:'입 (구강)', body:'이로 음식을 잘게 부수고, 침 속 아밀레이스가 탄수화물(녹말)을 분해하기 시작한다.' },
+  { name:'식도', img:IMG+'organ_esophagus.png', title:'식도', body:'음식물을 위까지 운반하는 통로이다. 근육이 물결치듯 움직여(연동 운동) 음식물을 밀어 내려보낸다.' },
+  { name:'위', img:IMG+'organ_stomach.png', title:'위', body:'펩신이 단백질을 분해하기 시작하고, 강한 위산이 음식물 속 세균을 없애며 음식물을 걸쭉하게 만든다.' },
+  { name:'소장', img:IMG+'organ_smallintestine.png', title:'소장', body:'소화의 대부분이 일어나는 곳으로, 탄수화물·단백질·지방이 최종적으로 분해되고 영양소가 융털을 통해 흡수된다.' },
+  { name:'대장', img:IMG+'organ_largeintestine.png', title:'대장', body:'소장에서 흡수되지 못한 물을 흡수하고, 남은 찌꺼기를 대변으로 만들어 배출한다.' },
+];
+let currentStage = 0;
+function renderStages(){
+  const track = document.getElementById('stageTrack'); track.innerHTML='';
+  STAGES.forEach((s,i) => {
+    const node = document.createElement('div');
+    node.className = 'stage-node'+(i===currentStage?' active':'');
+    node.onclick = () => { currentStage=i; renderStages(); };
+    node.innerHTML = `<div class="stage-icon"><img src="${s.img}" alt="${s.name}"></div><div class="stage-name">${s.name}</div>`;
+    track.appendChild(node);
+    if (i<STAGES.length-1) { const a=document.createElement('div'); a.className='stage-arrow'; a.textContent='→'; track.appendChild(a); }
+  });
+  const cur = STAGES[currentStage];
+  document.getElementById('stageDetail').innerHTML = `
+    <div class="sd-img"><img src="${cur.img}" alt="${cur.title}"></div>
+    <div class="sd-body"><h3>${cur.title}</h3><p>${cur.body}</p></div>
+  `;
+}
+renderStages();
+
+const HELPERS = [
+  { img:IMG+'organ_liver.png', name:'간', desc:'쓸개즙을 만들어 지방의 소화를 돕는다.' },
+  { img:IMG+'organ_gallbladder.png', name:'쓸개', desc:'간에서 만든 쓸개즙을 저장했다가 소장으로 내보낸다.' },
+  { img:IMG+'organ_duodenum.png', name:'십이지장', desc:'이자액과 쓸개즙이 흘러 들어와 본격적인 소화가 시작되는 소장의 첫 부분이다.' },
+];
+document.getElementById('helperWrap').innerHTML = HELPERS.map(h => `
+  <div class="h-card"><div class="h-img"><img src="${h.img}" alt="${h.name}"></div><div class="h-name">${h.name}</div><div class="h-desc">${h.desc}</div></div>
+`).join('');
+
+const QUIZ = [
+  { q:'침 속에 들어 있으며 탄수화물(녹말)을 분해하기 시작하는 소화 효소는?', opts:['펩신', '아밀레이스', '라이페이스', '트립신'], answer:1, fb:'침 속의 아밀레이스는 탄수화물(녹말)을 분해하는 첫 소화 효소이다.' },
+  { q:'위에서 분비되며 단백질을 분해하기 시작하는 소화 효소는?', opts:['아밀레이스', '라이페이스', '펩신', '뮤신'], answer:2, fb:'위에서는 펩신이 분비되어 단백질을 분해하기 시작한다.' },
+  { q:'영양소가 최종적으로 분해되고 대부분 흡수되는 소화 기관은?', opts:['위', '식도', '소장', '대장'], answer:2, fb:'소장에서 영양소가 최종적으로 분해되고 융털을 통해 흡수된다.' },
+  { q:'지방의 소화를 돕는 쓸개즙을 만드는 기관은?', opts:['이자', '간', '위', '대장'], answer:1, fb:'간에서 쓸개즙을 만들어 쓸개에 저장했다가 지방 소화를 돕는다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

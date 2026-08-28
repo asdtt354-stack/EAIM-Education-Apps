@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>순환계의 구조와 기능 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fda4af 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  /* 심장 소개 */
+  .heart-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .heart-card { background:#121012; border:1px solid #262022; border-radius:18px; padding:22px; display:flex; gap:20px; align-items:center; }
+  .heart-card .hc-img { width:100px; height:100px; border-radius:16px; overflow:hidden; flex-shrink:0; background:#1a1a1c; }
+  .heart-card .hc-img img { width:100%; height:100%; object-fit:cover; }
+  .heart-card .hc-body p { margin:0 0 8px; font-size:0.88em; color:#ddd; line-height:1.75; }
+  @media (max-width:520px) { .heart-card { flex-direction:column; text-align:center; } }
+
+  /* 혈관 카드 */
+  .vessel-wrap { max-width:800px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:600px) { .vessel-wrap { grid-template-columns:1fr; } }
+  .v-card { background:#121012; border:1.5px solid; border-radius:16px; padding:16px; text-align:center; }
+  .v-card.artery { border-color:rgba(244,63,94,0.35); }
+  .v-card.vein { border-color:rgba(56,189,248,0.35); }
+  .v-card.capillary { border-color:rgba(168,85,247,0.35); }
+  .v-card .v-icon { width:56px; height:56px; margin:0 auto 8px; border-radius:12px; overflow:hidden; background:#1a1a1c; }
+  .v-card .v-icon img { width:100%; height:100%; object-fit:cover; }
+  .v-card .v-name { font-weight:800; font-size:0.9em; margin-bottom:6px; }
+  .v-card.artery .v-name { color:#f43f5e; } .v-card.vein .v-name { color:#38bdf8; } .v-card.capillary .v-name { color:#a855f7; }
+  .v-card .v-desc { font-size:0.78em; color:#999; line-height:1.6; }
+
+  /* 혈액 성분 카드 */
+  .blood-wrap { max-width:800px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  @media (max-width:600px) { .blood-wrap { grid-template-columns:repeat(2,1fr); } }
+  .b-card { background:#121012; border:1.5px solid #262022; border-radius:14px; padding:12px; text-align:center; cursor:pointer; transition:all .2s; }
+  .b-card.open { border-color:var(--c); }
+  .b-card .b-icon { font-size:1.5em; margin-bottom:4px; }
+  .b-card .b-name { font-weight:800; font-size:0.8em; color:var(--c); margin-bottom:4px; }
+  .b-card .b-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .b-card.open .b-detail { max-height:120px; padding-top:6px; border-top:1px dashed #2f2f31; }
+  .b-card .b-detail p { font-size:0.7em; color:#ccc; line-height:1.55; margin:0; }
+
+  /* 순환 경로 탭 */
+  .circuit-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .circuit-tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .circuit-tab { flex:1; border:1.5px solid #2a2a2c; background:#141215; color:#999; padding:11px 8px; border-radius:10px; font-size:0.85em; font-weight:800; cursor:pointer; }
+  .circuit-tab.on { border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, #141215); color:#fff; }
+  .circuit-card { background:#121012; border:1px solid #262022; border-radius:16px; padding:20px 22px; }
+  .circuit-card .cc-path { font-size:0.86em; font-weight:800; margin-bottom:10px; color:var(--c); }
+  .circuit-card p { margin:0; font-size:0.86em; color:#ddd; line-height:1.75; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅵ. 동물과 에너지<span class="sep">/</span>1. 소화와 순환<span class="sep">/</span><b>순환계의 구조와 기능</b></div>
+    <a class="hub-link" href="../unit6-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅵ-1-3 · 교과서 212쪽</div>
+    <h1>심장은 하루에도<br>몇 번이나 온몸을 돌릴까</h1>
+    <p class="lead">소화로 흡수한 영양소는 어떻게 온몸의 세포까지 전달될까? 심장과 혈관, 그리고 혈액이 함께 만드는 순환의 원리를 살펴보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>심장과 혈관의 구조와 기능을 설명하고, 혈액의 구성 성분과 온몸순환·폐순환의 경로를 말할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>심장 — 순환의 펌프</h2></div>
+  <div class="heart-wrap">
+    <div class="heart-card">
+      <div class="hc-img"><img src="../../organ_heart.png" alt="심장"></div>
+      <div class="hc-body">
+        <p>심장은 2개의 심방과 2개의 심실, 총 4개의 방으로 이루어져 있다.</p>
+        <p>심장이 규칙적으로 수축·이완하며 혈액을 온몸과 폐로 밀어 보낸다.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>혈관 — 혈액이 흐르는 길</h2></div>
+  <div class="vessel-wrap">
+    <div class="v-card artery"><div class="v-icon"><img src="../../organ_vessels.png" alt="동맥"></div><div class="v-name">동맥</div><div class="v-desc">심장에서 나가는 혈액이 흐르는 혈관. 혈관 벽이 두껍고 탄력이 있다.</div></div>
+    <div class="v-card vein"><div class="v-icon"><img src="../../organ_vessels.png" alt="정맥"></div><div class="v-name">정맥</div><div class="v-desc">심장으로 들어오는 혈액이 흐르는 혈관. 곳곳에 판막이 있어 혈액의 역류를 막는다.</div></div>
+    <div class="v-card capillary"><div class="v-icon"><img src="../../organ_vessels.png" alt="모세혈관"></div><div class="v-name">모세혈관</div><div class="v-desc">동맥과 정맥을 잇는 매우 가는 혈관. 벽이 얇아 물질 교환이 활발히 일어난다.</div></div>
+  </div>
+
+  <div class="section-head"><div class="num">03</div><h2>혈액의 성분</h2></div>
+  <div class="blood-wrap" id="bloodWrap"></div>
+
+  <div class="section-head"><div class="num">04</div><h2>순환 경로 — 온몸순환과 폐순환</h2></div>
+  <div class="circuit-wrap">
+    <div class="circuit-tabs" id="circuitTabs"></div>
+    <div class="circuit-card" id="circuitCard"></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="digestive-system.html"><span class="k">이전 소단원</span><span class="t">← 소화계의 구조와 기능</span></a>
+    <a class="nav-btn next" href="respiratory-system.html"><span class="k">다음 소단원</span><span class="t">호흡계의 구조와 기능 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 동물과 에너지</footer>
+
+<script>
+const BLOOD = [
+  { icon:'🩸', c:'#38bdf8', name:'혈장', body:'혈액의 액체 성분으로, 영양소와 노폐물을 운반한다.' },
+  { icon:'🔴', c:'#f43f5e', name:'적혈구', body:'헤모글로빈을 이용해 산소를 온몸으로 운반한다.' },
+  { icon:'⚪', c:'#a855f7', name:'백혈구', body:'몸에 침입한 세균 등을 잡아먹어 방어 작용을 한다.' },
+  { icon:'🟡', c:'#fbbf24', name:'혈소판', body:'상처가 났을 때 혈액을 굳게 해 출혈을 막는다.' },
+];
+let openBlood = null;
+function renderBlood(){
+  document.getElementById('bloodWrap').innerHTML = BLOOD.map((b,i) => `
+    <div class="b-card ${openBlood===i?'open':''}" style="--c:${b.c}" data-i="${i}">
+      <div class="b-icon">${b.icon}</div><div class="b-name">${b.name}</div>
+      <div class="b-detail"><p>${b.body}</p></div>
+    </div>
+  `).join('');
+  document.querySelectorAll('.b-card').forEach(card => {
+    card.addEventListener('click', () => { const i=+card.dataset.i; openBlood = openBlood===i?null:i; renderBlood(); });
+  });
+}
+renderBlood();
+
+const CIRCUITS = {
+  systemic: { c:'#f43f5e', label:'🫀 온몸순환', path:'심장(좌심실) → 온몸의 조직 → 심장(우심방)', body:'심장에서 나온 산소가 풍부한 혈액이 온몸의 조직에 산소와 영양소를 전달하고, 이산화탄소와 노폐물을 받아 다시 심장으로 돌아온다.' },
+  pulmonary: { c:'#38bdf8', label:'🫁 폐순환', path:'심장(우심실) → 폐 → 심장(좌심방)', body:'심장에서 나온 이산화탄소가 많은 혈액이 폐로 가서 이산화탄소를 내보내고 산소를 받아 다시 심장으로 돌아온다.' },
+};
+let currentCircuit = 'systemic';
+function renderCircuit(){
+  document.getElementById('circuitTabs').innerHTML = Object.entries(CIRCUITS).map(([key,c]) =>
+    `<button class="circuit-tab ${key===currentCircuit?'on':''}" style="--c:${c.c}" data-k="${key}">${c.label}</button>`
+  ).join('');
+  document.querySelectorAll('.circuit-tab').forEach(btn => {
+    btn.addEventListener('click', () => { currentCircuit = btn.dataset.k; renderCircuit(); });
+  });
+  const cur = CIRCUITS[currentCircuit];
+  document.getElementById('circuitCard').innerHTML = `<div class="cc-path" style="color:${cur.c}">${cur.path}</div><p>${cur.body}</p>`;
+}
+renderCircuit();
+
+const QUIZ = [
+  { q:'심장은 몇 개의 방으로 이루어져 있는가?', opts:['2개', '3개', '4개', '5개'], answer:2, fb:'심장은 2개의 심방과 2개의 심실, 총 4개의 방으로 이루어져 있다.' },
+  { q:'심장에서 나가는 혈액이 흐르며 벽이 두껍고 탄력 있는 혈관은?', opts:['정맥', '동맥', '모세혈관', '림프관'], answer:1, fb:'심장에서 나가는 혈액이 흐르는 두껍고 탄력 있는 혈관은 "동맥"이다.' },
+  { q:'헤모글로빈을 이용해 산소를 운반하는 혈액 성분은?', opts:['혈장', '백혈구', '적혈구', '혈소판'], answer:2, fb:'적혈구는 헤모글로빈으로 산소를 운반하는 역할을 한다.' },
+  { q:'심장에서 나온 혈액이 폐를 거쳐 다시 심장으로 돌아오는 순환은?', opts:['온몸순환', '폐순환', '림프순환', '문맥순환'], answer:1, fb:'심장-폐-심장을 거치는 순환을 "폐순환"이라고 한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

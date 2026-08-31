@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리은하의 구조와 크기 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#a855f7; --bg-dark:#05060a; --accent:#38bdf8; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(5,6,10,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #1c1e26; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #2c2e3a; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#c4b5fd 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#cdeefd; }
+
+  .tab-row { max-width:400px; margin:40px auto 0; display:flex; gap:8px; padding:0 20px; }
+  .tab-btn { flex:1; border:1.5px solid #2c2e3a; background:#0d0e14; color:#999; padding:12px 8px; border-radius:12px; font-size:0.86em; font-weight:800; cursor:pointer; }
+  .tab-btn.on { border-color:var(--main-color); background:rgba(168,85,247,0.16); color:#fff; }
+
+  .sim-shell { max-width:620px; margin:18px auto 0; padding:0 20px; }
+  .sim-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:20px; padding:20px; text-align:center; }
+  #galaxyCanvas { background:#090a10; border-radius:14px; max-width:100%; }
+
+  .info-card { max-width:620px; margin:16px auto 0; padding:0 20px; }
+  .info-inner { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:18px 22px; text-align:center; }
+  .info-inner p { margin:0; font-size:0.85em; color:#ddd; line-height:1.75; }
+
+  .size-wrap { max-width:500px; margin:30px auto 0; padding:0 20px; }
+  .size-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:16px 20px; text-align:center; font-size:0.85em; color:#ccc; line-height:1.9; }
+  .size-card b { color:#a855f7; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#161821; border:1.5px solid #262832; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #262832; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #1c1e26; background:#0d0e14; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅷ. 별과 우주<span class="sep">/</span>2. 우리은하와 우주<span class="sep">/</span><b>우리은하의 구조와 크기</b></div>
+    <a class="hub-link" href="../unit8-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅷ-2-1 · 교과서 294쪽</div>
+    <h1>태양계가 속한<br>거대한 소용돌이, 우리은하</h1>
+    <p class="lead">밤하늘에 길게 뻗은 은하수는 사실 우리은하를 옆에서 바라본 모습이다. 위에서 보면 소용돌이 모양의 나선팔이 드러난다. 두 시점을 전환하며 우리은하의 구조를 살펴보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>우리은하의 구조(중심부, 원반부, 나선팔)와 크기, 태양계의 위치를 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="tab-row" id="tabRow"></div>
+
+  <div class="sim-shell">
+    <div class="sim-card"><canvas id="galaxyCanvas" width="500" height="280"></canvas></div>
+  </div>
+
+  <div class="info-card"><div class="info-inner" id="infoInner"></div></div>
+
+  <div class="size-wrap">
+    <div class="size-card">
+      🌌 우리은하의 지름은 약 <b>10만 광년</b>이며, 태양계는 은하 중심에서 약 <b>3만 광년</b> 떨어진 나선팔 부근에 자리 잡고 있다.
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="star-color-temperature.html"><span class="k">이전 소단원</span><span class="t">← 별의 색과 표면 온도</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">우리은하의 구성 천체 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 별과 우주</footer>
+
+<script>
+const MODES = {
+  side: { label:'옆에서 본 모습', body:'옆에서 보면 우리은하는 가운데가 볼록한 원반 모양이다. 중심부(팽대부)는 별이 매우 밀집해 볼록하게 튀어나와 보이고, 그 바깥은 상대적으로 얇은 원반부로 이루어져 있다. 지구에서 이 원반부를 옆으로 바라본 모습이 바로 "은하수"이다.' },
+  top:  { label:'위에서 본 모습', body:'위에서 보면 우리은하는 중심에서 뻗어 나온 여러 개의 나선팔을 가진 소용돌이 모양이다. 태양계는 중심이 아니라, 나선팔 중 하나(오리온자리 팔 부근)에 위치해 있다.' },
+};
+let currentMode = 'side';
+
+function renderTabs(){
+  const row = document.getElementById('tabRow'); row.innerHTML='';
+  Object.entries(MODES).forEach(([key,m]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn'+(key===currentMode?' on':'');
+    btn.textContent = m.label;
+    btn.onclick = () => { currentMode = key; renderTabs(); renderInfo(); draw(); };
+    row.appendChild(btn);
+  });
+}
+function renderInfo(){
+  document.getElementById('infoInner').innerHTML = `<p>${MODES[currentMode].body}</p>`;
+}
+
+const canvas = document.getElementById('galaxyCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height, cx = W/2, cy = H/2;
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // 배경 별
+  ctx.fillStyle = '#222';
+  for (let i=0;i<40;i++){ const x=(i*47)%W, y=(i*31)%H; ctx.beginPath(); ctx.arc(x,y,1,0,Math.PI*2); ctx.fill(); }
+
+  if (currentMode === 'side') {
+    // 원반부(얇은 타원)
+    ctx.beginPath(); ctx.ellipse(cx,cy,190,18,0,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(168,85,247,0.35)'; ctx.fill();
+    // 중심부(볼록)
+    ctx.beginPath(); ctx.ellipse(cx,cy,60,42,0,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(251,191,36,0.7)'; ctx.shadowColor='#fbbf24'; ctx.shadowBlur=20; ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle='#888'; ctx.font='11px sans-serif'; ctx.fillText('중심부(팽대부)', cx-40, cy-50);
+    ctx.fillText('원반부', cx+140, cy+30);
+    // 태양계 위치
+    const sx = cx+130, sy = cy+4;
+    ctx.beginPath(); ctx.arc(sx,sy,4,0,Math.PI*2); ctx.fillStyle='#38bdf8'; ctx.shadowColor='#38bdf8'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle='#38bdf8'; ctx.fillText('☀️ 태양계', sx-16, sy+18);
+  } else {
+    // 위에서 본 나선팔
+    ctx.save();
+    ctx.translate(cx,cy);
+    for (let arm=0; arm<4; arm++){
+      ctx.beginPath();
+      const armOffset = arm * (Math.PI/2);
+      for (let t=0;t<160;t++){
+        const angle = t*0.05 + armOffset;
+        const radius = t*0.85;
+        const x = Math.cos(angle)*radius, y = Math.sin(angle)*radius*0.55;
+        if (t===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = 'rgba(168,85,247,0.55)'; ctx.lineWidth=6; ctx.lineCap='round'; ctx.stroke();
+    }
+    ctx.restore();
+    // 중심부
+    ctx.beginPath(); ctx.arc(cx,cy,26,0,Math.PI*2);
+    ctx.fillStyle='#fbbf24'; ctx.shadowColor='#fbbf24'; ctx.shadowBlur=20; ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle='#888'; ctx.font='11px sans-serif'; ctx.fillText('중심부', cx-16, cy-34);
+    // 태양계 위치(나선팔 위 한 지점)
+    const sunAngle = 0.05*70 + Math.PI/2, sunR = 70*0.85;
+    const sx = cx + Math.cos(sunAngle)*sunR, sy = cy + Math.sin(sunAngle)*sunR*0.55;
+    ctx.beginPath(); ctx.arc(sx,sy,4,0,Math.PI*2); ctx.fillStyle='#38bdf8'; ctx.shadowColor='#38bdf8'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle='#38bdf8'; ctx.fillText('☀️ 태양계', sx+8, sy+4);
+  }
+}
+renderTabs(); renderInfo(); draw();
+
+const QUIZ = [
+  { q:'우리은하를 옆에서 바라본 모습에서, 중심부가 볼록하게 부풀어 있는 부분을 무엇이라 하는가?', opts:['원반부', '중심부(팽대부)', '나선팔', '헤일로'], answer:1, fb:'옆에서 볼 때 볼록하게 튀어나온 부분을 "중심부(팽대부)"라고 한다.' },
+  { q:'밤하늘에 길게 뻗은 은하수는 무엇을 바라본 모습인가?', opts:['다른 은하', '우리은하를 옆에서 본 원반부', '태양계 전체', '먼 별들의 집합'], answer:1, fb:'은하수는 우리은하의 원반부를 옆에서 바라본 모습이다.' },
+  { q:'우리은하를 위에서 보면 어떤 모양인가?', opts:['완전한 구형', '나선팔을 가진 소용돌이 모양', '평평한 원반 하나뿐', '불규칙한 조각 모양'], answer:1, fb:'위에서 보면 여러 개의 나선팔을 가진 소용돌이 모양이다.' },
+  { q:'태양계는 우리은하의 어디에 위치해 있는가?', opts:['은하의 정중앙', '나선팔 중 하나', '은하 바깥의 빈 공간', '중심부(팽대부)'], answer:1, fb:'태양계는 은하 중심이 아니라 나선팔 중 하나에 위치해 있다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

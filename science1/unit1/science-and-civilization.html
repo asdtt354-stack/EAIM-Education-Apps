@@ -52,6 +52,7 @@
 </style>
 </head>
 <body>
+<script src="../../self-check-room/shared/tracker.js"></script>
 
   <div class="topbar">
     <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅰ. 과학과 인류의 지속가능한 삶<span class="sep">/</span><b>과학과 인류 문명</b></div>
@@ -121,6 +122,7 @@ function renderQuiz(){
     card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
     area.appendChild(card);
   });
+  let quizAnswered=0, quizScore=0;
   area.querySelectorAll('.q-opt').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
@@ -131,6 +133,11 @@ function renderQuiz(){
       });
       const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
       fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+      quizAnswered++;
+      if (oi===item.answer) quizScore++;
+      if (quizAnswered===QUIZ.length && window.EAIM) {
+        EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '과학과 인류 문명', '퀴즈', quizScore+'/'+QUIZ.length+' 정답');
+      }
     });
   });
 }

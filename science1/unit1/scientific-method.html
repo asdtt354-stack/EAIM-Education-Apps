@@ -66,6 +66,7 @@
 </style>
 </head>
 <body>
+<script src="../../self-check-room/shared/tracker.js"></script>
 
   <div class="topbar">
     <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅰ. 과학과 인류의 지속가능한 삶<span class="sep">/</span><b>과학적 탐구 방법</b></div>
@@ -168,6 +169,11 @@ function checkVars(){
   fb.textContent = allCorrect
     ? '✅ 정답! 물을 주는 양(내가 직접 바꾸는 것)=조작변인, 식물의 키(그 결과로 측정하는 것)=종속변인, 나머지 조건들(같게 유지해야 하는 것)=통제변인이다.'
     : '❌ 다시 확인해 보자. 힌트: 내가 "직접 바꾸는" 것이 조작변인, "측정해서 관찰"하는 것이 종속변인, "같게 유지"해야 하는 것이 통제변인이다.';
+
+  if (window.EAIM) {
+    const answers = Array.from(selects).map(s => `${s.dataset.k}=${s.value}`).join(', ');
+    EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '과학적 탐구 방법', '변인 구분 활동', (allCorrect ? '✅ 정답' : '❌ 오답') + ' — ' + answers);
+  }
 }
 
 const QUIZ = [
@@ -184,6 +190,7 @@ function renderQuiz(){
     card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
     area.appendChild(card);
   });
+  let quizAnswered=0, quizScore=0;
   area.querySelectorAll('.q-opt').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
@@ -194,6 +201,11 @@ function renderQuiz(){
       });
       const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
       fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+      quizAnswered++;
+      if (oi===item.answer) quizScore++;
+      if (quizAnswered===QUIZ.length && window.EAIM) {
+        EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '과학적 탐구 방법', '퀴즈', quizScore+'/'+QUIZ.length+' 정답');
+      }
     });
   });
 }

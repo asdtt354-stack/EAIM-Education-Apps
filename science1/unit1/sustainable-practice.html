@@ -70,6 +70,7 @@
 </style>
 </head>
 <body>
+<script src="../../self-check-room/shared/tracker.js"></script>
 
   <div class="topbar">
     <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅰ. 과학과 인류의 지속가능한 삶<span class="sep">/</span><b>지속가능한 삶을 위한 실천</b></div>
@@ -149,6 +150,11 @@ function renderPractices(){
   else if (n>=5 && n<total) msg='정말 잘하고 있어요! 조금만 더! 🌳';
   else if (n===total) msg='완벽해요! 지속가능한 삶 실천 챔피언! 🏅';
   document.getElementById('progressMsg').textContent = msg;
+
+  if (n===total && window.EAIM && !window.__eaimChecklistLogged) {
+    window.__eaimChecklistLogged = true;
+    EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '지속가능한 삶을 위한 실천', '실천 체크리스트', `${total}/${total}개 항목 모두 다짐함`);
+  }
 }
 renderPractices();
 
@@ -163,6 +169,9 @@ function makeCard(){
     <div class="pp-text">"${text}"</div>
     <div class="pp-sign">— EAIM 과학 수업</div>
   `;
+  if (window.EAIM) {
+    EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '지속가능한 삶을 위한 실천', '나의 다짐 카드', `[${cat}] ${text}`);
+  }
 }
 
 const QUIZ = [
@@ -179,6 +188,7 @@ function renderQuiz(){
     card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
     area.appendChild(card);
   });
+  let quizAnswered=0, quizScore=0;
   area.querySelectorAll('.q-opt').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
@@ -189,6 +199,11 @@ function renderQuiz(){
       });
       const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
       fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+      quizAnswered++;
+      if (oi===item.answer) quizScore++;
+      if (quizAnswered===QUIZ.length && window.EAIM) {
+        EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '지속가능한 삶을 위한 실천', '퀴즈', quizScore+'/'+QUIZ.length+' 정답');
+      }
     });
   });
 }

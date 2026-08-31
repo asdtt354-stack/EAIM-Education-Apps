@@ -51,6 +51,7 @@
 </style>
 </head>
 <body>
+<script src="../../self-check-room/shared/tracker.js"></script>
 
   <div class="topbar">
     <div class="crumb"><b>과학1</b><span class="sep">/</span>Ⅰ. 과학과 인류의 지속가능한 삶<span class="sep">/</span><b>과학기술과 지속가능한 삶</b></div>
@@ -122,6 +123,9 @@ function pickSolution(el){
     el.classList.add('matched');
     matchedCount++;
     document.getElementById('matchStatus').textContent = matchedCount === PAIRS.length ? '🎉 모두 짝지었습니다! 잘했어요.' : '✅ 정답! 다음 문제도 짝지어 보자.';
+    if (matchedCount === PAIRS.length && window.EAIM) {
+      EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '과학기술과 지속가능한 삶', '매칭 활동', '환경문제-해결기술 4쌍 전체 매칭 완료');
+    }
   } else {
     el.classList.add('wrong');
     setTimeout(()=>el.classList.remove('wrong'), 500);
@@ -146,6 +150,7 @@ function renderQuiz(){
     card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
     area.appendChild(card);
   });
+  let quizAnswered=0, quizScore=0;
   area.querySelectorAll('.q-opt').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
@@ -156,6 +161,11 @@ function renderQuiz(){
       });
       const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
       fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+      quizAnswered++;
+      if (oi===item.answer) quizScore++;
+      if (quizAnswered===QUIZ.length && window.EAIM) {
+        EAIM.logActivity('Ⅰ. 과학과 인류의 지속가능한 삶', '과학기술과 지속가능한 삶', '퀴즈', quizScore+'/'+QUIZ.length+' 정답');
+      }
     });
   });
 }

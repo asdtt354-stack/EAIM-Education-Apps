@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>별의 색과 표면 온도 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#05060a; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(5,6,10,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #1c1e26; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #2c2e3a; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#f87171 15%,#fff 50%,#93c5fd 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:560px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:20px; padding:22px; text-align:center; }
+  #colorCanvas { background:#090a10; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:400px; margin:16px auto 0; text-align:center; }
+  input[type="range"] { width:100%; height:6px; }
+  .slider-scale { display:flex; justify-content:space-between; font-size:0.7em; color:#888; margin-top:4px; }
+  .temp-val { font-size:1.3em; font-weight:900; margin-top:10px; }
+
+  .star-wrap { max-width:900px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+  @media (max-width:700px) { .star-wrap { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:480px) { .star-wrap { grid-template-columns:repeat(2,1fr); } }
+  .star-card { background:#0d0e14; border:1.5px solid #1c1e26; border-radius:16px; padding:14px; text-align:center; }
+  .star-card .sc-dot { width:34px; height:34px; border-radius:50%; margin:0 auto 8px; }
+  .star-card .sc-name { font-weight:800; font-size:0.82em; margin-bottom:4px; }
+  .star-card .sc-temp { font-size:0.72em; color:#999; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#161821; border:1.5px solid #262832; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #262832; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #1c1e26; background:#0d0e14; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅷ. 별과 우주<span class="sep">/</span>1. 별의 특성<span class="sep">/</span><b>별의 색과 표면 온도</b></div>
+    <a class="hub-link" href="../unit8-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅷ-1-3 · 교과서 288쪽</div>
+    <h1>별의 색깔이<br>바로 온도계다</h1>
+    <p class="lead">밤하늘의 별을 자세히 보면 색깔이 조금씩 다르다. 이 색깔이 바로 별의 표면 온도를 알려주는 단서다. 온도 슬라이더로 별의 색이 어떻게 바뀌는지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>별의 색이 표면 온도에 따라 달라짐을 알고, 온도에 따른 별의 색 변화를 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>온도에 따른 별의 색</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="colorCanvas" width="200" height="180"></canvas>
+      <div class="slider-row">
+        <input type="range" id="tempSlider" min="3000" max="30000" value="6000" step="500">
+        <div class="slider-scale"><span>🔴 3,000K</span><span>🔵 30,000K</span></div>
+      </div>
+      <div class="temp-val" id="tempVal"></div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>실제 별들의 색과 온도</h2></div>
+  <div class="star-wrap">
+    <div class="star-card"><div class="sc-dot" style="background:#93c5fd;box-shadow:0 0 12px #93c5fd"></div><div class="sc-name">리겔</div><div class="sc-temp">약 12,000K · 파란색</div></div>
+    <div class="star-card"><div class="sc-dot" style="background:#e0f2fe;box-shadow:0 0 12px #e0f2fe"></div><div class="sc-name">시리우스</div><div class="sc-temp">약 9,900K · 흰색</div></div>
+    <div class="star-card"><div class="sc-dot" style="background:#fde68a;box-shadow:0 0 12px #fde68a"></div><div class="sc-name">태양</div><div class="sc-temp">약 5,800K · 노란색</div></div>
+    <div class="star-card"><div class="sc-dot" style="background:#fdba74;box-shadow:0 0 12px #fdba74"></div><div class="sc-name">알데바란</div><div class="sc-temp">약 3,900K · 주황색</div></div>
+    <div class="star-card"><div class="sc-dot" style="background:#f87171;box-shadow:0 0 12px #f87171"></div><div class="sc-name">베텔게우스</div><div class="sc-temp">약 3,500K · 붉은색</div></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="star-brightness.html"><span class="k">이전 소단원</span><span class="t">← 별의 밝기와 등급</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">우리은하의 구조와 크기 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 별과 우주</footer>
+
+<script>
+const canvas = document.getElementById('colorCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+function tempToColor(t){
+  // 3000K(빨강) ~ 30000K(파랑) 구간 보간
+  const ratio = Math.min(1, Math.max(0, (t-3000)/27000));
+  const r = Math.round(248 - ratio*(248-147));
+  const g = Math.round(113 + ratio*(197-113));
+  const b = Math.round(113 + ratio*(253-113));
+  return `rgb(${r},${g},${b})`;
+}
+function tempLabel(t){
+  if (t < 4000) return '🔴 붉은색 별 (저온)';
+  if (t < 6000) return '🟠 주황~노란색 별';
+  if (t < 8000) return '⚪ 흰색 별';
+  return '🔵 파란색 별 (고온)';
+}
+
+function draw(){
+  const t = +document.getElementById('tempSlider').value;
+  document.getElementById('tempVal').textContent = t.toLocaleString() + 'K · ' + tempLabel(t);
+  const color = tempToColor(t);
+
+  ctx.clearRect(0,0,W,H);
+  ctx.beginPath(); ctx.arc(W/2,H/2,44,0,Math.PI*2);
+  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 30; ctx.fill(); ctx.shadowBlur = 0;
+}
+document.getElementById('tempSlider').addEventListener('input', draw);
+draw();
+
+const QUIZ = [
+  { q:'별의 표면 온도가 높을수록 별의 색깔은 어떻게 보이는가?', opts:['붉은색에 가까워진다', '파란색에 가까워진다', '항상 흰색이다', '색깔과 온도는 관계없다'], answer:1, fb:'표면 온도가 높을수록 파란색에 가까운 별이 된다.' },
+  { q:'표면 온도가 가장 낮은 별의 색깔은?', opts:['파란색', '흰색', '노란색', '붉은색'], answer:3, fb:'표면 온도가 낮을수록 붉은색을 띤다.' },
+  { q:'태양의 표면 온도(약 5,800K)에 해당하는 별의 색깔은?', opts:['파란색', '흰색', '노란색', '붉은색'], answer:2, fb:'태양은 중간 정도의 표면 온도를 가져 노란색으로 보인다.' },
+  { q:'다음 중 표면 온도가 가장 높을 것으로 예상되는 별은?', opts:['베텔게우스(붉은색)', '태양(노란색)', '리겔(파란색)', '알데바란(주황색)'], answer:2, fb:'파란색 별인 리겔이 표면 온도가 가장 높다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

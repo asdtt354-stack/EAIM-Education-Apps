@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우주 탐사 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#05060a; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(5,6,10,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #1c1e26; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #2c2e3a; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .timeline-wrap { max-width:700px; margin:44px auto 0; padding:0 20px; position:relative; }
+  .timeline-wrap::before { content:''; position:absolute; left:38px; top:0; bottom:0; width:2px; background:#1c1e26; }
+  .tl-item { position:relative; padding-left:70px; margin-bottom:22px; cursor:pointer; }
+  .tl-dot { position:absolute; left:24px; top:2px; width:28px; height:28px; border-radius:50%; background:#0d0e14; border:2px solid var(--c); display:flex; align-items:center; justify-content:center; font-size:0.9em; z-index:1; }
+  .tl-card { background:#0d0e14; border:1.5px solid #1c1e26; border-radius:14px; padding:14px 16px; transition:all .25s; }
+  .tl-item.open .tl-card { border-color:var(--c); }
+  .tl-year { font-size:0.68em; font-weight:800; color:var(--c); margin-bottom:4px; }
+  .tl-title { font-weight:800; font-size:0.94em; margin-bottom:6px; }
+  .tl-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .tl-item.open .tl-detail { max-height:140px; padding-top:6px; border-top:1px dashed #262832; }
+  .tl-detail p { font-size:0.82em; color:#ccc; line-height:1.65; margin:0; }
+
+  .meaning-wrap { max-width:620px; margin:40px auto 0; padding:0 20px; }
+  .meaning-card { background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.28); border-radius:16px; padding:18px 22px; }
+  .meaning-card .mc-title { font-size:0.9em; font-weight:800; color:var(--main-color); margin-bottom:8px; }
+  .meaning-card ul { margin:0; padding-left:18px; font-size:0.84em; color:#cdeefd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#161821; border:1.5px solid #262832; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #262832; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #1c1e26; background:#0d0e14; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅷ. 별과 우주<span class="sep">/</span>2. 우리은하와 우주<span class="sep">/</span><b>우주 탐사</b></div>
+    <a class="hub-link" href="../unit8-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅷ-2-4 · 교과서 304쪽</div>
+    <h1>인류는<br>지구 밖으로 나아가고 있다</h1>
+    <p class="lead">최초의 인공위성부터 화성 탐사 로버까지, 인류는 끊임없이 우주로 발을 뻗어왔다. 타임라인을 눌러 우주 탐사의 주요 순간들을 살펴보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>인류의 주요 우주 탐사 역사를 알고, 우주 탐사가 갖는 의의를 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="timeline-wrap" id="timelineWrap"></div>
+
+  <div class="meaning-wrap">
+    <div class="meaning-card">
+      <div class="mc-title">🚀 우주 탐사의 의의</div>
+      <ul>
+        <li>우주와 지구의 기원, 생명체의 존재 가능성 등 과학적 궁금증을 해결하는 데 도움을 준다.</li>
+        <li>우주 탐사 과정에서 개발된 기술(GPS, 위성통신, 신소재 등)이 실생활에 활용된다.</li>
+        <li>지구 밖 자원 탐색과 미래 우주 개발의 기반을 마련한다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="expanding-universe.html"><span class="k">이전 소단원</span><span class="t">← 팽창하는 우주</span></a>
+    <span class="nav-btn next disabled"><span class="t">과학2 Ⅷ단원 완료 🎉</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 별과 우주 · Ⅷ단원 완료 🎉</footer>
+
+<script>
+const TIMELINE = [
+  { year:'1957년', icon:'🛰️', c:'#38bdf8', title:'스푸트니크 1호 발사', body:'인류 최초의 인공위성이 발사되어 지구 주위를 도는 데 성공하며 우주 탐사 시대를 열었다.' },
+  { year:'1961년', icon:'🧑‍🚀', c:'#a855f7', title:'최초의 유인 우주비행', body:'유리 가가린이 인류 최초로 우주선을 타고 지구 궤도를 도는 데 성공했다.' },
+  { year:'1969년', icon:'🌕', c:'#fbbf24', title:'아폴로 11호, 달 착륙', body:'인류가 처음으로 달 표면에 발을 내디딘 역사적인 순간이었다.' },
+  { year:'1990년', icon:'🔭', c:'#f472b6', title:'허블 우주망원경 발사', body:'대기의 방해 없이 우주를 관측할 수 있는 우주망원경으로, 수많은 우주 사진과 자료를 보내왔다.' },
+  { year:'2000년대~', icon:'🏗️', c:'#34d399', title:'국제우주정거장(ISS) 운영', body:'여러 나라가 협력해 우주에 건설한 정거장으로, 우주인들이 장기간 머무르며 다양한 실험을 수행한다.' },
+  { year:'현재', icon:'🔴', c:'#f87171', title:'화성 탐사 로버', body:'화성 표면을 직접 탐사하는 로버들이 화성의 토양과 대기를 분석하며 생명체 존재 가능성을 조사하고 있다.' },
+];
+let openIdx = null;
+function render(){
+  const wrap = document.getElementById('timelineWrap');
+  wrap.innerHTML = TIMELINE.map((t,i) => `
+    <div class="tl-item ${openIdx===i?'open':''}" style="--c:${t.c}" data-i="${i}">
+      <div class="tl-dot">${t.icon}</div>
+      <div class="tl-card">
+        <div class="tl-year">${t.year}</div>
+        <div class="tl-title">${t.title}</div>
+        <div class="tl-detail"><p>${t.body}</p></div>
+      </div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.tl-item').forEach(item => {
+    item.addEventListener('click', () => { const i=+item.dataset.i; openIdx = openIdx===i?null:i; render(); });
+  });
+}
+render();
+
+const QUIZ = [
+  { q:'인류 최초의 인공위성으로, 1957년에 발사된 것은?', opts:['아폴로 11호', '스푸트니크 1호', '허블 우주망원경', '보이저 1호'], answer:1, fb:'1957년 발사된 "스푸트니크 1호"가 인류 최초의 인공위성이다.' },
+  { q:'인류가 처음으로 달 표면에 착륙한 우주선은?', opts:['스푸트니크 1호', '아폴로 11호', '보이저 2호', '허블 우주망원경'], answer:1, fb:'1969년 아폴로 11호가 인류 최초로 달에 착륙했다.' },
+  { q:'대기의 방해 없이 우주를 관측할 수 있도록 우주 공간에 띄운 망원경은?', opts:['화성 탐사 로버', '국제우주정거장', '허블 우주망원경', '스푸트니크 1호'], answer:2, fb:'허블 우주망원경은 대기의 방해를 받지 않고 선명하게 우주를 관측할 수 있다.' },
+  { q:'우주 탐사의 의의로 보기 어려운 것은?', opts:['과학적 궁금증 해결에 도움을 줌', '실생활에 활용되는 기술 개발로 이어짐', '지구 자원을 대체할 우주 자원 탐색에 기여함', '지구의 자전 속도를 빠르게 함'], answer:3, fb:'우주 탐사는 지구의 자전 속도와는 관련이 없다. 나머지는 모두 실제 우주 탐사의 의의이다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

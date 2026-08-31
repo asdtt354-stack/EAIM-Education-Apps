@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>밀도 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; }
+  .canvas-row { display:flex; justify-content:center; }
+  #densityCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .sliders-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:18px; }
+  .slider-block .sb-label { font-size:0.8em; font-weight:700; color:#ccc; margin-bottom:6px; text-align:center; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+  .sb-val { text-align:center; font-size:0.78em; color:#999; margin-top:4px; }
+  .formula-row { text-align:center; margin-top:18px; font-size:1.1em; font-weight:800; }
+  .formula-row .density-val { color:var(--main-color); }
+  .float-msg { text-align:center; margin-top:10px; font-size:0.88em; font-weight:800; }
+  .float-msg.float { color:#38bdf8; } .float-msg.sink { color:#fb923c; }
+
+  .table-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .density-table { width:100%; border-collapse:collapse; font-size:0.85em; }
+  .density-table th, .density-table td { padding:9px 12px; text-align:left; border-bottom:1px solid #262022; }
+  .density-table th { color:#888; font-weight:700; font-size:0.85em; }
+  .density-table td.dv { color:var(--main-color); font-weight:700; text-align:right; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅰ. 물질의 특성<span class="sep">/</span>1. 물질의 특성<span class="sep">/</span><b>밀도</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-1-1 · 교과서 16쪽</div>
+    <h1>같은 크기라도<br>무게는 다르다</h1>
+    <p class="lead">쇠공과 스티로폼 공은 크기가 같아도 무게가 다르다. 이 차이를 나타내는 값이 바로 밀도다. 질량과 부피를 조절하며 밀도를 직접 계산하고, 물에 뜨고 가라앉는지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>밀도의 뜻을 알고 질량과 부피로부터 밀도를 계산할 수 있으며, 밀도를 이용해 물질을 구별할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>밀도 계산기</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <div class="canvas-row"><canvas id="densityCanvas" width="260" height="200"></canvas></div>
+      <div class="sliders-row">
+        <div class="slider-block">
+          <div class="sb-label">질량 (g)</div>
+          <input type="range" id="massSlider" min="10" max="300" value="100">
+          <div class="sb-val" id="massVal">100 g</div>
+        </div>
+        <div class="slider-block">
+          <div class="sb-label">부피 (mL)</div>
+          <input type="range" id="volSlider" min="10" max="300" value="100">
+          <div class="sb-val" id="volVal">100 mL</div>
+        </div>
+      </div>
+      <div class="formula-row">밀도 = 질량 ÷ 부피 = <span class="density-val" id="densityVal">1.00</span> g/mL</div>
+      <div class="float-msg" id="floatMsg"></div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>물질마다 다른 고유한 밀도</h2></div>
+  <div class="table-wrap">
+    <table class="density-table">
+      <tr><th>물질</th><th style="text-align:right">밀도(g/mL)</th></tr>
+      <tr><td>나무(참나무 기준)</td><td class="dv">0.6~0.9</td></tr>
+      <tr><td>얼음</td><td class="dv">0.92</td></tr>
+      <tr><td>물</td><td class="dv">1.00</td></tr>
+      <tr><td>알루미늄</td><td class="dv">2.70</td></tr>
+      <tr><td>철</td><td class="dv">7.87</td></tr>
+      <tr><td>금</td><td class="dv">19.3</td></tr>
+    </table>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">용해도 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 특성</footer>
+
+<script>
+const canvas = document.getElementById('densityCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const waterTop = 60;
+
+function draw(){
+  const mass = +document.getElementById('massSlider').value;
+  const vol = +document.getElementById('volSlider').value;
+  const density = mass/vol;
+
+  document.getElementById('massVal').textContent = mass + ' g';
+  document.getElementById('volVal').textContent = vol + ' mL';
+  document.getElementById('densityVal').textContent = density.toFixed(2);
+
+  ctx.clearRect(0,0,W,H);
+  // 물
+  ctx.fillStyle = 'rgba(56,189,248,0.18)';
+  ctx.fillRect(10, waterTop, W-20, H-waterTop-10);
+  ctx.strokeStyle='#38bdf8'; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(10,waterTop); ctx.lineTo(W-10,waterTop); ctx.stroke(); ctx.setLineDash([]);
+
+  const floats = density < 1.0;
+  const size = Math.max(20, Math.min(70, vol*0.35));
+  const targetY = floats ? waterTop-6 : H-10-size/2;
+  const color = density < 1 ? '#a3e635' : (density < 3 ? '#fb923c' : '#94a3b8');
+
+  ctx.fillStyle = color; ctx.shadowColor=color; ctx.shadowBlur=10;
+  ctx.fillRect(W/2-size/2, targetY-size/2, size, size);
+  ctx.shadowBlur=0;
+
+  const msg = document.getElementById('floatMsg');
+  if (Math.abs(density-1.0) < 0.02) { msg.className='float-msg'; msg.style.color='#fbbf24'; msg.textContent='⚖️ 물과 밀도가 거의 같아 중간에 떠 있다.'; }
+  else if (floats) { msg.className='float-msg float'; msg.textContent='🟢 밀도가 물(1.00)보다 작아 물에 뜬다.'; }
+  else { msg.className='float-msg sink'; msg.textContent='🟠 밀도가 물(1.00)보다 커서 가라앉는다.'; }
+}
+document.getElementById('massSlider').addEventListener('input', draw);
+document.getElementById('volSlider').addEventListener('input', draw);
+draw();
+
+const QUIZ = [
+  { q:'밀도를 구하는 식으로 옳은 것은?', opts:['밀도 = 질량 × 부피', '밀도 = 질량 ÷ 부피', '밀도 = 부피 ÷ 질량', '밀도 = 질량 + 부피'], answer:1, fb:'밀도는 질량을 부피로 나눈 값이다.' },
+  { q:'질량이 200g이고 부피가 100mL인 물체의 밀도는?', opts:['0.5 g/mL', '2 g/mL', '20 g/mL', '100 g/mL'], answer:1, fb:'200 ÷ 100 = 2 g/mL이다.' },
+  { q:'어떤 물체의 밀도가 물(1.00 g/mL)보다 작을 때, 이 물체는 물에서 어떻게 되는가?', opts:['가라앉는다', '뜬다', '녹는다', '증발한다'], answer:1, fb:'밀도가 물보다 작으면 물에 뜬다.' },
+  { q:'밀도를 이용해 알 수 있는 것으로 가장 알맞은 것은?', opts:['물질의 색깔', '물질의 온도', '물질의 종류 구별', '물질의 맛'], answer:2, fb:'물질마다 밀도가 고유하기 때문에, 밀도를 측정하면 어떤 물질인지 구별하는 데 도움이 된다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

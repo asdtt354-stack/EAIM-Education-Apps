@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>별까지의 거리 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#05060a; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(5,6,10,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #1c1e26; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #2c2e3a; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .sim-wrap { max-width:700px; margin:40px auto 0; padding:0 20px; }
+  .sim-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:20px; padding:22px; text-align:center; }
+  #parallaxCanvas { background:#090a10; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:440px; margin:16px auto 0; text-align:center; }
+  .slider-row .sl-label { font-size:0.82em; color:#999; margin-bottom:8px; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+  .readout-row { display:flex; justify-content:center; gap:26px; margin-top:14px; flex-wrap:wrap; }
+  .ro-item .rv { font-size:1.2em; font-weight:900; color:var(--main-color); } .ro-item .rl { font-size:0.72em; color:#888; }
+
+  .apparent-wrap { max-width:500px; margin:20px auto 0; }
+  .apparent-title { font-size:0.78em; color:#999; margin-bottom:8px; text-align:center; }
+  .apparent-box { background:#090a10; border:1px solid #1c1e26; border-radius:12px; padding:10px; display:flex; justify-content:center; gap:6px; }
+
+  .concept-wrap { max-width:700px; margin:40px auto 0; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px) { .concept-wrap { grid-template-columns:1fr; } }
+  .concept-card { background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.28); border-radius:16px; padding:16px 18px; }
+  .concept-card .cc-title { font-size:0.86em; font-weight:800; color:var(--main-color); margin-bottom:8px; }
+  .concept-card p { margin:0; font-size:0.8em; color:#cdeefd; line-height:1.7; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#0d0e14; border:1px solid #1c1e26; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#161821; border:1.5px solid #262832; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #262832; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #1c1e26; background:#0d0e14; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅷ. 별과 우주<span class="sep">/</span>1. 별의 특성<span class="sep">/</span><b>별까지의 거리</b></div>
+    <a class="hub-link" href="../unit8-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅷ-1-1 · 교과서 282쪽</div>
+    <h1>손가락을 눈앞에 두고<br>양쪽 눈을 번갈아 감아보면</h1>
+    <p class="lead">손가락이 배경에 대해 살짝 움직여 보인다. 지구가 태양 주위를 공전하면서, 가까운 별도 이와 똑같은 원리로 배경 별들에 대해 위치가 조금씩 달라져 보인다. 이 원리로 별까지의 거리를 잰다.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>연주시차의 원리를 설명하고, 연주시차와 별까지의 거리 사이의 관계를 말할 수 있다.</p></div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="parallaxCanvas" width="500" height="260"></canvas>
+      <div class="slider-row">
+        <div class="sl-label">별까지의 거리</div>
+        <input type="range" id="distSlider" min="20" max="100" value="40">
+      </div>
+      <div class="readout-row">
+        <div class="ro-item"><div class="rv" id="distVal">-</div><div class="rl">상대적 거리</div></div>
+        <div class="ro-item"><div class="rv" id="angleVal">-</div><div class="rl">연주시차(모식도상 각도)</div></div>
+      </div>
+
+      <div class="apparent-wrap">
+        <div class="apparent-title">배경 별에 대한 겉보기 위치 (1월 vs 7월)</div>
+        <div class="apparent-box"><canvas id="apparentCanvas" width="200" height="90"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept-wrap">
+    <div class="concept-card"><div class="cc-title">📐 연주시차</div><p>지구가 공전 궤도의 양쪽 끝에 있을 때, 가까운 별이 멀리 있는 배경 별들에 대해 위치가 달라 보이는 것을 이용해 측정한 각도의 절반이다.</p></div>
+    <div class="concept-card"><div class="cc-title">📏 거리와의 관계</div><p>별이 가까울수록 연주시차는 커지고, 별이 멀수록 연주시차는 작아진다. 즉 거리와 연주시차는 반비례 관계이다.</p></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">별의 밝기와 등급 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 별과 우주</footer>
+
+<script>
+const canvas = document.getElementById('parallaxCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const sunX = 90, sunY = H/2, orbitR = 34;
+
+function draw(){
+  const distSlider = +document.getElementById('distSlider').value;
+  const starX = 140 + distSlider * 3.2;
+  const starY = H/2;
+
+  ctx.clearRect(0,0,W,H);
+
+  // 배경 고정별
+  ctx.fillStyle = '#333';
+  for (let i=0;i<25;i++){
+    const x = 260 + (i%5)*50 + (i*13%20);
+    const y = 30 + Math.floor(i/5)*45 + (i*7%15);
+    ctx.beginPath(); ctx.arc(x,y,1.3,0,Math.PI*2); ctx.fill();
+  }
+
+  // 태양
+  ctx.beginPath(); ctx.arc(sunX,sunY,10,0,Math.PI*2);
+  ctx.fillStyle='#fbbf24'; ctx.shadowColor='#fbbf24'; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+
+  // 지구 궤도
+  ctx.strokeStyle='#1c1e26'; ctx.setLineDash([2,3]);
+  ctx.beginPath(); ctx.arc(sunX,sunY,orbitR,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+
+  // 지구 위치 A(1월), B(7월)
+  const earthAx = sunX, earthAy = sunY-orbitR;
+  const earthBx = sunX, earthBy = sunY+orbitR;
+  [[earthAx,earthAy,'A(1월)'], [earthBx,earthBy,'B(7월)']].forEach(([ex,ey,label]) => {
+    ctx.beginPath(); ctx.arc(ex,ey,6,0,Math.PI*2);
+    ctx.fillStyle='#38bdf8'; ctx.fill();
+    ctx.fillStyle='#888'; ctx.font='10px sans-serif'; ctx.fillText(label, ex+10, ey+3);
+  });
+
+  // 별
+  ctx.beginPath(); ctx.arc(starX,starY,8,0,Math.PI*2);
+  ctx.fillStyle='#f472b6'; ctx.shadowColor='#f472b6'; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+  ctx.fillStyle='#888'; ctx.font='10px sans-serif'; ctx.fillText('가까운 별', starX-14, starY+22);
+
+  // 시선 A, B → 별
+  ctx.strokeStyle='rgba(56,189,248,0.5)'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(earthAx,earthAy); ctx.lineTo(starX,starY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(earthBx,earthBy); ctx.lineTo(starX,starY); ctx.stroke();
+
+  // 각도 계산(모식도용)
+  const angA = Math.atan2(starY-earthAy, starX-earthAx);
+  const angB = Math.atan2(starY-earthBy, starX-earthBx);
+  const parallax = Math.abs(angA-angB) * 180/Math.PI / 2;
+
+  document.getElementById('distVal').textContent = distSlider;
+  document.getElementById('angleVal').textContent = parallax.toFixed(2) + '°';
+
+  drawApparent(parallax);
+}
+
+function drawApparent(parallax){
+  const ac = document.getElementById('apparentCanvas');
+  const actx = ac.getContext('2d');
+  const AW = ac.width, AH = ac.height;
+  actx.clearRect(0,0,AW,AH);
+  // 배경 별
+  actx.fillStyle = '#333';
+  for (let i=0;i<14;i++){
+    const x = 10 + (i%7)*27, y = 15 + Math.floor(i/7)*40;
+    actx.beginPath(); actx.arc(x,y,1.3,0,Math.PI*2); actx.fill();
+  }
+  // 별의 겉보기 위치 두 개 (parallax가 클수록 더 벌어지게 과장)
+  const shift = Math.min(40, parallax*18);
+  const cx = AW/2, cy = AH/2;
+  actx.beginPath(); actx.arc(cx-shift/2,cy,4,0,Math.PI*2); actx.fillStyle='rgba(244,114,182,0.9)'; actx.fill();
+  actx.beginPath(); actx.arc(cx+shift/2,cy,4,0,Math.PI*2); actx.fillStyle='rgba(244,114,182,0.4)'; actx.fill();
+  actx.strokeStyle='#f472b6'; actx.setLineDash([2,2]);
+  actx.beginPath(); actx.moveTo(cx-shift/2,cy); actx.lineTo(cx+shift/2,cy); actx.stroke(); actx.setLineDash([]);
+}
+
+document.getElementById('distSlider').addEventListener('input', draw);
+draw();
+
+const QUIZ = [
+  { q:'지구가 공전 궤도의 양쪽 끝에 있을 때, 가까운 별이 배경 별들에 대해 위치가 달라 보이는 것을 이용한 각도를 무엇이라 하는가?', opts:['적경', '연주시차', '광년', '등급'], answer:1, fb:'이렇게 측정한 각도의 절반을 "연주시차"라고 한다.' },
+  { q:'별까지의 거리와 연주시차의 관계로 옳은 것은?', opts:['거리가 멀수록 연주시차도 커진다', '거리가 멀수록 연주시차는 작아진다', '거리와 연주시차는 관계가 없다', '거리가 가까울수록 연주시차는 0이 된다'], answer:1, fb:'별이 멀수록 연주시차는 작아진다. 거리와 연주시차는 반비례 관계이다.' },
+  { q:'연주시차가 큰 별과 작은 별 중, 지구에서 더 가까운 별은?', opts:['연주시차가 큰 별', '연주시차가 작은 별', '둘 다 같은 거리', '알 수 없다'], answer:0, fb:'연주시차가 클수록 그 별은 지구에서 더 가까운 별이다.' },
+  { q:'연주시차를 이용해 별까지의 거리를 측정할 수 있는 근본적인 까닭은?', opts:['별이 스스로 움직이기 때문에', '지구가 태양 주위를 공전하기 때문에', '별의 밝기가 변하기 때문에', '태양이 자전하기 때문에'], answer:1, fb:'지구가 공전하면서 관측 위치가 달라지기 때문에 가까운 별의 겉보기 위치 변화(연주시차)를 측정할 수 있다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

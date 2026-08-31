@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>끓는점 차를 이용한 분리 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#f43f5e; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fda4af 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:460px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #distillCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:340px; margin:16px auto 0; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+  .temp-val { font-size:1.2em; font-weight:900; color:var(--main-color); margin-top:10px; }
+  .status-msg { font-size:0.84em; font-weight:700; margin-top:8px; min-height:36px; line-height:1.5; }
+
+  .example-wrap { max-width:780px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  @media (max-width:560px) { .example-wrap { grid-template-columns:1fr; } }
+  .ex-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:18px; }
+  .ex-card .ex-icon { font-size:1.8em; margin-bottom:8px; }
+  .ex-card .ex-title { font-weight:800; font-size:0.9em; margin-bottom:6px; }
+  .ex-card .ex-desc { font-size:0.8em; color:#999; line-height:1.7; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅰ. 물질의 특성<span class="sep">/</span>2. 혼합물의 분리<span class="sep">/</span><b>끓는점 차를 이용한 분리</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-2-4 · 교과서 38쪽</div>
+    <h1>먼저 끓는 쪽이<br>먼저 떠난다</h1>
+    <p class="lead">물과 에탄올이 섞인 혼합물을 가열하면, 끓는점이 낮은 에탄올(78°C)이 물(100°C)보다 먼저 끓어 증기로 날아간다. 이 증기를 냉각기로 식혀 다시 액체로 모으는 방법이 "증류"다.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>증류의 원리를 이해하고, 끓는점 차이를 이용해 액체 혼합물을 분리하는 과정을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>증류 장치로 물과 에탄올 분리하기</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="distillCanvas" width="240" height="220"></canvas>
+      <div class="slider-row">
+        <input type="range" id="tempSlider" min="20" max="100" value="20">
+      </div>
+      <div class="temp-val" id="tempVal">20°C</div>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>일상 속 증류</h2></div>
+  <div class="example-wrap">
+    <div class="ex-card"><div class="ex-icon">🍶</div><div class="ex-title">소주 증류</div><div class="ex-desc">발효액을 가열하면 끓는점이 낮은 에탄올이 먼저 증발해, 이를 모아 알코올 농도가 높은 소주를 얻는다.</div></div>
+    <div class="ex-card"><div class="ex-icon">⛽</div><div class="ex-title">원유의 분별증류</div><div class="ex-desc">원유를 가열해 끓는점이 낮은 순서대로 휘발유, 등유, 경유 등 여러 성분으로 나누어 분리한다.</div></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="solubility-separation.html"><span class="k">이전 소단원</span><span class="t">← 용해도 차를 이용한 분리</span></a>
+    <a class="nav-btn next" href="multiple-separation-methods.html"><span class="k">다음 소단원</span><span class="t">여러 가지 방법으로 혼합물 분리하기 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 특성</footer>
+
+<script>
+const canvas = document.getElementById('distillCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const ethanolBP = 78, waterBP = 100;
+let collected = 0;
+
+function draw(){
+  const temp = +document.getElementById('tempSlider').value;
+  document.getElementById('tempVal').textContent = temp + '°C';
+
+  ctx.clearRect(0,0,W,H);
+
+  // 가열 플라스크(왼쪽)
+  const fx = 50, fy = 150;
+  ctx.strokeStyle='#4a4a4c'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(fx,fy,32,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(fx-8,fy-30); ctx.lineTo(fx-8,fy-50); ctx.lineTo(fx+8,fy-50); ctx.lineTo(fx+8,fy-30); ctx.stroke();
+  ctx.fillStyle='rgba(168,85,247,0.18)';
+  ctx.beginPath(); ctx.arc(fx,fy+6,26,0,Math.PI*2); ctx.fill();
+
+  // 냉각기(가운데 관)
+  ctx.strokeStyle='#4a4a4c';
+  ctx.beginPath(); ctx.moveTo(fx+8,fy-50); ctx.lineTo(120,fy-70); ctx.lineTo(170,fy-70); ctx.stroke();
+
+  // 받는 용기(오른쪽)
+  const rx = 190, ry = 170;
+  ctx.beginPath(); ctx.moveTo(rx-16,ry-30); ctx.lineTo(rx-16,ry+20); ctx.lineTo(rx+16,ry+20); ctx.lineTo(rx+16,ry-30); ctx.stroke();
+
+  // 증기 표시(끓는점 도달 시)
+  let vaporLabel = '';
+  if (temp >= ethanolBP && temp < waterBP) { vaporLabel = '에탄올 증기'; }
+  else if (temp >= waterBP) { vaporLabel = '물 증기(에탄올은 이미 대부분 분리됨)'; }
+
+  if (temp >= ethanolBP) {
+    ctx.fillStyle = temp < waterBP ? '#fbbf24' : '#38bdf8';
+    ctx.font='10px sans-serif';
+    ctx.fillText('～ ' + vaporLabel + ' ～', 60, fy-58);
+    collected = Math.min(30, collected + 0.3);
+  } else {
+    collected = Math.max(0, collected - 0.5);
+  }
+
+  // 받는 용기에 모인 액체
+  const liqColor = temp < waterBP ? 'rgba(251,191,36,0.5)' : 'rgba(56,189,248,0.5)';
+  ctx.fillStyle = liqColor;
+  ctx.fillRect(rx-16, ry+20-collected, 32, collected);
+
+  const msg = document.getElementById('statusMsg');
+  if (temp < ethanolBP) msg.textContent = '아직 끓는점에 도달하지 않았다. 계속 가열해 보자.';
+  else if (temp < waterBP) msg.textContent = `🟡 78°C를 넘어서 에탄올이 먼저 끓어 증기가 되고, 냉각기를 거쳐 받는 용기에 모이고 있다.`;
+  else msg.textContent = `🔵 100°C에 가까워지며 물도 끓기 시작한다. 에탄올은 이미 대부분 먼저 분리되었다.`;
+}
+document.getElementById('tempSlider').addEventListener('input', draw);
+draw();
+
+const QUIZ = [
+  { q:'끓는점 차이를 이용해 액체 혼합물을 분리하는 방법을 무엇이라 하는가?', opts:['재결정', '증류', '거름', '밀도 분리'], answer:1, fb:'끓는점 차이를 이용해 액체 혼합물을 분리하는 방법이 "증류"이다.' },
+  { q:'물(끓는점 100°C)과 에탄올(끓는점 78°C) 혼합물을 가열할 때, 어느 것이 먼저 끓어 증발하는가?', opts:['물', '에탄올', '둘 다 동시에', '알 수 없다'], answer:1, fb:'끓는점이 더 낮은 에탄올이 먼저 끓어 증발한다.' },
+  { q:'증류 장치에서 증기를 다시 액체로 만들어 모으는 역할을 하는 부분은?', opts:['가열 플라스크', '냉각기', '온도계만', '거름종이'], answer:1, fb:'냉각기가 뜨거운 증기를 식혀 다시 액체로 만들어 모을 수 있게 한다.' },
+  { q:'원유를 가열해 휘발유, 등유, 경유 등으로 나누는 과정에서 이용하는 원리는?', opts:['밀도 차이', '용해도 차이', '끓는점 차이', '색깔 차이'], answer:2, fb:'원유의 성분들은 끓는점이 서로 달라, 끓는점 순서대로 분리하는 분별증류를 이용한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

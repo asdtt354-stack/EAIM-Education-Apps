@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>순물질과 혼합물 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:700px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sort-wrap { max-width:700px; margin:0 auto; padding:0 20px; }
+  .sort-instruct { text-align:center; color:#999; font-size:0.84em; margin-bottom:18px; }
+  .sort-item { display:flex; align-items:center; gap:12px; background:#121012; border:1.5px solid #262022; border-radius:12px; padding:12px 16px; margin-bottom:8px; }
+  .sort-item .si-name { flex:1; font-size:0.88em; font-weight:700; }
+  .sort-item .si-btns { display:flex; gap:6px; }
+  .si-btn { border:1.5px solid #2f2f31; background:#1a1a1c; color:#ccc; padding:7px 12px; border-radius:8px; font-size:0.78em; font-weight:700; cursor:pointer; }
+  .si-btn.correct { border-color:#34d399; background:rgba(52,211,153,0.14); color:#a7f3d0; }
+  .si-btn.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.14); color:#fda4af; }
+  .si-btn:disabled { cursor:default; }
+  .sort-progress { text-align:center; margin-top:14px; font-size:0.84em; color:#999; }
+
+  .mix-wrap { max-width:700px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px) { .mix-wrap { grid-template-columns:1fr; } }
+  .mix-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:18px; }
+  .mix-card .mc-title { font-weight:800; font-size:0.92em; margin-bottom:8px; }
+  .mix-card p { margin:0 0 8px; font-size:0.82em; color:#ccc; line-height:1.65; }
+  .mix-card .mc-eg { font-size:0.76em; color:#999; }
+
+  .graph-wrap { max-width:620px; margin:0 auto; padding:0 20px; }
+  .graph-card { background:#121012; border:1px solid #262022; border-radius:16px; padding:18px; text-align:center; }
+  #compareCanvas { background:#0f1720; border-radius:12px; max-width:100%; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅰ. 물질의 특성<span class="sep">/</span>2. 혼합물의 분리<span class="sep">/</span><b>순물질과 혼합물</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-2-1 · 교과서 32쪽</div>
+    <h1>우리 주변 대부분은<br>사실 순수하지 않다</h1>
+    <p class="lead">물, 소금물, 공기, 우유... 이 중 정말 "한 가지 물질"로만 이루어진 것은 몇 개일까? 물질을 하나씩 눌러 순물질인지 혼합물인지 직접 분류해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>순물질과 혼합물의 차이를 알고, 혼합물을 균일 혼합물과 불균일 혼합물로 구분할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>순물질일까, 혼합물일까?</h2></div>
+  <div class="sort-wrap">
+    <div class="sort-instruct">각 물질이 순물질인지 혼합물인지 골라보자.</div>
+    <div id="sortArea"></div>
+    <div class="sort-progress" id="sortProgress"></div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>혼합물의 두 종류</h2></div>
+  <div class="mix-wrap">
+    <div class="mix-card">
+      <div class="mc-title" style="color:#38bdf8">💧 균일 혼합물</div>
+      <p>어느 부분을 살펴봐도 성분 물질이 고르게 섞여 있는 혼합물이다.</p>
+      <div class="mc-eg">예 · 소금물, 공기, 사이다</div>
+    </div>
+    <div class="mix-card">
+      <div class="mc-title" style="color:#fb923c">🪨 불균일 혼합물</div>
+      <p>부분마다 성분 물질의 비율이 다르게 섞여 있는 혼합물이다.</p>
+      <div class="mc-eg">예 · 흙탕물, 화강암, 우유(현미경 관찰 시)</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">03</div><h2>가열할 때 나타나는 차이</h2></div>
+  <div class="graph-wrap">
+    <div class="graph-card">
+      <canvas id="compareCanvas" width="480" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="melting-boiling-point.html"><span class="k">이전 소단원</span><span class="t">← 녹는점과 끓는점</span></a>
+    <a class="nav-btn next" href="density-separation.html"><span class="k">다음 소단원</span><span class="t">밀도 차를 이용한 분리 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 특성</footer>
+
+<script>
+const SUBSTANCES = [
+  { name:'물(증류수)', answer:'pure' },
+  { name:'소금물', answer:'mix' },
+  { name:'산소', answer:'pure' },
+  { name:'공기', answer:'mix' },
+  { name:'흙탕물', answer:'mix' },
+  { name:'금(순금)', answer:'pure' },
+];
+let sortCorrect = 0;
+
+function renderSort(){
+  const area = document.getElementById('sortArea');
+  area.innerHTML = SUBSTANCES.map((s,i) => `
+    <div class="sort-item">
+      <div class="si-name">${s.name}</div>
+      <div class="si-btns">
+        <button class="si-btn" data-i="${i}" data-v="pure">순물질</button>
+        <button class="si-btn" data-i="${i}" data-v="mix">혼합물</button>
+      </div>
+    </div>
+  `).join('');
+  area.querySelectorAll('.si-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = +btn.dataset.i, v = btn.dataset.v;
+      const s = SUBSTANCES[i];
+      const siblings = area.querySelectorAll(`.si-btn[data-i="${i}"]`);
+      siblings.forEach(b => b.disabled = true);
+      if (v === s.answer) { btn.classList.add('correct'); sortCorrect++; }
+      else {
+        btn.classList.add('wrong');
+        area.querySelector(`.si-btn[data-i="${i}"][data-v="${s.answer}"]`).classList.add('correct');
+      }
+      document.getElementById('sortProgress').textContent = `맞힌 개수: ${sortCorrect} / ${SUBSTANCES.length}`;
+    });
+  });
+}
+renderSort();
+
+const canvas = document.getElementById('compareCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const padL=44, padR=14, padT=16, padB=26;
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#333'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
+  ctx.fillStyle='#666'; ctx.font='10px sans-serif';
+  ctx.fillText('온도', 6, padT+2);
+  ctx.fillText('가열 시간 →', W-padR-58, H-8);
+
+  // 순물질: 평평한 구간이 뚜렷한 계단형
+  ctx.strokeStyle='#38bdf8'; ctx.lineWidth=2.2; ctx.beginPath();
+  ctx.moveTo(padL, H-padB-20);
+  ctx.lineTo(padL+90, H-padB-70);
+  ctx.lineTo(padL+150, H-padB-70); // 평평(끓는점 일정)
+  ctx.lineTo(padL+220, H-padB-140);
+  ctx.stroke();
+
+  // 혼합물: 완만하게 계속 오르며 뚜렷한 평평 구간 없음
+  ctx.strokeStyle='#fb923c'; ctx.lineWidth=2.2; ctx.beginPath();
+  ctx.moveTo(padL, H-padB-10);
+  ctx.quadraticCurveTo(padL+120, H-padB-90, padL+240, H-padB-150);
+  ctx.stroke();
+
+  ctx.fillStyle='#38bdf8'; ctx.font='11px sans-serif'; ctx.fillText('순물질(예: 물) — 끓는점에서 온도 일정', padL+10, padT+16);
+  ctx.fillStyle='#fb923c'; ctx.fillText('혼합물 — 일정한 온도 구간 없이 계속 변함', padL+10, padT+32);
+}
+draw();
+
+const QUIZ = [
+  { q:'한 종류의 물질로만 이루어진 것을 무엇이라 하는가?', opts:['혼합물', '순물질', '균일 혼합물', '불균일 혼합물'], answer:1, fb:'한 종류의 물질로만 이루어진 것을 "순물질"이라고 한다.' },
+  { q:'다음 중 순물질인 것은?', opts:['소금물', '공기', '산소', '흙탕물'], answer:2, fb:'산소는 한 종류의 물질로만 이루어진 순물질이다. 나머지는 모두 혼합물이다.' },
+  { q:'어느 부분을 봐도 성분이 고르게 섞여 있는 혼합물을 무엇이라 하는가?', opts:['순물질', '균일 혼합물', '불균일 혼합물', '화합물'], answer:1, fb:'성분이 고르게 섞인 혼합물을 "균일 혼합물"이라고 한다.' },
+  { q:'순물질과 혼합물을 가열할 때 나타나는 차이로 옳은 것은?', opts:['순물질만 온도가 변한다', '순물질은 끓는점에서 온도가 일정하게 유지되지만, 혼합물은 일정한 온도 구간이 뚜렷하지 않다', '혼합물만 상태가 변한다', '둘 다 완전히 같은 그래프를 그린다'], answer:1, fb:'순물질은 끓는점에서 온도가 일정하게 유지되는 뚜렷한 구간이 나타나지만, 혼합물은 그런 구간 없이 온도가 계속 변한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

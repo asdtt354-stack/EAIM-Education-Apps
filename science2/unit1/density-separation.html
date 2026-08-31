@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>밀도 차를 이용한 분리 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:400px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #funnelCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .go-btn { border:none; background:var(--main-color); color:#04222b; font-weight:800; padding:11px 22px; border-radius:12px; font-size:0.86em; cursor:pointer; margin-top:14px; }
+  .go-btn:disabled { opacity:0.5; cursor:default; }
+  .sim-note { font-size:0.8em; color:#999; margin-top:10px; line-height:1.6; }
+  .status-msg { margin-top:10px; font-size:0.84em; font-weight:700; min-height:20px; }
+
+  .example-wrap { max-width:780px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:600px) { .example-wrap { grid-template-columns:1fr; } }
+  .ex-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:16px; text-align:center; }
+  .ex-card .ex-icon { font-size:1.8em; margin-bottom:8px; }
+  .ex-card .ex-title { font-weight:800; font-size:0.86em; margin-bottom:6px; }
+  .ex-card .ex-desc { font-size:0.76em; color:#999; line-height:1.6; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅰ. 물질의 특성<span class="sep">/</span>2. 혼합물의 분리<span class="sep">/</span><b>밀도 차를 이용한 분리</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-2-2 · 교과서 34쪽</div>
+    <h1>섞이지 않는 두 액체는<br>층을 이루며 나뉜다</h1>
+    <p class="lead">물과 식용유를 함께 넣으면 서로 섞이지 않고 밀도가 큰 물이 아래, 기름이 위로 층을 이룬다. 분별깔때기의 꼭지를 열어 두 액체를 분리해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>밀도 차이를 이용해 섞이지 않는 액체나 물에 뜨고 가라앉는 고체 혼합물을 분리하는 방법을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>분별깔때기로 물과 기름 분리하기</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="funnelCanvas" width="200" height="260"></canvas>
+      <button class="go-btn" id="drainBtn" onclick="startDrain()">🚰 꼭지 열기</button>
+      <div class="status-msg" id="statusMsg"></div>
+      <div class="sim-note">밀도가 큰 물이 아래층에 있으므로, 꼭지를 열면 물부터 빠져나온다. 물이 다 빠지면 꼭지를 잠가 위층의 기름만 따로 남길 수 있다.</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>일상 속 밀도 차 분리</h2></div>
+  <div class="example-wrap">
+    <div class="ex-card"><div class="ex-icon">✨</div><div class="ex-title">사금 채취</div><div class="ex-desc">강모래를 물속에서 흔들면 밀도가 큰 금 알갱이가 바닥에 가라앉아 분리된다.</div></div>
+    <div class="ex-card"><div class="ex-icon">🩸</div><div class="ex-title">혈액 성분 분리</div><div class="ex-desc">원심분리기로 혈액을 빠르게 돌리면 밀도 차이로 혈장과 혈구가 층을 이루며 분리된다.</div></div>
+    <div class="ex-card"><div class="ex-icon">♻️</div><div class="ex-title">폐식용유 분리</div><div class="ex-desc">폐식용유는 물보다 밀도가 작아 물 위에 뜨므로, 위층만 걷어내 따로 모을 수 있다.</div></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="pure-vs-mixture.html"><span class="k">이전 소단원</span><span class="t">← 순물질과 혼합물</span></a>
+    <a class="nav-btn next" href="solubility-separation.html"><span class="k">다음 소단원</span><span class="t">용해도 차를 이용한 분리 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 특성</footer>
+
+<script>
+const canvas = document.getElementById('funnelCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let waterLevel = 1.0; // 1.0 = 가득, 0 = 없음
+let draining = false;
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const funnelTop = 20, funnelBottom = 190, funnelWidth = 140;
+  const cx = W/2;
+
+  // 깔때기 몸통(사다리꼴)
+  ctx.strokeStyle = '#4a4a4c'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx-funnelWidth/2, funnelTop);
+  ctx.lineTo(cx+funnelWidth/2, funnelTop);
+  ctx.lineTo(cx+10, funnelBottom);
+  ctx.lineTo(cx-10, funnelBottom);
+  ctx.closePath();
+  ctx.stroke();
+  // 꼭지 관
+  ctx.strokeRect(cx-6, funnelBottom, 12, 24);
+
+  // 액체 층(클립)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx-funnelWidth/2, funnelTop);
+  ctx.lineTo(cx+funnelWidth/2, funnelTop);
+  ctx.lineTo(cx+10, funnelBottom);
+  ctx.lineTo(cx-10, funnelBottom);
+  ctx.closePath();
+  ctx.clip();
+
+  const totalH = funnelBottom-funnelTop;
+  const oilH = totalH*0.35;
+  const waterH = totalH*0.65*waterLevel;
+  const liquidBottom = funnelBottom - (totalH*0.65 - waterH); // 물이 빠지면 液面이 내려감(실제로는 기름이 내려앉음 표현 단순화)
+
+  // 기름층(항상 위, 살짝 아래로 내려앉는 것처럼)
+  const oilTopY = funnelBottom - waterH - oilH;
+  ctx.fillStyle = 'rgba(251,191,36,0.55)';
+  ctx.fillRect(cx-funnelWidth/2, oilTopY, funnelWidth, oilH);
+
+  // 물층(아래, 빠지면서 줄어듦)
+  ctx.fillStyle = 'rgba(56,189,248,0.55)';
+  ctx.fillRect(cx-funnelWidth/2, funnelBottom-waterH, funnelWidth, waterH);
+
+  ctx.restore();
+
+  ctx.fillStyle = '#fbbf24'; ctx.font='10px sans-serif'; ctx.fillText('기름', cx+funnelWidth/2+6, oilTopY+oilH/2+4);
+  ctx.fillStyle = '#38bdf8'; ctx.fillText('물', cx+funnelWidth/2+6, funnelBottom-waterH/2+4);
+
+  // 빠져나가는 물방울
+  if (draining && waterLevel > 0) {
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath(); ctx.arc(cx, funnelBottom+30, 3, 0, Math.PI*2); ctx.fill();
+  }
+}
+draw();
+
+function startDrain(){
+  const btn = document.getElementById('drainBtn');
+  btn.disabled = true;
+  draining = true;
+  document.getElementById('statusMsg').textContent = '💧 물이 빠져나가고 있어요...';
+  const iv = setInterval(() => {
+    waterLevel -= 0.02;
+    if (waterLevel <= 0) { waterLevel = 0; clearInterval(iv); draining=false;
+      document.getElementById('statusMsg').style.color = '#fbbf24';
+      document.getElementById('statusMsg').textContent = '✅ 물이 다 빠졌다! 이제 기름만 남았으니 꼭지를 잠그면 분리 완료.';
+      btn.textContent = '↺ 다시 채우기'; btn.disabled = false;
+      btn.onclick = () => { waterLevel = 1.0; draw(); document.getElementById('statusMsg').textContent=''; btn.textContent='🚰 꼭지 열기'; btn.onclick=startDrain; };
+    }
+    draw();
+  }, 60);
+}
+
+const QUIZ = [
+  { q:'섞이지 않는 두 액체를 밀도 차이를 이용해 층으로 분리할 때 사용하는 실험 기구는?', opts:['시험관', '분별깔때기', '리비히 냉각기', '증발접시'], answer:1, fb:'꼭지를 열어 아래층 액체만 따로 뺄 수 있는 기구가 "분별깔때기"이다.' },
+  { q:'물과 식용유를 함께 넣으면 어느 것이 위층에 뜨는가?', opts:['물', '식용유', '둘 다 섞인다', '알 수 없다'], answer:1, fb:'식용유는 물보다 밀도가 작아 위층에 뜬다.' },
+  { q:'스타이로폼 알갱이와 모래가 섞인 혼합물을 물에 넣었을 때 분리되는 원리는?', opts:['색깔 차이', '밀도 차이', '온도 차이', '맛의 차이'], answer:1, fb:'스타이로폼은 물보다 밀도가 작아 뜨고, 모래는 밀도가 커서 가라앉아 분리된다.' },
+  { q:'강모래에서 사금(금 알갱이)을 채취할 때 이용하는 원리는?', opts:['용해도 차이', '밀도 차이', '끓는점 차이', '색깔 차이'], answer:1, fb:'금은 밀도가 매우 커서 강모래와 함께 물속에서 흔들면 바닥에 가라앉아 분리된다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

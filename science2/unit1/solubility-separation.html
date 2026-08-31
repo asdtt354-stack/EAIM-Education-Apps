@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>용해도 차를 이용한 분리 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#a855f7; --bg-dark:#0a0708; --accent:#38bdf8; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#c4b5fd 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .graph-wrap { max-width:560px; margin:0 auto; padding:0 20px; }
+  .graph-card { background:#121012; border:1px solid #262022; border-radius:16px; padding:18px; text-align:center; }
+  #curveCanvas { background:#0f1720; border-radius:12px; max-width:100%; }
+  .legend-row { display:flex; justify-content:center; gap:20px; margin-top:10px; font-size:0.78em; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:12px; height:12px; border-radius:3px; }
+
+  .sim-wrap { max-width:400px; margin:34px auto 0; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #beakerCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:340px; margin:16px auto 0; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+  .temp-val { font-size:1.15em; font-weight:900; color:var(--main-color); margin-top:10px; }
+  .status-msg { font-size:0.84em; font-weight:700; margin-top:8px; min-height:20px; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅰ. 물질의 특성<span class="sep">/</span>2. 혼합물의 분리<span class="sep">/</span><b>용해도 차를 이용한 분리</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-2-3 · 교과서 36쪽</div>
+    <h1>식히기만 해도<br>순수한 결정이 생긴다</h1>
+    <p class="lead">불순물이 섞인 질산칼륨을 뜨거운 물에 녹인 뒤 서서히 식히면, 질산칼륨만 결정으로 다시 나타난다. 이렇게 온도에 따른 용해도 차이를 이용해 순물질을 얻는 방법을 "재결정"이라고 한다.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>재결정의 원리를 이해하고, 온도에 따른 용해도 차이를 이용해 혼합물에서 순물질을 분리하는 과정을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>두 물질의 용해도 곡선 비교</h2></div>
+  <div class="graph-wrap">
+    <div class="graph-card">
+      <canvas id="curveCanvas" width="440" height="220"></canvas>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>질산칼륨(온도에 민감)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#38bdf8"></span>소금(온도 영향 적음)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>냉각하며 재결정 과정 확인하기</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="beakerCanvas" width="180" height="200"></canvas>
+      <div class="slider-row">
+        <input type="range" id="tempSlider" min="0" max="80" value="80">
+      </div>
+      <div class="temp-val" id="tempVal">80°C</div>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="density-separation.html"><span class="k">이전 소단원</span><span class="t">← 밀도 차를 이용한 분리</span></a>
+    <a class="nav-btn next" href="boiling-point-separation.html"><span class="k">다음 소단원</span><span class="t">끓는점 차를 이용한 분리 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 특성</footer>
+
+<script>
+function kno3Sol(t){ return 15 + t*1.6 + t*t*0.006; } // 온도에 민감
+function saltSol(t){ return 35 + t*0.06; } // 온도에 거의 영향 없음
+
+const gcanvas = document.getElementById('curveCanvas');
+const gctx = gcanvas.getContext('2d');
+const GW = gcanvas.width, GH = gcanvas.height;
+const padL=44, padR=14, padT=16, padB=26;
+
+function drawCurves(temp){
+  gctx.clearRect(0,0,GW,GH);
+  gctx.strokeStyle='#333'; gctx.lineWidth=1;
+  gctx.beginPath(); gctx.moveTo(padL,padT); gctx.lineTo(padL,GH-padB); gctx.lineTo(GW-padR,GH-padB); gctx.stroke();
+  gctx.fillStyle='#666'; gctx.font='10px sans-serif';
+  gctx.fillText('용해도(g)', 4, padT+2);
+  gctx.fillText('온도(°C) →', GW-padR-56, GH-8);
+
+  const yMax=180;
+  const xFor = t => padL + (t/80)*(GW-padL-padR);
+  const yFor = s => (GH-padB) - (s/yMax)*(GH-padB-padT);
+
+  [[kno3Sol,'#a855f7'],[saltSol,'#38bdf8']].forEach(([fn,color]) => {
+    gctx.strokeStyle=color; gctx.lineWidth=2.2; gctx.beginPath();
+    for (let t=0;t<=80;t+=2){
+      const x=xFor(t), y=yFor(fn(t));
+      if (t===0) gctx.moveTo(x,y); else gctx.lineTo(x,y);
+    }
+    gctx.stroke();
+  });
+
+  // 현재 온도 세로선
+  gctx.strokeStyle='#f43f5e'; gctx.setLineDash([3,3]);
+  gctx.beginPath(); gctx.moveTo(xFor(temp),padT); gctx.lineTo(xFor(temp),GH-padB); gctx.stroke(); gctx.setLineDash([]);
+}
+
+const bcanvas = document.getElementById('beakerCanvas');
+const bctx = bcanvas.getContext('2d');
+const BW = bcanvas.width, BH = bcanvas.height;
+const kno3Amount = 80, saltAmount = 20;
+
+function drawBeaker(temp){
+  const kno3Cap = kno3Sol(temp);
+  const kno3Dissolved = Math.min(kno3Amount, kno3Cap);
+  const kno3Crystal = Math.max(0, kno3Amount - kno3Cap);
+
+  bctx.clearRect(0,0,BW,BH);
+  bctx.strokeStyle='#4a4a4c'; bctx.lineWidth=2;
+  bctx.beginPath(); bctx.moveTo(14,16); bctx.lineTo(14,BH-14); bctx.lineTo(BW-14,BH-14); bctx.lineTo(BW-14,16); bctx.stroke();
+
+  const waterTop = 34;
+  bctx.fillStyle='rgba(168,85,247,0.10)';
+  bctx.fillRect(18,waterTop,BW-36,BH-waterTop-16);
+
+  // 녹아있는 소금(파랑 점, 항상 다 녹아있음)
+  bctx.fillStyle='#38bdf8';
+  for (let i=0;i<10;i++){
+    const x=24+(i*15)%(BW-48), y=waterTop+14+Math.floor(i/((BW-48)/15))*16;
+    bctx.beginPath(); bctx.arc(x,y,1.8,0,Math.PI*2); bctx.fill();
+  }
+  // 녹아있는 질산칼륨(보라 점, 온도 낮을수록 적어짐)
+  const kno3Ratio = kno3Dissolved/kno3Amount;
+  const numDots = Math.round(kno3Ratio*14);
+  bctx.fillStyle='#a855f7';
+  for (let i=0;i<numDots;i++){
+    const x=30+(i*17)%(BW-60), y=waterTop+28+Math.floor(i/((BW-60)/17))*16;
+    bctx.beginPath(); bctx.arc(x,y,2.2,0,Math.PI*2); bctx.fill();
+  }
+  // 석출된 결정(바닥, 보라 사각형들)
+  if (kno3Crystal > 0){
+    const pileH = Math.min(28, kno3Crystal*0.4);
+    bctx.fillStyle='#a855f7';
+    bctx.fillRect(20, BH-16-pileH, BW-40, pileH);
+    bctx.strokeStyle='#c4b5fd';
+    for (let i=0;i<6;i++){ bctx.strokeRect(24+i*22, BH-16-pileH+3, 8,8); }
+  }
+
+  const msg = document.getElementById('statusMsg');
+  if (kno3Crystal > 5) { msg.style.color='#a855f7'; msg.textContent = `🟣 질산칼륨 결정 ${kno3Crystal.toFixed(0)}g이 석출되었다! (소금은 계속 녹아 있음)`; }
+  else { msg.style.color='#34d399'; msg.textContent = '✅ 아직 뜨거워서 둘 다 완전히 녹아 있다.'; }
+}
+
+document.getElementById('tempSlider').addEventListener('input', (e) => {
+  const t = +e.target.value;
+  document.getElementById('tempVal').textContent = t + '°C';
+  drawCurves(t); drawBeaker(t);
+});
+drawCurves(80); drawBeaker(80);
+
+const QUIZ = [
+  { q:'온도에 따른 용해도 차이를 이용해 혼합물에서 순물질을 얻는 방법을 무엇이라 하는가?', opts:['증류', '재결정', '거름', '밀도 분리'], answer:1, fb:'온도에 따른 용해도 차이를 이용한 분리 방법을 "재결정"이라고 한다.' },
+  { q:'재결정이 잘 일어나려면 두 물질 사이에 어떤 조건이 필요한가?', opts:['색깔이 같아야 한다', '온도에 따른 용해도 차이가 뚜렷해야 한다', '끓는점이 같아야 한다', '부피가 같아야 한다'], answer:1, fb:'온도가 낮아질 때 용해도가 크게 줄어드는 물질과, 거의 변하지 않는 물질이 함께 있어야 재결정으로 잘 분리된다.' },
+  { q:'질산칼륨과 소금이 섞인 뜨거운 용액을 식히면 어떤 물질이 먼저 결정으로 석출되는가?', opts:['소금', '질산칼륨', '둘 다 동시에', '둘 다 석출되지 않는다'], answer:1, fb:'질산칼륨은 온도에 따라 용해도가 크게 변하므로, 온도가 낮아지면 먼저 결정으로 석출된다.' },
+  { q:'재결정으로 석출된 결정을 용액에서 순수하게 걸러내려면 다음에 어떤 과정을 거쳐야 하는가?', opts:['다시 가열한다', '거름(여과)한다', '증발시킨다', '냉동시킨다'], answer:1, fb:'석출된 고체 결정을 액체와 분리하려면 거름종이로 걸러내는 "거름(여과)" 과정을 거친다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>용해도 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .sim-wrap { max-width:780px; margin:40px auto 0; padding:0 20px; display:grid; grid-template-columns:220px 1fr; gap:20px; }
+  @media (max-width:640px) { .sim-wrap { grid-template-columns:1fr; } }
+  .beaker-card { background:#121012; border:1px solid #262022; border-radius:18px; padding:16px; text-align:center; }
+  #beakerCanvas { background:#0f1720; border-radius:12px; max-width:100%; }
+  .graph-card { background:#121012; border:1px solid #262022; border-radius:18px; padding:18px; }
+  #curveCanvas { background:#0f1720; border-radius:12px; max-width:100%; }
+
+  .slider-row { max-width:600px; margin:18px auto 0; padding:0 20px; }
+  .slider-row .sl-label { font-size:0.82em; color:#999; margin-bottom:8px; text-align:center; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+  .readout-row { display:flex; justify-content:center; gap:30px; margin-top:14px; flex-wrap:wrap; }
+  .ro-item .rv { font-size:1.2em; font-weight:900; color:var(--main-color); } .ro-item .rl { font-size:0.72em; color:#888; }
+  .status-msg { text-align:center; margin-top:10px; font-size:0.85em; font-weight:700; }
+  .status-msg.unsat { color:#34d399; } .status-msg.sat { color:#fbbf24; }
+
+  .concept-wrap { max-width:620px; margin:36px auto 0; padding:0 20px; }
+  .concept-card { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:18px 22px; }
+  .concept-card ul { margin:0; padding-left:18px; font-size:0.85em; color:#ddd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅰ. 물질의 특성<span class="sep">/</span>1. 물질의 특성<span class="sep">/</span><b>용해도</b></div>
+    <a class="hub-link" href="../unit1-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅰ-1-2 · 교과서 20쪽</div>
+    <h1>물은 온도에 따라<br>녹일 수 있는 양이 다르다</h1>
+    <p class="lead">따뜻한 물에는 설탕이 잘 녹지만, 차가운 물에는 잘 녹지 않는다. 온도 슬라이더를 움직여 물이 녹일 수 있는 최대량(용해도)이 어떻게 달라지는지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>용해도의 뜻을 알고, 온도에 따라 물질의 용해도가 달라짐을 용해도 곡선을 통해 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="sim-wrap">
+    <div class="beaker-card">
+      <canvas id="beakerCanvas" width="180" height="220"></canvas>
+    </div>
+    <div class="graph-card">
+      <canvas id="curveCanvas" width="440" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="slider-row">
+    <div class="sl-label">온도</div>
+    <input type="range" id="tempSlider" min="0" max="100" value="40">
+  </div>
+  <div class="readout-row">
+    <div class="ro-item"><div class="rv" id="tempVal">40°C</div><div class="rl">온도</div></div>
+    <div class="ro-item"><div class="rv" id="solVal">-</div><div class="rl">최대 용해도(물 100g당)</div></div>
+  </div>
+  <div class="status-msg" id="statusMsg"></div>
+
+  <div class="concept-wrap">
+    <div class="concept-card">
+      <ul>
+        <li><b>용해도</b>란 일정한 온도에서 용매 100g에 최대로 녹을 수 있는 용질의 g수를 말한다.</li>
+        <li>대부분의 고체 물질은 온도가 높을수록 용해도가 <b>커진다.</b></li>
+        <li>용질을 최대한 녹여 더 이상 녹을 수 없는 상태를 <b>포화 상태</b>라고 한다.</li>
+        <li>포화 용액을 식히면 온도가 낮아지며 줄어든 용해도만큼 녹아 있던 용질이 결정으로 석출된다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="density.html"><span class="k">이전 소단원</span><span class="t">← 밀도</span></a>
+    <a class="nav-btn next" href="melting-boiling-point.html"><span class="k">다음 소단원</span><span class="t">녹는점과 끓는점 →</span></a>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 특성</footer>
+
+<script>
+// 임의의 물질(질산칼륨과 비슷한 형태)의 용해도 곡선: 온도가 오를수록 급격히 증가
+function solubilityAt(temp){ return 15 + temp*1.1 + (temp*temp)*0.004; }
+
+const bcanvas = document.getElementById('beakerCanvas');
+const bctx = bcanvas.getContext('2d');
+const BW = bcanvas.width, BH = bcanvas.height;
+const solidAmount = 90; // 넣어준 용질의 양(g, 고정)
+
+function drawBeaker(){
+  const temp = +document.getElementById('tempSlider').value;
+  const sol = solubilityAt(temp);
+  document.getElementById('tempVal').textContent = temp + '°C';
+  document.getElementById('solVal').textContent = sol.toFixed(1) + ' g';
+
+  const dissolved = Math.min(solidAmount, sol);
+  const undissolved = Math.max(0, solidAmount - sol);
+  const saturated = undissolved > 0;
+
+  const msg = document.getElementById('statusMsg');
+  if (saturated) { msg.className='status-msg sat'; msg.textContent=`⚠️ 포화 상태: ${undissolved.toFixed(1)}g이 녹지 못하고 바닥에 가라앉아 있다.`; }
+  else { msg.className='status-msg unsat'; msg.textContent=`✅ 넣어준 용질 ${solidAmount}g이 모두 녹았다.`; }
+
+  bctx.clearRect(0,0,BW,BH);
+  // 비커
+  ctx_beaker_outline();
+  // 물
+  const waterTop = 40;
+  bctx.fillStyle = 'rgba(56,189,248,0.15)';
+  bctx.fillRect(20, waterTop, BW-40, BH-waterTop-16);
+
+  // 녹아있는 입자(파란 점)
+  const dissolvedRatio = dissolved/solidAmount;
+  const numDots = Math.round(dissolvedRatio*30);
+  bctx.fillStyle = '#38bdf8';
+  for (let i=0;i<numDots;i++){
+    const x = 26 + (i*13)%(BW-52);
+    const y = waterTop+14 + Math.floor(i/((BW-52)/13))*16;
+    bctx.beginPath(); bctx.arc(x,y,2.2,0,Math.PI*2); bctx.fill();
+  }
+
+  // 바닥에 가라앉은 결정(주황)
+  if (undissolved > 0) {
+    const pileH = Math.min(30, undissolved*0.35);
+    bctx.fillStyle = '#fbbf24';
+    bctx.fillRect(22, BH-16-pileH, BW-44, pileH);
+  }
+}
+function ctx_beaker_outline(){
+  bctx.strokeStyle = '#4a4a4c'; bctx.lineWidth=2;
+  bctx.beginPath();
+  bctx.moveTo(16,20); bctx.lineTo(16,BH-14); bctx.lineTo(BW-16,BH-14); bctx.lineTo(BW-16,20);
+  bctx.stroke();
+}
+document.getElementById('tempSlider').addEventListener('input', () => { drawBeaker(); drawCurve(); });
+
+const gcanvas = document.getElementById('curveCanvas');
+const gctx = gcanvas.getContext('2d');
+const GW = gcanvas.width, GH = gcanvas.height;
+const padL=44, padR=14, padT=14, padB=28;
+
+function drawCurve(){
+  const temp = +document.getElementById('tempSlider').value;
+  gctx.clearRect(0,0,GW,GH);
+  gctx.strokeStyle='#333'; gctx.lineWidth=1;
+  gctx.beginPath(); gctx.moveTo(padL,padT); gctx.lineTo(padL,GH-padB); gctx.lineTo(GW-padR,GH-padB); gctx.stroke();
+  gctx.fillStyle='#666'; gctx.font='10px sans-serif';
+  gctx.fillText('용해도(g)', 4, padT+2);
+  gctx.fillText('온도(°C) →', GW-padR-56, GH-8);
+
+  const yMax=160;
+  const xFor = t => padL + (t/100)*(GW-padL-padR);
+  const yFor = s => (GH-padB) - (s/yMax)*(GH-padB-padT);
+
+  gctx.strokeStyle='#38bdf8'; gctx.lineWidth=2.2; gctx.beginPath();
+  for (let t=0;t<=100;t+=2){
+    const s = solubilityAt(t);
+    const x = xFor(t), y = yFor(s);
+    if (t===0) gctx.moveTo(x,y); else gctx.lineTo(x,y);
+  }
+  gctx.stroke();
+
+  // 현재 위치
+  const curSol = solubilityAt(temp);
+  const cx = xFor(temp), cy = yFor(curSol);
+  gctx.beginPath(); gctx.arc(cx,cy,5,0,Math.PI*2);
+  gctx.fillStyle='#f43f5e'; gctx.shadowColor='#f43f5e'; gctx.shadowBlur=8; gctx.fill(); gctx.shadowBlur=0;
+}
+
+drawBeaker(); drawCurve();
+
+const QUIZ = [
+  { q:'용해도의 정의로 가장 알맞은 것은?', opts:['용질이 녹는 데 걸리는 시간', '일정 온도에서 용매 100g에 최대로 녹을 수 있는 용질의 g수', '용액의 색깔 변화 정도', '용매와 용질의 부피 합'], answer:1, fb:'용해도는 일정 온도에서 용매 100g에 최대로 녹을 수 있는 용질의 양(g)이다.' },
+  { q:'대부분의 고체 물질은 온도가 높아질수록 용해도가 어떻게 되는가?', opts:['작아진다', '커진다', '변화 없다', '0이 된다'], answer:1, fb:'대부분의 고체는 온도가 높을수록 용해도가 커져 더 많이 녹는다.' },
+  { q:'용질이 최대한 녹아 더 이상 녹을 수 없는 상태를 무엇이라 하는가?', opts:['불포화 상태', '포화 상태', '과냉각 상태', '증발 상태'], answer:1, fb:'더 이상 용질이 녹지 못하는 상태를 "포화 상태"라고 한다.' },
+  { q:'포화 용액을 식히면 어떤 일이 일어나는가?', opts:['용질이 더 많이 녹는다', '줄어든 용해도만큼 용질이 결정으로 석출된다', '용매가 사라진다', '아무 변화도 없다'], answer:1, fb:'온도를 낮추면 용해도가 줄어들어, 그만큼의 용질이 다시 결정 형태로 석출된다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

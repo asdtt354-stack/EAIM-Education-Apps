@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>광물과 토양 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#a3e635; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#bef264 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .mineral-wrap { max-width:900px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:700px) { .mineral-wrap { grid-template-columns:repeat(2,1fr); } }
+  .m-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:14px; text-align:center; }
+  .m-card .m-swatch { width:40px; height:40px; border-radius:10px; margin:0 auto 8px; }
+  .m-card .m-name { font-weight:800; font-size:0.86em; margin-bottom:6px; }
+  .m-card .m-desc { font-size:0.72em; color:#999; line-height:1.6; }
+
+  .soil-wrap { max-width:640px; margin:0 auto; padding:0 20px; display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+  .soil-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:20px; text-align:center; flex-shrink:0; }
+  #soilCanvas { cursor:pointer; }
+  .soil-detail { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; flex:1; min-width:220px; }
+  .soil-detail h3 { margin:0 0 8px; font-size:1.05em; }
+  .soil-detail p { font-size:0.82em; color:#bbb; line-height:1.75; margin:0; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅱ. 지권의 변화<span class="sep">/</span>1. 지권의 구성<span class="sep">/</span><b>광물과 토양</b></div>
+    <a class="hub-link" href="../unit2-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅱ-1-3 · 교과서 64쪽</div>
+    <h1>암석을 쪼개면<br>더 작은 알갱이가 나온다</h1>
+    <p class="lead">암석을 이루는 작은 알갱이를 광물이라고 한다. 그리고 이 광물이 풍화되어 부서지고 생물의 흔적이 더해지면 토양이 된다. 조암광물과 토양의 층상 구조를 살펴보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>지각을 구성하는 주요 조암광물의 특징을 알고, 토양이 만들어지는 과정과 층상 구조를 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>지각을 이루는 주요 광물(조암광물)</h2></div>
+  <div class="mineral-wrap" id="mineralWrap"></div>
+
+  <div class="section-head"><div class="num">02</div><h2>토양의 층상 구조</h2></div>
+  <div class="soil-wrap">
+    <div class="soil-card"><canvas id="soilCanvas" width="180" height="260"></canvas></div>
+    <div class="soil-detail" id="soilDetail"></div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="rock-classification.html"><span class="k">이전 소단원</span><span class="t">← 암석의 분류와 이용</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">대륙 이동과 판구조론 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 지권의 변화</footer>
+
+<script>
+const MINERALS = [
+  { color:'#e5e7eb', name:'석영', desc:'무색투명하거나 흰색을 띠며 매우 단단하다.' },
+  { color:'#fecaca', name:'장석', desc:'분홍빛이나 흰빛을 띠며 지각에 가장 많이 분포한다.' },
+  { color:'#292524', name:'흑운모', desc:'검은색을 띠며 얇은 판 모양으로 잘 쪼개진다.' },
+  { color:'#166534', name:'각섬석', desc:'짙은 녹색이나 검은색을 띠며 긴 기둥 모양의 결정을 이룬다.' },
+];
+document.getElementById('mineralWrap').innerHTML = MINERALS.map(m => `
+  <div class="m-card"><div class="m-swatch" style="background:${m.color}"></div><div class="m-name">${m.name}</div><div class="m-desc">${m.desc}</div></div>
+`).join('');
+
+const SOIL_LAYERS = [
+  { key:'a', name:'A층 (표토층)', yTop:20, yBottom:80, color:'#78350f',
+    body:'부식질(썩은 생물의 잔해)이 풍부해 색이 짙고 검다. 식물의 뿌리가 많이 분포한다.' },
+  { key:'b', name:'B층 (집적층)', yTop:80, yBottom:160, color:'#a16207',
+    body:'A층에서 빗물에 씻겨 내려온 물질이 쌓이는 층으로, 점토질 성분이 많다.' },
+  { key:'c', name:'C층 (모질층)', yTop:160, yBottom:220, color:'#ca8a04',
+    body:'기반암이 풍화되어 부서지기 시작한 층으로, 아직 암석 조각이 남아 있다.' },
+  { key:'r', name:'기반암', yTop:220, yBottom:260, color:'#57534e',
+    body:'토양이 만들어지기 전, 풍화되지 않은 원래의 단단한 암석층이다.' },
+];
+let selectedSoil = 'b';
+
+const scanvas = document.getElementById('soilCanvas');
+const sctx = scanvas.getContext('2d');
+const SW = scanvas.width, SH = scanvas.height;
+
+function drawSoil(){
+  sctx.clearRect(0,0,SW,SH);
+  SOIL_LAYERS.forEach(l => {
+    sctx.fillStyle = l.color;
+    sctx.globalAlpha = l.key===selectedSoil ? 1 : 0.55;
+    sctx.fillRect(20, l.yTop, SW-40, l.yBottom-l.yTop);
+    sctx.globalAlpha = 1;
+    sctx.strokeStyle = '#0a0708'; sctx.lineWidth=1.5;
+    sctx.strokeRect(20, l.yTop, SW-40, l.yBottom-l.yTop);
+  });
+}
+function renderSoilDetail(){
+  const l = SOIL_LAYERS.find(x=>x.key===selectedSoil);
+  document.getElementById('soilDetail').innerHTML = `<h3 style="color:${l.color}">${l.name}</h3><p>${l.body}</p>`;
+}
+scanvas.addEventListener('click', (e) => {
+  const rect = scanvas.getBoundingClientRect();
+  const y = (e.clientY-rect.top)*(SH/rect.height);
+  const hit = SOIL_LAYERS.find(l => y>=l.yTop && y<=l.yBottom);
+  if (hit) { selectedSoil = hit.key; drawSoil(); renderSoilDetail(); }
+});
+drawSoil(); renderSoilDetail();
+
+const QUIZ = [
+  { q:'무색투명하거나 흰색을 띠며 매우 단단한 조암광물은?', opts:['흑운모', '석영', '각섬석', '장석'], answer:1, fb:'무색투명하고 단단한 광물은 "석영"이다.' },
+  { q:'지각에 가장 많이 분포하는 조암광물로, 분홍빛이나 흰빛을 띠는 것은?', opts:['석영', '흑운모', '장석', '각섬석'], answer:2, fb:'지각에 가장 많이 분포하는 광물은 "장석"이다.' },
+  { q:'부식질이 풍부해 색이 짙고 식물 뿌리가 많이 분포하는 토양층은?', opts:['A층', 'B층', 'C층', '기반암'], answer:0, fb:'가장 위쪽의 "A층"에 부식질이 풍부하다.' },
+  { q:'토양이 만들어지기 전, 풍화되지 않은 원래의 단단한 암석을 무엇이라 하는가?', opts:['A층', 'B층', 'C층', '기반암'], answer:3, fb:'풍화가 시작되기 전의 원래 암석층을 "기반암"이라고 한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

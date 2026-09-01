@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>암석의 분류와 이용 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#fb923c; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fdba74 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .tab-row { max-width:500px; margin:0 auto; display:flex; gap:8px; padding:0 20px; }
+  .tab-btn { flex:1; border:1.5px solid #2a2a2c; background:#141215; color:#999; padding:11px 8px; border-radius:12px; font-size:0.85em; font-weight:800; cursor:pointer; }
+  .tab-btn.on { border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, #141215); color:#fff; }
+
+  .rock-shell { max-width:700px; margin:16px auto 0; padding:0 20px; }
+  .rock-form { text-align:center; font-size:0.86em; color:#ccc; margin-bottom:16px; padding:12px 16px; background:#121012; border-radius:12px; border:1px solid #262022; }
+  .rock-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:480px) { .rock-grid { grid-template-columns:1fr; } }
+  .rock-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:16px; text-align:center; }
+  .rock-card .rc-icon { font-size:1.8em; margin-bottom:8px; }
+  .rock-card .rc-name { font-weight:800; font-size:0.9em; margin-bottom:6px; }
+  .rock-card .rc-desc { font-size:0.78em; color:#999; line-height:1.6; }
+
+  .cycle-wrap { max-width:700px; margin:0 auto; padding:0 20px; }
+  .cycle-card { background:#121012; border:1px solid #262022; border-radius:16px; padding:20px; text-align:center; }
+  .cycle-row { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; font-size:0.82em; font-weight:700; }
+  .cycle-item { padding:8px 12px; border-radius:9px; background:#1a1a1c; }
+  .cycle-item.ig { color:#f87171; } .cycle-item.se { color:#fbbf24; } .cycle-item.me { color:#a855f7; }
+  .cycle-arrow { color:#555; }
+  .cycle-note { margin-top:14px; font-size:0.8em; color:#999; line-height:1.7; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅱ. 지권의 변화<span class="sep">/</span>1. 지권의 구성<span class="sep">/</span><b>암석의 분류와 이용</b></div>
+    <a class="hub-link" href="../unit2-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅱ-1-2 · 교과서 60쪽</div>
+    <h1>같은 돌이라도<br>태어난 방식이 다르다</h1>
+    <p class="lead">화강암, 사암, 대리암... 암석은 생성 과정에 따라 크게 세 종류로 나뉜다. 탭을 눌러 각 암석이 어떻게 만들어지는지 살펴보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>암석을 생성 원인에 따라 화성암, 퇴적암, 변성암으로 분류하고, 암석의 순환 과정을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>암석의 세 가지 종류</h2></div>
+  <div class="tab-row" id="tabRow"></div>
+  <div class="rock-shell">
+    <div class="rock-form" id="rockForm"></div>
+    <div class="rock-grid" id="rockGrid"></div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>암석의 순환</h2></div>
+  <div class="cycle-wrap">
+    <div class="cycle-card">
+      <div class="cycle-row">
+        <span class="cycle-item ig">마그마</span><span class="cycle-arrow">→</span>
+        <span class="cycle-item ig">화성암</span><span class="cycle-arrow">→</span>
+        <span class="cycle-item se">풍화·침식</span><span class="cycle-arrow">→</span>
+        <span class="cycle-item se">퇴적암</span><span class="cycle-arrow">→</span>
+        <span class="cycle-item me">열·압력</span><span class="cycle-arrow">→</span>
+        <span class="cycle-item me">변성암</span><span class="cycle-arrow">→</span>
+        <span class="cycle-item ig">용융(다시 마그마로)</span>
+      </div>
+      <div class="cycle-note">암석은 한 종류로 고정되어 있지 않다. 오랜 시간에 걸쳐 화성암, 퇴적암, 변성암 사이를 끊임없이 순환한다.</div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="earth-layers.html"><span class="k">이전 소단원</span><span class="t">← 지권의 층상 구조</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">광물과 토양 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 지권의 변화</footer>
+
+<script>
+const ROCK_TYPES = {
+  igneous: { c:'#f87171', label:'🌋 화성암', form:'마그마나 용암이 식어서 굳어져 만들어진 암석이다.',
+    rocks:[
+      { icon:'⬛', name:'현무암', desc:'용암이 지표 근처에서 빠르게 식어 만들어져 알갱이가 매우 작다.' },
+      { icon:'⬜', name:'화강암', desc:'마그마가 땅속 깊은 곳에서 천천히 식어 만들어져 알갱이가 크다.' },
+    ] },
+  sedimentary: { c:'#fbbf24', label:'🏖️ 퇴적암', form:'자갈, 모래, 진흙 등의 퇴적물이 쌓이고 다져져서 굳어진 암석이다.',
+    rocks:[
+      { icon:'🟤', name:'사암', desc:'모래가 다져져 만들어진 암석으로, 알갱이가 비교적 굵다.' },
+      { icon:'⚪', name:'석회암', desc:'석회질 생물의 유해나 침전물이 쌓여 만들어진 암석이다.' },
+    ] },
+  metamorphic: { c:'#a855f7', label:'🔥 변성암', form:'기존의 암석이 높은 열과 압력을 받아 성질이 변한 암석이다.',
+    rocks:[
+      { icon:'🌀', name:'편마암', desc:'화강암 등이 강한 열과 압력을 받아 줄무늬가 생긴 암석이다.' },
+      { icon:'⬜', name:'대리암', desc:'석회암이 열과 압력을 받아 변한 암석으로, 조각상이나 건축에 많이 쓰인다.' },
+    ] },
+};
+let currentType = 'igneous';
+
+function renderTabs(){
+  const row = document.getElementById('tabRow'); row.innerHTML='';
+  Object.entries(ROCK_TYPES).forEach(([key,t]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn'+(key===currentType?' on':'');
+    btn.style.setProperty('--c', t.c);
+    btn.textContent = t.label;
+    btn.onclick = () => { currentType = key; renderAll(); };
+    row.appendChild(btn);
+  });
+}
+function renderRocks(){
+  const t = ROCK_TYPES[currentType];
+  document.getElementById('rockForm').innerHTML = `<b style="color:${t.c}">생성 과정</b> — ${t.form}`;
+  document.getElementById('rockGrid').innerHTML = t.rocks.map(r => `
+    <div class="rock-card"><div class="rc-icon">${r.icon}</div><div class="rc-name">${r.name}</div><div class="rc-desc">${r.desc}</div></div>
+  `).join('');
+}
+function renderAll(){ renderTabs(); renderRocks(); }
+renderAll();
+
+const QUIZ = [
+  { q:'마그마나 용암이 식어서 굳어진 암석을 무엇이라 하는가?', opts:['퇴적암', '화성암', '변성암', '광물'], answer:1, fb:'마그마나 용암이 식어 굳어진 암석을 "화성암"이라고 한다.' },
+  { q:'퇴적물이 쌓이고 다져져서 만들어진 암석은?', opts:['화성암', '변성암', '퇴적암', '현무암'], answer:2, fb:'퇴적물이 쌓이고 다져져 굳은 암석을 "퇴적암"이라고 한다.' },
+  { q:'기존의 암석이 열과 압력을 받아 성질이 변한 암석은?', opts:['화성암', '퇴적암', '변성암', '용암'], answer:2, fb:'열과 압력으로 성질이 변한 암석을 "변성암"이라고 한다.' },
+  { q:'암석의 순환에 대한 설명으로 옳은 것은?', opts:['암석의 종류는 한 번 정해지면 영원히 변하지 않는다', '화성암, 퇴적암, 변성암은 서로 순환하며 변할 수 있다', '변성암은 절대 다른 암석으로 변하지 않는다', '암석은 항상 화성암에서 시작해서 끝난다'], answer:1, fb:'암석은 오랜 시간에 걸쳐 화성암, 퇴적암, 변성암 사이를 끊임없이 순환한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

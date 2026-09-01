@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ⅱ단원 확인하기 - 셀프체크룸</title>
 <script src="../../science1/unit2/quiz-data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root { --main-color:#22d3ee; --bg-dark:#07090c; --accent:#a855f7; }
   * { box-sizing: border-box; }
@@ -69,7 +71,9 @@
 
   .action-row { text-align:center; margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   .action-btn { border:none; font-weight:800; padding:11px 20px; border-radius:10px; font-size:0.84em; cursor:pointer; }
-  .print-btn { background:var(--main-color); color:#04222b; }
+  .action-btn.print-btn { background:var(--main-color); color:#04222b; }
+  .action-btn.download-btn { background:#0d9488; color:#fff; }
+  .action-btn:disabled { opacity:0.6; cursor:wait; }
   .retry-btn { background:transparent; border:1.5px solid #444; color:#aaa; }
 
   footer { text-align:center; padding:40px 20px 50px; color:#555; font-size:0.75em; }
@@ -139,7 +143,7 @@ function renderQuiz(){
     const card = document.createElement('div');
     const optsHtml = item.opts.map((o,oi) => `<button class="q-opt" data-gid="${sel.key}" data-oi="${oi}">${o}</button>`).join('');
     card.innerHTML = `
-      <div class="topic-title"><span>${sel.label}</span><span class="tt-page">${sel.page}쪽</span></div>
+      <div class="topic-title"><span>${sel.label}</span></div>
       <div class="q-card">
         <div class="q-text">${item.q}</div>
         <div class="q-opts">${optsHtml}</div>
@@ -183,7 +187,7 @@ function renderWritten(){
     const card = document.createElement('div');
     card.className = 'w-card';
     card.innerHTML = `
-      <div class="w-topic">${sub.label} · ${sub.page}쪽</div>
+      <div class="w-topic">${sub.label}</div>
       <div class="w-q">${w.q}</div>
       <textarea placeholder="여기에 자유롭게 답을 써 보자..." data-idx="${idx}"></textarea>
       <div class="w-guide">💡 ${w.guide}</div>
@@ -240,12 +244,39 @@ function showSummary(){
       <div class="comment-box">💬 ${comment}</div>
       <div class="written-note">✍️ 서술형 문제는 자동 채점되지 않아요. 위에서 작성한 내용과 모범답안을 비교해 스스로 점검해 보자.</div>
       <div class="action-row">
+        <button class="action-btn download-btn" id="downloadBtn" onclick="downloadResultPDF('${name}')">📥 PDF 다운로드</button>
         <button class="action-btn print-btn" onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button>
         <button class="action-btn retry-btn" onclick="location.reload()">↺ 다른 문제로 다시 풀기</button>
       </div>
     </div>
   `;
   wrap.scrollIntoView({ behavior:'smooth' });
+}
+
+function downloadResultPDF(name){
+  const btn = document.getElementById('downloadBtn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ 준비 중...';
+
+  const card = document.querySelector('.summary-card');
+  html2canvas(card, { scale: 2, backgroundColor: '#0d0f14', useCORS: true }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = 210;
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    const imgData = canvas.toDataURL('image/png');
+    pdf.addImage(imgData, 'PNG', 0, 15, imgWidth, imgHeight);
+    pdf.save(`${name}_Ⅱ단원_확인결과.pdf`);
+    btn.disabled = false;
+    btn.textContent = original;
+  }).catch(err => {
+    console.error(err);
+    alert('PDF 생성 중 문제가 발생했어요. 다시 시도해 주세요.');
+    btn.disabled = false;
+    btn.textContent = original;
+  });
 }
 </script>
 </body>

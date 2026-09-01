@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ⅱ단원 학습지 - 셀프체크룸</title>
 <script src="../../science1/unit2/quiz-data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root { --ink:#1a1a1a; --line:#ccc; --accent:#7c3aed; }
   * { box-sizing: border-box; }
@@ -17,6 +19,8 @@
   .toggle-btn { border:1.5px solid #444; background:#1a1a1a; color:#ccc; padding:8px 14px; border-radius:8px; font-size:0.8em; font-weight:700; cursor:pointer; }
   .toggle-btn.on { border-color:#f43f5e; background:rgba(244,63,94,0.2); color:#fda4af; }
   .print-btn { border:none; background:#7c3aed; color:#fff; padding:9px 18px; border-radius:8px; font-size:0.82em; font-weight:800; cursor:pointer; }
+  .download-btn { border:none; background:#0d9488; color:#fff; padding:9px 18px; border-radius:8px; font-size:0.82em; font-weight:800; cursor:pointer; }
+  .download-btn:disabled { opacity:0.6; cursor:wait; }
   .warn-note { font-size:0.72em; color:#fbbf24; text-align:center; padding:6px 20px; background:#1a1508; }
 
   .sheet { max-width: 780px; margin: 30px auto 60px; background:#fff; padding: 50px 56px; box-shadow: 0 6px 30px rgba(0,0,0,0.25); }
@@ -67,6 +71,7 @@
     <div class="cb-left"><a href="index.html">← 과학1</a><span>Ⅱ단원 인쇄용 학습지</span></div>
     <div class="cb-right">
       <button class="toggle-btn" id="toggleBtn" onclick="toggleAnswers()">🔑 정답 표시 (교사용)</button>
+      <button class="download-btn" id="downloadBtn" onclick="downloadPDF()">📥 PDF 다운로드</button>
       <button class="print-btn" onclick="window.print()">🖨️ 이 화면 그대로 인쇄</button>
     </div>
   </div>
@@ -106,7 +111,7 @@ function renderMC(){
     const sub = EAIM_QUIZ_DATA[key];
     const section = document.createElement('div');
     section.className = 'section';
-    section.innerHTML = `<div class="section-title"><span>${sub.label}</span><span class="st-page">교과서 ${sub.page}쪽</span></div>`;
+    section.innerHTML = `<div class="section-title"><span>${sub.label}</span></div>`;
     sub.questions.forEach(item => {
       qNum++;
       const div = document.createElement('div');
@@ -134,7 +139,7 @@ function renderWritten(){
     const div = document.createElement('div');
     div.className = 'w-item';
     div.innerHTML = `
-      <div class="w-topic">${sub.label} · 교과서 ${sub.page}쪽</div>
+      <div class="w-topic">${sub.label}</div>
       <div class="w-q">서${wNum}. ${w.q}</div>
       <div class="w-lines"></div>
       <div class="w-lines"></div>
@@ -152,6 +157,45 @@ function toggleAnswers(){
   const on = body.classList.contains('show-answers');
   btn.classList.toggle('on', on);
   warn.style.display = on ? 'block' : 'none';
+}
+
+function downloadPDF(){
+  const btn = document.getElementById('downloadBtn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ 준비 중...';
+
+  const sheet = document.querySelector('.sheet');
+  const withAnswers = document.getElementById('pageBody').classList.contains('show-answers');
+
+  html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = 210, pageHeight = 297;
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    const imgData = canvas.toDataURL('image/png');
+
+    let heightLeft = imgHeight, position = 0;
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    const filename = `Ⅱ단원_학습지${withAnswers ? '_정답포함(교사용)' : ''}.pdf`;
+    pdf.save(filename);
+    btn.disabled = false;
+    btn.textContent = original;
+  }).catch(err => {
+    console.error(err);
+    alert('PDF 생성 중 문제가 발생했어요. 다시 시도해 주세요.');
+    btn.disabled = false;
+    btn.textContent = original;
+  });
 }
 </script>
 </body>

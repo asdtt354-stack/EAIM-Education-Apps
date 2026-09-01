@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전류가 만드는 자기장 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:460px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  canvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .go-btn { border:none; font-weight:800; padding:11px 22px; border-radius:12px; font-size:0.86em; cursor:pointer; margin-top:14px; }
+  .go-btn.off { background:#374151; color:#ccc; } .go-btn.on { background:var(--main-color); color:#04222b; }
+  .sim-note { font-size:0.8em; color:#999; margin-top:10px; line-height:1.6; }
+
+  .slider-row { max-width:400px; margin:16px auto 0; }
+  input[type="range"] { width:100%; height:6px; accent-color:#f43f5e; }
+  .strength-val { font-size:1.1em; font-weight:900; color:#f43f5e; margin-top:10px; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅶ. 전기와 자기<span class="sep">/</span>2. 전류의 자기 작용<span class="sep">/</span><b>전류가 만드는 자기장</b></div>
+    <a class="hub-link" href="../unit7-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅶ-2-1 · 교과서 262쪽</div>
+    <h1>전선 옆의 나침반이<br>갑자기 흔들린 이유</h1>
+    <p class="lead">외르스테드는 전류가 흐르는 도선 옆에서 나침반 바늘이 흔들리는 것을 발견했다. 전류가 흐르면 그 주위에 자기장이 만들어진다. 스위치를 켜서 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>전류가 흐르는 도선 주위에 자기장이 만들어짐을 알고, 전자석의 세기에 영향을 주는 요인을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>직선 도선 주위의 자기장</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="wireCanvas" width="260" height="220"></canvas>
+      <button class="go-btn off" id="wireBtn" onclick="toggleWire()">🔌 전류 흘리기</button>
+      <div class="sim-note">전류가 흐르면 도선 주위에 동심원 모양의 자기장이 생기고, 나침반 바늘이 자기장 방향으로 회전한다.</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>전자석의 세기</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="magnetCanvas" width="260" height="200"></canvas>
+      <div class="slider-row"><input type="range" id="currentSlider" min="0" max="100" value="40"></div>
+      <div class="strength-val" id="strengthVal"></div>
+      <div class="sim-note">전류의 세기가 강할수록, 코일을 많이 감을수록 전자석이 끌어당기는 힘(자기장의 세기)이 커진다.</div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="resistor-connections.html"><span class="k">이전 소단원</span><span class="t">← 저항의 연결</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">전동기 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 전기와 자기</footer>
+
+<script>
+let wireOn = false;
+const wcanvas = document.getElementById('wireCanvas');
+const wctx = wcanvas.getContext('2d');
+const WW = wcanvas.width, WH = wcanvas.height, wcx=WW/2, wcy=90;
+let needleAngle = 0;
+
+function drawWire(){
+  wctx.clearRect(0,0,WW,WH);
+  // 도선(세로)
+  wctx.strokeStyle = wireOn ? '#38bdf8' : '#4a4a4c'; wctx.lineWidth=4;
+  wctx.beginPath(); wctx.moveTo(wcx,10); wctx.lineTo(wcx,170); wctx.stroke();
+
+  // 자기장 동심원
+  if (wireOn) {
+    wctx.strokeStyle='rgba(56,189,248,0.35)'; wctx.setLineDash([3,3]);
+    [30,50,70].forEach(r => { wctx.beginPath(); wctx.arc(wcx,wcy,r,0,Math.PI*2); wctx.stroke(); });
+    wctx.setLineDash([]);
+  }
+
+  // 나침반
+  const compX = wcx+90, compY = wcy;
+  wctx.beginPath(); wctx.arc(compX,compY,18,0,Math.PI*2);
+  wctx.strokeStyle='#666'; wctx.stroke();
+  const targetAngle = wireOn ? Math.PI/2 : 0;
+  needleAngle += (targetAngle-needleAngle)*0.1;
+  wctx.strokeStyle='#f43f5e'; wctx.lineWidth=3;
+  wctx.beginPath();
+  wctx.moveTo(compX-Math.cos(needleAngle)*14, compY-Math.sin(needleAngle)*14);
+  wctx.lineTo(compX+Math.cos(needleAngle)*14, compY+Math.sin(needleAngle)*14);
+  wctx.stroke();
+
+  wctx.fillStyle='#888'; wctx.font='10px sans-serif';
+  wctx.fillText('나침반', compX-16, compY+34);
+  wctx.fillText('도선', wcx-10, 190);
+
+  requestAnimationFrame(drawWire);
+}
+drawWire();
+
+function toggleWire(){
+  wireOn = !wireOn;
+  const btn = document.getElementById('wireBtn');
+  btn.className = 'go-btn ' + (wireOn?'on':'off');
+  btn.textContent = wireOn ? '🔌 전류 끄기' : '🔌 전류 흘리기';
+}
+
+const mcanvas = document.getElementById('magnetCanvas');
+const mctx = mcanvas.getContext('2d');
+const MW = mcanvas.width, MH = mcanvas.height;
+
+function drawMagnet(){
+  const strength = +document.getElementById('currentSlider').value;
+  document.getElementById('strengthVal').textContent = `전류 세기: ${strength}% · 자기장 세기: ${(strength*0.9).toFixed(0)}%`;
+
+  mctx.clearRect(0,0,MW,MH);
+  const coilX = MW/2-40, coilY = MH/2;
+  // 코일
+  mctx.strokeStyle='#fbbf24'; mctx.lineWidth=3;
+  for (let i=0;i<5;i++){ mctx.beginPath(); mctx.ellipse(coilX, coilY-30+i*15, 18, 8, 0, 0, Math.PI*2); mctx.stroke(); }
+
+  // 끌려오는 클립(전류 세기에 비례)
+  const numClips = Math.round(strength/16);
+  for (let i=0;i<numClips;i++){
+    const cx = coilX+40+i*14, cy = coilY;
+    mctx.strokeStyle='#94a3b8'; mctx.lineWidth=2;
+    mctx.beginPath(); mctx.moveTo(cx-4,cy-6); mctx.lineTo(cx+4,cy-6); mctx.lineTo(cx+4,cy+6); mctx.lineTo(cx-4,cy+6); mctx.stroke();
+  }
+  mctx.fillStyle='#888'; mctx.font='10px sans-serif';
+  mctx.fillText('코일(전자석)', coilX-30, MH-20);
+  mctx.fillText('클립', coilX+50, MH-20);
+}
+document.getElementById('currentSlider').addEventListener('input', drawMagnet);
+drawMagnet();
+
+const QUIZ = [
+  { q:'전류가 흐르는 도선 주위에 생기는 것은?', opts:['중력장', '자기장', '전기장만', '온도장'], answer:1, fb:'전류가 흐르는 도선 주위에는 "자기장"이 생긴다.' },
+  { q:'전류가 흐르는 도선 주위에서 자기장을 발견한 과학자는?', opts:['뉴턴', '외르스테드', '갈릴레이', '패러데이'], answer:1, fb:'외르스테드가 전류 주위에 자기장이 생긴다는 것을 처음 발견했다.' },
+  { q:'전자석의 세기를 강하게 하는 방법으로 옳은 것은?', opts:['전류를 약하게 한다', '전류를 세게 하거나 코일을 많이 감는다', '코일을 풀어놓는다', '자석을 멀리 둔다'], answer:1, fb:'전류를 세게 하거나 코일을 많이 감을수록 전자석의 자기장이 강해진다.' },
+  { q:'전자석에 대한 설명으로 옳은 것은?', opts:['영구자석처럼 항상 자성을 띤다', '전류가 흐를 때만 자성을 띤다', '전류와 관계없이 항상 자성이 없다', '자석의 성질이 전혀 없다'], answer:1, fb:'전자석은 전류가 흐를 때만 자성을 띠고, 전류를 끊으면 자성이 사라진다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

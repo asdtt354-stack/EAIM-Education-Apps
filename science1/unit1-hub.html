@@ -53,7 +53,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학1 · Ⅰ단원 · 교과서 12쪽 ~ 32쪽</div>
+    <div class="eyebrow">과학1 · Ⅰ단원</div>
     <h1>과학과 인류의 지속가능한 삶</h1>
     <p class="lead">과학은 어떻게 탐구되고, 어떻게 인류 문명을 바꿔왔을까? 그리고 그 힘으로 우리는 어떤 미래를 만들어갈 수 있을까?</p>
   </section>
@@ -80,11 +80,11 @@
 
 <script>
 const GROUP1 = [
-  { icon:'🔬', page:'14쪽', title:'과학적 탐구 방법', desc:'탐구 6단계 + 변인 구분 활동', href:'unit1/scientific-method.html', done:true },
-  { icon:'🏛️', page:'20쪽', title:'과학과 인류 문명', desc:'인류 문명을 바꾼 과학기술 타임라인', href:'unit1/science-and-civilization.html', done:true },
-  { icon:'🤖', page:'22쪽', title:'첨단 과학기술과 미래 사회', desc:'AI·생명공학·나노기술 카드 갤러리', href:'unit1/future-technology.html', done:true },
-  { icon:'🌱', page:'26쪽', title:'과학기술과 지속가능한 삶', desc:'환경문제-해결기술 매칭 게임', href:'unit1/sustainable-technology.html', done:true },
-  { icon:'🎴', page:'30쪽', title:'지속가능한 삶을 위한 실천', desc:'실천 체크리스트 + 나만의 다짐 카드', href:'unit1/sustainable-practice.html', done:true },
+  { icon:'🔬', title:'과학적 탐구 방법', desc:'탐구 6단계 + 변인 구분 활동', href:'unit1/scientific-method.html', done:true },
+  { icon:'🏛️', title:'과학과 인류 문명', desc:'인류 문명을 바꾼 과학기술 타임라인', href:'unit1/science-and-civilization.html', done:true },
+  { icon:'🤖', title:'첨단 과학기술과 미래 사회', desc:'AI·생명공학·나노기술 카드 갤러리', href:'unit1/future-technology.html', done:true },
+  { icon:'🌱', title:'과학기술과 지속가능한 삶', desc:'환경문제-해결기술 매칭 게임', href:'unit1/sustainable-technology.html', done:true },
+  { icon:'🎴', title:'지속가능한 삶을 위한 실천', desc:'실천 체크리스트 + 나만의 다짐 카드', href:'unit1/sustainable-practice.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -92,8 +92,7 @@ function renderGroup(id, items){
     <a class="lcard" href="${item.href}">
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

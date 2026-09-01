@@ -48,7 +48,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학1 · Ⅵ단원 · 교과서 196쪽 ~ 220쪽</div>
+    <div class="eyebrow">과학1 · Ⅵ단원</div>
     <h1>기체의 성질</h1>
     <p class="lead">기체는 왜 압력을 만들까? 압력과 온도가 바뀌면 기체의 부피는 어떻게 달라질까? 입자의 움직임으로 기체의 성질을 설명하는 단원이다.</p>
   </section>
@@ -70,13 +70,13 @@
 
 <script>
 const GROUP1 = [
-  { icon:'💥', page:'198쪽', title:'기체의 압력', desc:'입자 충돌 시뮬레이션', href:'unit6/gas-pressure.html', done:true },
-  { icon:'🧪', page:'200쪽', title:'기체의 압력과 부피 관계', desc:'피스톤 압축 시뮬레이션 + 보일의 법칙 그래프', href:'unit6/pressure-volume-relation.html', done:true },
-  { icon:'✈️', page:'204쪽', title:'생활 속 기체의 압력과 부피 관계', desc:'실생활 사례 카드', href:'unit6/pressure-volume-daily-life.html', done:true },
+  { icon:'💥', title:'기체의 압력', desc:'입자 충돌 시뮬레이션', href:'unit6/gas-pressure.html', done:true },
+  { icon:'🧪', title:'기체의 압력과 부피 관계', desc:'피스톤 압축 시뮬레이션 + 보일의 법칙 그래프', href:'unit6/pressure-volume-relation.html', done:true },
+  { icon:'✈️', title:'생활 속 기체의 압력과 부피 관계', desc:'실생활 사례 카드', href:'unit6/pressure-volume-daily-life.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'🎈', page:'210쪽', title:'기체의 온도와 부피 관계', desc:'풍선 가열/냉각 시뮬레이션', href:'unit6/temperature-volume-relation.html', done:true },
-  { icon:'🚗', page:'214쪽', title:'생활 속 기체의 온도와 부피 관계', desc:'실생활 사례 카드', href:'unit6/temperature-volume-daily-life.html', done:true },
+  { icon:'🎈', title:'기체의 온도와 부피 관계', desc:'풍선 가열/냉각 시뮬레이션', href:'unit6/temperature-volume-relation.html', done:true },
+  { icon:'🚗', title:'생활 속 기체의 온도와 부피 관계', desc:'실생활 사례 카드', href:'unit6/temperature-volume-daily-life.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -84,8 +84,7 @@ function renderGroup(id, items){
     <a class="lcard" href="${item.href}">
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

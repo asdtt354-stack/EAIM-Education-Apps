@@ -55,7 +55,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학1 · Ⅶ단원 · 교과서 226쪽 ~ 258쪽</div>
+    <div class="eyebrow">과학1 · Ⅶ단원</div>
     <h1>태양계</h1>
     <p class="lead">태양계에는 무엇이 있을까? 지구는 왜 돌고, 달은 왜 모양이 바뀔까? 태양-지구-달의 관계로 우주의 규칙을 살펴보는 단원이다.</p>
   </section>
@@ -87,15 +87,15 @@
 
 <script>
 const GROUP1 = [
-  { icon:'☀️', page:'228쪽', title:'태양계 구성 천체', desc:'태양~해왕성, 혜성 카드 갤러리', href:'unit7/solar-system-bodies.html', done:true },
-  { icon:'🪐', page:'234쪽', title:'태양계 행성 분류', desc:'내행성/외행성, 지구형/목성형 분류', href:'unit7/planet-classification.html', done:true },
-  { icon:'⚫', page:'236쪽', title:'태양의 활동', desc:'흑점·홍염·플레어·태양풍 카드', href:'unit7/solar-activity.html', done:true },
+  { icon:'☀️', title:'태양계 구성 천체', desc:'태양~해왕성, 혜성 카드 갤러리', href:'unit7/solar-system-bodies.html', done:true },
+  { icon:'🪐', title:'태양계 행성 분류', desc:'내행성/외행성, 지구형/목성형 분류', href:'unit7/planet-classification.html', done:true },
+  { icon:'⚫', title:'태양의 활동', desc:'흑점·홍염·플레어·태양풍 카드', href:'unit7/solar-activity.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'🔄', page:'244쪽', title:'지구의 자전과 천체의 겉보기 운동', desc:'시간 슬라이더로 보는 일주 운동', href:'unit7/earth-rotation.html', done:true },
-  { icon:'🌌', page:'246쪽', title:'지구의 공전과 별자리 변화', desc:'월별 밤하늘 별자리 시뮬레이션', href:'unit7/earth-revolution.html', done:true },
-  { icon:'🌗', page:'248쪽', title:'달의 위상 변화', desc:'공전 위치에 따른 실제 달 모양 계산', href:'unit7/moon-phases.html', done:true },
-  { icon:'🌘', page:'251쪽', title:'일식과 월식', desc:'태양-지구-달 배치 비교 탭', href:'unit7/eclipses.html', done:true },
+  { icon:'🔄', title:'지구의 자전과 천체의 겉보기 운동', desc:'시간 슬라이더로 보는 일주 운동', href:'unit7/earth-rotation.html', done:true },
+  { icon:'🌌', title:'지구의 공전과 별자리 변화', desc:'월별 밤하늘 별자리 시뮬레이션', href:'unit7/earth-revolution.html', done:true },
+  { icon:'🌗', title:'달의 위상 변화', desc:'공전 위치에 따른 실제 달 모양 계산', href:'unit7/moon-phases.html', done:true },
+  { icon:'🌘', title:'일식과 월식', desc:'태양-지구-달 배치 비교 탭', href:'unit7/eclipses.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -103,8 +103,7 @@ function renderGroup(id, items){
     <a class="lcard" href="${item.href}">
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

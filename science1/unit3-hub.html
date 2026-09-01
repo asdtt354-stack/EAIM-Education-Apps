@@ -57,11 +57,11 @@
 
   <div class="topbar">
     <div class="crumb"><b>과학1</b><span class="sep">/</span><b>Ⅲ. 열</b></div>
-    <a class="hub-link" href="../index.html">← 전체 단원 목록</a>
+    <a class="hub-link" href="index.html">← 과학1 전체 단원</a>
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학1 · Ⅲ단원 · 교과서 78쪽 ~ 108쪽</div>
+    <div class="eyebrow">과학1 · Ⅲ단원</div>
     <h1>열</h1>
     <p class="lead">온도는 무엇을 나타내는 값일까? 뜨거운 것과 차가운 것이 만나면 왜 결국 같아질까? 눈에 보이지 않는 입자의 움직임으로 열 현상을 설명하는 단원이다.</p>
   </section>
@@ -83,13 +83,13 @@
 
 <script>
 const GROUP1 = [
-  { icon:'🌡️', page:'82쪽', title:'온도와 입자 운동', desc:'온도 슬라이더로 보는 입자 운동 시뮬레이션', href:'unit3/temperature-particle-motion.html', done:true },
-  { icon:'🔄', page:'84쪽', title:'열평형', desc:'두 물체 접촉 실험 + 실시간 온도 그래프', href:'unit3/thermal-equilibrium.html', done:true },
-  { icon:'🔥', page:'88쪽', title:'열의 이동', desc:'전도·대류·복사 탭 애니메이션', href:'unit3/heat-transfer.html', done:true },
+  { icon:'🌡️', title:'온도와 입자 운동', desc:'온도 슬라이더로 보는 입자 운동 시뮬레이션', href:'unit3/temperature-particle-motion.html', done:true },
+  { icon:'🔄', title:'열평형', desc:'두 물체 접촉 실험 + 실시간 온도 그래프', href:'unit3/thermal-equilibrium.html', done:true },
+  { icon:'🔥', title:'열의 이동', desc:'전도·대류·복사 탭 애니메이션', href:'unit3/heat-transfer.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'⚖️', page:'96쪽', title:'비열', desc:'물 vs 모래 가열 비교 실험', href:'unit3/specific-heat.html', done:true },
-  { icon:'📏', page:'100쪽', title:'열팽창', desc:'막대 팽창 시뮬레이션 + 고체·액체·기체 비교', href:'unit3/thermal-expansion.html', done:true },
+  { icon:'⚖️', title:'비열', desc:'물 vs 모래 가열 비교 실험', href:'unit3/specific-heat.html', done:true },
+  { icon:'📏', title:'열팽창', desc:'막대 팽창 시뮬레이션 + 고체·액체·기체 비교', href:'unit3/thermal-expansion.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -97,8 +97,7 @@ function renderGroup(id, items){
     <a class="lcard" href="${item.href}">
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

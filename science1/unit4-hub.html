@@ -57,7 +57,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학1 · Ⅳ단원 · 교과서 114쪽 ~ 148쪽</div>
+    <div class="eyebrow">과학1 · Ⅳ단원</div>
     <h1>물질의 상태 변화</h1>
     <p class="lead">고체, 액체, 기체는 서로 어떻게 오갈까? 상태가 변할 때 입자에게, 그리고 열에너지에게 무슨 일이 일어나는지 살펴보는 단원이다.</p>
   </section>
@@ -79,15 +79,15 @@
 
 <script>
 const GROUP1 = [
-  { icon:'🌸', page:'116쪽', title:'입자의 운동', desc:'확산·증발 시뮬레이션', href:'unit4/particle-motion.html', done:true },
-  { icon:'🧊', page:'120쪽', title:'물질의 상태', desc:'고체·액체·기체 입자 배열 + 그릇 모양 실험', href:'unit4/matter-states.html', done:true },
-  { icon:'🔺', page:'124쪽', title:'물질의 상태 변화', desc:'융해·응고·기화·액화·승화 다이어그램', href:'unit4/state-change-types.html', done:true },
-  { icon:'⚖️', page:'128쪽', title:'상태 변화와 입자 배열의 변화', desc:'질량 vs 부피 비교 슬라이더', href:'unit4/particle-arrangement-change.html', done:true },
+  { icon:'🌸', title:'입자의 운동', desc:'확산·증발 시뮬레이션', href:'unit4/particle-motion.html', done:true },
+  { icon:'🧊', title:'물질의 상태', desc:'고체·액체·기체 입자 배열 + 그릇 모양 실험', href:'unit4/matter-states.html', done:true },
+  { icon:'🔺', title:'물질의 상태 변화', desc:'융해·응고·기화·액화·승화 다이어그램', href:'unit4/state-change-types.html', done:true },
+  { icon:'⚖️', title:'상태 변화와 입자 배열의 변화', desc:'질량 vs 부피 비교 슬라이더', href:'unit4/particle-arrangement-change.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'📈', page:'136쪽', title:'열에너지를 흡수하는 상태 변화', desc:'가열 온도-시간 그래프 시뮬레이션', href:'unit4/heating-graph-absorb.html', done:true },
-  { icon:'📉', page:'140쪽', title:'열에너지를 방출하는 상태 변화', desc:'냉각 온도-시간 그래프 시뮬레이션', href:'unit4/cooling-graph-release.html', done:true },
-  { icon:'🧣', page:'142쪽', title:'상태 변화와 열에너지의 이용', desc:'실생활 흡열·발열 활용 사례 카드', href:'unit4/state-change-applications.html', done:true },
+  { icon:'📈', title:'열에너지를 흡수하는 상태 변화', desc:'가열 온도-시간 그래프 시뮬레이션', href:'unit4/heating-graph-absorb.html', done:true },
+  { icon:'📉', title:'열에너지를 방출하는 상태 변화', desc:'냉각 온도-시간 그래프 시뮬레이션', href:'unit4/cooling-graph-release.html', done:true },
+  { icon:'🧣', title:'상태 변화와 열에너지의 이용', desc:'실생활 흡열·발열 활용 사례 카드', href:'unit4/state-change-applications.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -95,8 +95,7 @@ function renderGroup(id, items){
     <a class="lcard" href="${item.href}">
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

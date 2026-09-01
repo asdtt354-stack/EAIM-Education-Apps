@@ -59,7 +59,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">2022 개정 교육과정 · 미래엔 중등과학1</div>
+    <div class="eyebrow">2022 개정 교육과정 기반 중등과학1</div>
     <h1>과학1</h1>
     <p class="lead">교과서 순서 그대로, 대단원을 하나씩 눌러 학습을 시작해 보자.</p>
   </section>
@@ -75,13 +75,13 @@
 
 <script>
 const UNITS = [
-  { roman:'Ⅰ', title:'과학과 인류의 지속가능한 삶', page:'12쪽 ~ 32쪽', desc:'과학적 탐구 방법, 첨단 과학기술과 지속가능한 삶', href:'unit1-hub.html' },
-  { roman:'Ⅱ', title:'생물의 구성과 다양성', page:'34쪽 ~ 74쪽', desc:'세포, 생물의 구성 단계, 생물다양성과 분류·보전', href:'unit2-hub.html' },
-  { roman:'Ⅲ', title:'열', page:'78쪽 ~ 108쪽', desc:'온도와 입자 운동, 열평형, 열의 이동, 비열, 열팽창', href:'unit3-hub.html' },
-  { roman:'Ⅳ', title:'물질의 상태 변화', page:'114쪽 ~ 148쪽', desc:'입자 운동과 물질의 상태, 상태 변화와 열에너지', href:'unit4-hub.html' },
-  { roman:'Ⅴ', title:'힘의 작용', page:'154쪽 ~ 190쪽', desc:'여러 가지 힘, 힘과 물체의 운동', href:'unit5-hub.html' },
-  { roman:'Ⅵ', title:'기체의 성질', page:'196쪽 ~ 220쪽', desc:'기체의 압력과 부피, 온도와 부피 관계', href:'unit6-hub.html' },
-  { roman:'Ⅶ', title:'태양계', page:'226쪽 ~ 258쪽', desc:'태양계 구성 천체, 지구와 달의 운동', href:'unit7-hub.html' },
+  { roman:'Ⅰ', title:'과학과 인류의 지속가능한 삶', desc:'과학적 탐구 방법, 첨단 과학기술과 지속가능한 삶', href:'unit1-hub.html' },
+  { roman:'Ⅱ', title:'생물의 구성과 다양성', desc:'세포, 생물의 구성 단계, 생물다양성과 분류·보전', href:'unit2-hub.html' },
+  { roman:'Ⅲ', title:'열', desc:'온도와 입자 운동, 열평형, 열의 이동, 비열, 열팽창', href:'unit3-hub.html' },
+  { roman:'Ⅳ', title:'물질의 상태 변화', desc:'입자 운동과 물질의 상태, 상태 변화와 열에너지', href:'unit4-hub.html' },
+  { roman:'Ⅴ', title:'힘의 작용', desc:'여러 가지 힘, 힘과 물체의 운동', href:'unit5-hub.html' },
+  { roman:'Ⅵ', title:'기체의 성질', desc:'기체의 압력과 부피, 온도와 부피 관계', href:'unit6-hub.html' },
+  { roman:'Ⅶ', title:'태양계', desc:'태양계 구성 천체, 지구와 달의 운동', href:'unit7-hub.html' },
 ];
 
 function render(){
@@ -92,8 +92,7 @@ function render(){
       <div class="u-roman">${u.roman}</div>
       <div class="u-body">
         <div class="u-title">${u.title}</div>
-        <div class="u-page">${u.page}</div>
-        <div class="u-desc">${u.desc}</div>
+                <div class="u-desc">${u.desc}</div>
         <span class="u-badge">${ready ? '학습 가능' : '준비중'}</span>
       </div>
     `;

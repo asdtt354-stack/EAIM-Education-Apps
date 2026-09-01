@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화합물 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#34d399; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#6ee7b7 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .compound-wrap { max-width:900px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:700px) { .compound-wrap { grid-template-columns:1fr; } }
+  .cp-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:all .25s; }
+  .cp-card.open { border-color:var(--main-color); }
+  .cp-card .cp-formula { font-size:1.4em; font-weight:900; color:var(--main-color); margin-bottom:6px; }
+  .cp-card .cp-name { font-weight:800; font-size:0.88em; margin-bottom:6px; }
+  .cp-card .cp-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .cp-card.open .cp-detail { max-height:100px; margin-top:8px; padding-top:8px; border-top:1px dashed #2f2f31; }
+  .cp-card .cp-detail p { font-size:0.78em; color:#ccc; line-height:1.6; margin:0; }
+
+  .drama-wrap { max-width:700px; margin:0 auto; padding:0 20px; }
+  .drama-card { background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.28); border-radius:16px; padding:20px 22px; }
+  .drama-row { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; font-size:0.9em; font-weight:800; margin-bottom:14px; }
+  .drama-item { padding:8px 14px; border-radius:10px; text-align:center; }
+  .drama-item.na { background:rgba(251,191,36,0.15); color:#fbbf24; }
+  .drama-item.cl { background:rgba(163,230,53,0.15); color:#a3e635; }
+  .drama-item.eq { color:#666; }
+  .drama-item.salt { background:rgba(52,211,153,0.15); color:#34d399; }
+  .drama-card p { margin:0; font-size:0.84em; color:#d6f5e6; line-height:1.75; }
+
+  .formula-wrap { max-width:620px; margin:30px auto 0; padding:0 20px; }
+  .formula-card { background:#121012; border:1px solid #262022; border-radius:16px; padding:18px 22px; text-align:center; font-size:0.85em; color:#ccc; line-height:1.9; }
+  .formula-card b { color:var(--main-color); }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅳ. 물질의 구성<span class="sep">/</span>1. 원소와 화합물<span class="sep">/</span><b>화합물</b></div>
+    <a class="hub-link" href="../unit4-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅳ-1-3 · 교과서 144쪽</div>
+    <h1>위험한 두 원소가 만나<br>우리가 매일 먹는 소금이 된다</h1>
+    <p class="lead">두 종류 이상의 원소가 일정한 비율로 결합하면 원래와는 완전히 다른 성질의 새로운 물질, 화합물이 만들어진다. 카드를 눌러 대표적인 화합물을 살펴보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>화합물의 뜻을 알고, 화합물이 원래 원소와는 다른 성질을 가짐을 화학식과 함께 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>대표적인 화합물</h2></div>
+  <div class="compound-wrap" id="compoundWrap"></div>
+
+  <div class="section-head"><div class="num">02</div><h2>원소와는 전혀 다른 화합물의 성질</h2></div>
+  <div class="drama-wrap">
+    <div class="drama-card">
+      <div class="drama-row">
+        <span class="drama-item na">🟡 나트륨(Na)<br><span style="font-weight:400;font-size:0.7em">물에 넣으면 폭발적으로 반응</span></span>
+        <span class="drama-item eq">+</span>
+        <span class="drama-item cl">🟢 염소(Cl)<br><span style="font-weight:400;font-size:0.7em">냄새가 독하고 독성이 있는 기체</span></span>
+        <span class="drama-item eq">→</span>
+        <span class="drama-item salt">🧂 염화나트륨(NaCl)<br><span style="font-weight:400;font-size:0.7em">우리가 매일 먹는 안전한 소금</span></span>
+      </div>
+      <p>이렇게 위험한 성질을 가진 두 원소가 결합하면, 원래와는 완전히 다른 안전한 성질의 화합물이 만들어진다. 이것이 화합물이 원소와 구별되는 가장 중요한 특징이다.</p>
+    </div>
+  </div>
+
+  <div class="formula-wrap">
+    <div class="formula-card">
+      📐 <b>화학식</b>이란 화합물을 이루는 원소 기호와 그 개수의 비를 이용해 나타낸 것이다. 예를 들어 물의 화학식 <b>H₂O</b>는 수소(H) 원자 2개와 산소(O) 원자 1개가 결합했다는 뜻이다. 원소 기호 오른쪽 아래 숫자는 원자의 개수를 나타내며, 숫자가 없으면 1개를 의미한다.
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="element-symbols.html"><span class="k">이전 소단원</span><span class="t">← 원소 기호</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">원자의 구조 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 물질의 구성</footer>
+
+<script>
+const COMPOUNDS = [
+  { formula:'H₂O', name:'물', body:'수소 원자 2개와 산소 원자 1개가 결합해 만들어진다. 생명체에게 없어서는 안 될 물질이다.' },
+  { formula:'CO₂', name:'이산화탄소', body:'탄소 원자 1개와 산소 원자 2개가 결합해 만들어진다. 우리가 숨을 내쉴 때 나오는 기체이다.' },
+  { formula:'NaCl', name:'염화나트륨(소금)', body:'나트륨 원자 1개와 염소 원자 1개가 결합해 만들어진다. 우리가 매일 먹는 소금의 주성분이다.' },
+];
+let openIdx = null;
+function render(){
+  const wrap = document.getElementById('compoundWrap');
+  wrap.innerHTML = COMPOUNDS.map((c,i) => `
+    <div class="cp-card ${openIdx===i?'open':''}" data-i="${i}">
+      <div class="cp-formula">${c.formula}</div>
+      <div class="cp-name">${c.name}</div>
+      <div class="cp-detail"><p>${c.body}</p></div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.cp-card').forEach(card => {
+    card.addEventListener('click', () => { const i=+card.dataset.i; openIdx = openIdx===i?null:i; render(); });
+  });
+}
+render();
+
+const QUIZ = [
+  { q:'두 종류 이상의 원소가 일정한 비율로 결합해 만들어진 순물질을 무엇이라 하는가?', opts:['원소', '화합물', '혼합물', '이온'], answer:1, fb:'두 종류 이상의 원소가 결합해 만들어진 물질을 "화합물"이라고 한다.' },
+  { q:'화합물의 성질에 대한 설명으로 옳은 것은?', opts:['항상 원래 원소들의 성질과 같다', '원래 원소들과는 다른 새로운 성질을 가진다', '원소보다 항상 위험하다', '색깔만 다르고 나머지는 같다'], answer:1, fb:'화합물은 원래 원소들과는 전혀 다른 새로운 성질을 갖는다. 나트륨과 염소가 결합해 안전한 소금이 되는 것이 대표적인 예이다.' },
+  { q:'물의 화학식 H₂O에서 숫자 2가 의미하는 것은?', opts:['산소 원자의 개수', '수소 원자의 개수', '물 분자의 개수', '물의 온도'], answer:1, fb:'H₂O에서 아래첨자 2는 수소(H) 원자가 2개라는 뜻이다.' },
+  { q:'나트륨과 염소가 결합해 만들어지는 화합물은?', opts:['이산화탄소', '물', '염화나트륨(소금)', '산소'], answer:2, fb:'나트륨(Na)과 염소(Cl)가 결합하면 우리가 먹는 소금, 염화나트륨(NaCl)이 된다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

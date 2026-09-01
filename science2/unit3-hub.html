@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ⅲ. 빛과 파동 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color: #fbbf24; --bg-dark: #0a0708; --accent: #a855f7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Pretendard', -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,7,8,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid #262022; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .crumb { font-size: 0.78em; color: #888; } .crumb b { color: #ccc; font-weight: 600; }
+  .hub-link { font-size: 0.72em; color: #aaa; padding: 6px 12px; border: 1px solid #3a3a3c; border-radius: 8px; }
+  .hub-link:hover { border-color: var(--accent); color: #fff; }
+  .hero { padding: 56px 20px 20px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .hero .eyebrow { font-size: 0.74em; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.9em, 4.5vw, 2.7em); margin: 0 0 14px; background: linear-gradient(100deg, #fde68a 20%, #fff 50%, #c4b5fd 100%); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.3; }
+  .hero p.lead { color: #aaa; font-size: 0.98em; line-height: 1.75; margin: 0 auto; max-width: 580px; }
+  .progress-shell { max-width: 620px; margin: 30px auto 0; padding: 16px 22px; background: #121012; border: 1px solid #262022; border-radius: 16px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .progress-top .p-label { font-size: 0.82em; color: #ccc; font-weight: 700; }
+  .progress-top .p-count { font-size: 0.78em; color: #888; }
+  .progress-bar-outer { height: 9px; border-radius: 5px; background: #262022; overflow: hidden; }
+  .progress-bar-inner { height: 100%; background: linear-gradient(90deg, #fbbf24, #a855f7); }
+  .group-wrap { max-width: 900px; margin: 50px auto 0; padding: 0 20px; }
+  .group-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+  .group-head .g-num { font-size: 0.78em; font-weight: 900; color: var(--accent); background: rgba(168,85,247,0.14); padding: 3px 10px; border-radius: 7px; }
+  .group-head h2 { margin: 0; font-size: 1.15em; }
+  .lesson-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 42px; }
+  @media (max-width: 640px) { .lesson-grid { grid-template-columns: 1fr; } }
+  .lcard { display: flex; align-items: center; gap: 14px; background: #121012; border: 1.5px solid #262022; border-radius: 16px; padding: 16px 18px; transition: all .2s; }
+  .lcard.ready:hover { border-color: var(--main-color); transform: translateY(-2px); }
+  .lcard.pending { opacity:0.45; }
+  .lcard .l-icon { font-size: 1.7em; flex-shrink: 0; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; background: #1a1a1c; border-radius: 12px; }
+  .lcard .l-body { flex: 1; min-width: 0; }
+  .lcard .l-page { font-size: 0.68em; color: #777; margin-bottom: 3px; }
+  .lcard .l-title { font-size: 0.94em; font-weight: 800; color: #fff; margin-bottom: 3px; }
+  .lcard .l-desc { font-size: 0.76em; color: #999; line-height: 1.5; }
+  .lcard .l-badge { font-size: 0.66em; font-weight: 800; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; white-space: nowrap; }
+  .lcard.ready .l-badge { color:#34d399; background: rgba(52,211,153,0.14); }
+  .lcard.pending .l-badge { color:#888; background:#1a1a1c; }
+  footer { text-align: center; padding: 10px 20px 50px; color: #555; font-size: 0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span><b>Ⅲ. 빛과 파동</b></div>
+    <a class="hub-link" href="index.html">← 과학2 전체 단원</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">과학2 · Ⅲ단원 · 교과서 96쪽 ~ 130쪽</div>
+    <h1>빛과 파동</h1>
+    <p class="lead">거울에 상이 비치는 원리, 물속 다리가 짧아 보이는 이유, 소리가 전달되는 방식까지 — 빛과 파동의 성질을 탐구하는 단원이다.</p>
+  </section>
+
+  <div class="progress-shell">
+    <div class="progress-top"><span class="p-label">단원 진행률</span><span class="p-count" id="pCount"></span></div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="pBar"></div></div>
+  </div>
+
+  <div class="group-wrap">
+    <div class="group-head"><span class="g-num">1</span><h2>빛</h2></div>
+    <div class="lesson-grid" id="group1"></div>
+
+    <div class="group-head"><span class="g-num">2</span><h2>파동</h2></div>
+    <div class="lesson-grid" id="group2"></div>
+  </div>
+
+  <footer>EAIM 과학 수업 · 과학2</footer>
+
+<script>
+const GROUP1 = [
+  { icon:'🪞', page:'98쪽', title:'빛의 직진과 반사', desc:'반사법칙 각도 슬라이더 + 정반사/난반사', href:'unit3/light-reflection.html', done:true },
+  { icon:'🥤', page:'102쪽', title:'빛의 굴절', desc:'준비중', href:null, done:false },
+  { icon:'🔍', page:'106쪽', title:'볼록렌즈에 의한 상', desc:'준비중', href:null, done:false },
+];
+const GROUP2 = [
+  { icon:'🌊', page:'114쪽', title:'파동의 종류와 표시', desc:'준비중', href:null, done:false },
+  { icon:'🔊', page:'118쪽', title:'소리의 특성', desc:'준비중', href:null, done:false },
+];
+
+function renderGroup(id, items){
+  document.getElementById(id).innerHTML = items.map(item => {
+    const inner = `
+      <div class="l-icon">${item.icon}</div>
+      <div class="l-body">
+        <div class="l-page">${item.page}</div>
+        <div class="l-title">${item.title}</div>
+        <div class="l-desc">${item.desc}</div>
+      </div>
+      <div class="l-badge">${item.done ? '완료' : '준비중'}</div>
+    `;
+    return item.done
+      ? `<a class="lcard ready" href="${item.href}">${inner}</a>`
+      : `<div class="lcard pending">${inner}</div>`;
+  }).join('');
+}
+renderGroup('group1', GROUP1);
+renderGroup('group2', GROUP2);
+
+const allItems = [...GROUP1, ...GROUP2];
+const done = allItems.filter(i=>i.done).length;
+document.getElementById('pCount').textContent = `${done} / ${allItems.length} 완료`;
+document.getElementById('pBar').style.width = (done/allItems.length*100)+'%';
+</script>
+</body>
+</html>

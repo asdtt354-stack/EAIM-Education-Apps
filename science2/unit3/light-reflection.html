@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>빛의 직진과 반사 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#fbbf24; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fde68a 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:560px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  canvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:400px; margin:16px auto 0; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+  .readout-row { display:flex; justify-content:center; gap:30px; margin-top:14px; flex-wrap:wrap; }
+  .ro-item .rv { font-size:1.15em; font-weight:900; color:var(--main-color); } .ro-item .rl { font-size:0.72em; color:#888; }
+  .sim-note { font-size:0.8em; color:#999; margin-top:10px; line-height:1.6; }
+
+  .compare-wrap { max-width:700px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px) { .compare-wrap { grid-template-columns:1fr; } }
+  .compare-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:18px; text-align:center; }
+  #mirrorCanvas, #roughCanvas { background:#0f1720; border-radius:10px; }
+  .compare-card .cc-title { font-weight:800; font-size:0.88em; margin:10px 0 6px; }
+  .compare-card p { margin:0; font-size:0.78em; color:#999; line-height:1.6; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅲ. 빛과 파동<span class="sep">/</span>1. 빛<span class="sep">/</span><b>빛의 직진과 반사</b></div>
+    <a class="hub-link" href="../unit3-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅲ-1-1 · 교과서 98쪽</div>
+    <h1>빛은 항상<br>가장 곧은 길로 간다</h1>
+    <p class="lead">그림자가 생기는 것도, 거울에 내 모습이 비치는 것도 모두 빛의 직진과 반사 때문이다. 각도 슬라이더로 빛이 거울에 부딪혀 어떻게 튕겨 나가는지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>빛의 직진으로 그림자가 생기는 원리를 알고, 반사 법칙(입사각=반사각)을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>반사의 법칙 — 입사각과 반사각</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="reflectCanvas" width="320" height="220"></canvas>
+      <div class="slider-row">
+        <input type="range" id="angleSlider" min="10" max="80" value="40">
+      </div>
+      <div class="readout-row">
+        <div class="ro-item"><div class="rv" id="incVal">40°</div><div class="rl">입사각</div></div>
+        <div class="ro-item"><div class="rv" id="refVal">40°</div><div class="rl">반사각</div></div>
+      </div>
+      <div class="sim-note">거울에 수직인 가상의 선을 "법선"이라고 한다. 입사각과 반사각은 항상 법선을 기준으로 같다.</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>정반사와 난반사</h2></div>
+  <div class="compare-wrap">
+    <div class="compare-card">
+      <canvas id="mirrorCanvas" width="260" height="120"></canvas>
+      <div class="cc-title" style="color:#38bdf8">정반사</div>
+      <p>매끄러운 표면에서는 나란한 빛이 반사된 후에도 나란하게 나아간다. 그래서 거울에 상이 또렷하게 비친다.</p>
+    </div>
+    <div class="compare-card">
+      <canvas id="roughCanvas" width="260" height="120"></canvas>
+      <div class="cc-title" style="color:#fb923c">난반사</div>
+      <p>울퉁불퉁한 표면에서는 빛이 여러 방향으로 흩어져 반사된다. 그래서 대부분의 물체는 상이 비치지 않고 표면만 밝게 보인다.</p>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">빛의 굴절 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 빛과 파동</footer>
+
+<script>
+const canvas = document.getElementById('reflectCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const mirrorY = H-40, originX = W/2;
+
+function draw(){
+  const angleDeg = +document.getElementById('angleSlider').value;
+  document.getElementById('incVal').textContent = angleDeg + '°';
+  document.getElementById('refVal').textContent = angleDeg + '°';
+
+  ctx.clearRect(0,0,W,H);
+  // 거울면
+  ctx.strokeStyle = '#4a4a4c'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(20,mirrorY); ctx.lineTo(W-20,mirrorY); ctx.stroke();
+  // 빗금(거울 뒷면 표시)
+  ctx.strokeStyle='#2a2a2c'; ctx.lineWidth=1;
+  for (let x=20;x<W-20;x+=10){ ctx.beginPath(); ctx.moveTo(x,mirrorY); ctx.lineTo(x-6,mirrorY+10); ctx.stroke(); }
+
+  // 법선(점선)
+  ctx.strokeStyle='#555'; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(originX,mirrorY-90); ctx.lineTo(originX,mirrorY); ctx.stroke(); ctx.setLineDash([]);
+
+  const rad = angleDeg * Math.PI/180;
+  const len = 90;
+  // 입사광선
+  const inX = originX - Math.sin(rad)*len, inY = mirrorY - Math.cos(rad)*len;
+  ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(inX,inY); ctx.lineTo(originX,mirrorY); ctx.stroke();
+  drawArrowHead(inX,inY,originX,mirrorY,'#fbbf24');
+
+  // 반사광선
+  const outX = originX + Math.sin(rad)*len, outY = mirrorY - Math.cos(rad)*len;
+  ctx.strokeStyle='#38bdf8';
+  ctx.beginPath(); ctx.moveTo(originX,mirrorY); ctx.lineTo(outX,outY); ctx.stroke();
+  drawArrowHead(originX,mirrorY,outX,outY,'#38bdf8');
+
+  ctx.fillStyle='#888'; ctx.font='10px sans-serif';
+  ctx.fillText('법선', originX+6, mirrorY-80);
+  ctx.fillStyle='#fbbf24'; ctx.fillText('입사광선', inX-30, inY-4);
+  ctx.fillStyle='#38bdf8'; ctx.fillText('반사광선', outX+6, outY-4);
+}
+function drawArrowHead(x0,y0,x1,y1,color){
+  const angle = Math.atan2(y1-y0,x1-x0);
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x1-9*Math.cos(angle-0.4), y1-9*Math.sin(angle-0.4));
+  ctx.lineTo(x1-9*Math.cos(angle+0.4), y1-9*Math.sin(angle+0.4));
+  ctx.closePath(); ctx.fill();
+}
+document.getElementById('angleSlider').addEventListener('input', draw);
+draw();
+
+// 정반사 미니 캔버스
+const mc = document.getElementById('mirrorCanvas').getContext('2d');
+mc.strokeStyle='#4a4a4c'; mc.lineWidth=3; mc.beginPath(); mc.moveTo(10,90); mc.lineTo(250,90); mc.stroke();
+[60,110,160,210].forEach(x => {
+  mc.strokeStyle='#fbbf24'; mc.lineWidth=1.6;
+  mc.beginPath(); mc.moveTo(x-15,20); mc.lineTo(x,90); mc.stroke();
+  mc.beginPath(); mc.moveTo(x,90); mc.lineTo(x+15,20); mc.stroke();
+});
+
+// 난반사 미니 캔버스
+const rc = document.getElementById('roughCanvas').getContext('2d');
+rc.strokeStyle='#4a4a4c'; rc.lineWidth=2; rc.beginPath();
+rc.moveTo(10,90);
+for (let x=10;x<=250;x+=20){ rc.lineTo(x, 90+((x/20)%2===0?-6:6)); }
+rc.stroke();
+[60,110,160,210].forEach((x,i) => {
+  const outAngles = [-40,10,-15,35];
+  rc.strokeStyle='#fb923c'; rc.lineWidth=1.6;
+  rc.beginPath(); rc.moveTo(x-15,20); rc.lineTo(x,88); rc.stroke();
+  const rad = outAngles[i]*Math.PI/180;
+  rc.beginPath(); rc.moveTo(x,88); rc.lineTo(x+Math.sin(rad)*60, 88-Math.cos(rad)*60); rc.stroke();
+});
+
+const QUIZ = [
+  { q:'빛이 곧게 나아가는 성질 때문에 물체 뒤에 생기는 어두운 부분을 무엇이라 하는가?', opts:['상', '그림자', '반사', '굴절'], answer:1, fb:'빛이 직진하다가 물체에 가로막히면 그 뒤에 "그림자"가 생긴다.' },
+  { q:'반사의 법칙에 대한 설명으로 옳은 것은?', opts:['입사각이 반사각보다 항상 크다', '입사각과 반사각은 항상 같다', '반사각은 항상 90°이다', '입사각과 반사각은 관계가 없다'], answer:1, fb:'반사의 법칙에 따라 입사각과 반사각은 항상 같다.' },
+  { q:'매끄러운 표면에서 나란한 빛이 반사된 후에도 나란하게 나아가는 반사는?', opts:['난반사', '정반사', '굴절', '산란'], answer:1, fb:'매끄러운 표면에서 일어나는 반사를 "정반사"라고 하며, 거울에 상이 또렷하게 비치는 이유이다.' },
+  { q:'울퉁불퉁한 표면에서 빛이 여러 방향으로 흩어져 반사되는 현상은?', opts:['정반사', '난반사', '굴절', '직진'], answer:1, fb:'울퉁불퉁한 표면에서 빛이 여러 방향으로 흩어지는 반사를 "난반사"라고 한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

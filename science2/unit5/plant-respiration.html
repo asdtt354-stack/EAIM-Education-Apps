@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>식물의 호흡 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#fb923c; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fdba74 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .eq-wrap { max-width:700px; margin:0 auto; padding:0 20px; }
+  .eq-card { background:rgba(251,146,60,0.08); border:1px solid rgba(251,146,60,0.28); border-radius:18px; padding:24px 20px; text-align:center; }
+  .eq-row { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; font-size:0.9em; font-weight:800; }
+  .eq-item { padding:10px 14px; border-radius:10px; background:#121012; }
+  .eq-item.material { color:#34d399; }
+  .eq-item.product { color:#fb923c; }
+  .eq-item.energy { color:#fbbf24; }
+  .eq-arrow { color:#666; font-size:1.2em; }
+  .eq-note { margin-top:16px; font-size:0.82em; color:#fed7aa; line-height:1.7; }
+
+  .compare-wrap { max-width:700px; margin:36px auto 0; padding:0 20px; }
+  .compare-table { width:100%; border-collapse:collapse; font-size:0.84em; }
+  .compare-table th, .compare-table td { padding:10px 14px; text-align:center; border-bottom:1px solid #262022; }
+  .compare-table th { color:#888; font-weight:700; }
+  .compare-table td.photo { color:#34d399; font-weight:700; }
+  .compare-table td.resp { color:#fb923c; font-weight:700; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅴ. 식물과 에너지<span class="sep">/</span>2. 식물의 호흡<span class="sep">/</span><b>식물의 호흡</b></div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-2-1 · 교과서 186쪽</div>
+    <h1>식물도<br>24시간 숨을 쉰다</h1>
+    <p class="lead">광합성은 낮에만 일어나지만, 호흡은 식물이 살아있는 한 밤낮없이 항상 일어난다. 식물도 동물처럼 양분을 분해해 에너지를 얻어야 살 수 있기 때문이다.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>식물의 호흡이 일어나는 원리와 반응식을 알고, 호흡이 광합성과 어떻게 다른지 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>호흡 반응</h2></div>
+  <div class="eq-wrap">
+    <div class="eq-card">
+      <div class="eq-row">
+        <span class="eq-item material">포도당</span>
+        <span class="eq-arrow">+</span>
+        <span class="eq-item material">산소</span>
+        <span class="eq-arrow">→</span>
+        <span class="eq-item product">이산화탄소</span>
+        <span class="eq-arrow">+</span>
+        <span class="eq-item product">물</span>
+        <span class="eq-arrow">+</span>
+        <span class="eq-item energy">⚡ 에너지</span>
+      </div>
+      <div class="eq-note">식물의 세포는 미토콘드리아에서 포도당과 산소를 이용해 이산화탄소, 물과 함께 생명활동에 필요한 에너지를 얻는다. 이 과정을 "호흡"이라 하며, 밤낮없이 항상 일어난다.</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>광합성과 호흡 비교</h2></div>
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <tr><th></th><th>광합성</th><th>호흡</th></tr>
+      <tr><td>일어나는 곳</td><td class="photo">엽록체</td><td class="resp">미토콘드리아</td></tr>
+      <tr><td>일어나는 시간</td><td class="photo">빛이 있을 때만</td><td class="resp">항상(24시간)</td></tr>
+      <tr><td>에너지</td><td class="photo">저장(빛→화학에너지)</td><td class="resp">방출(화학에너지→생명활동)</td></tr>
+      <tr><td>기체 출입</td><td class="photo">CO₂ 흡수, O₂ 방출</td><td class="resp">O₂ 흡수, CO₂ 방출</td></tr>
+    </table>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="photosynthesis-factors.html"><span class="k">이전 소단원</span><span class="t">← 광합성에 영향을 미치는 요인</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">광합성과 호흡의 관계 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 식물과 에너지</footer>
+
+<script>
+const QUIZ = [
+  { q:'식물이 포도당과 산소를 이용해 에너지를 얻는 과정을 무엇이라 하는가?', opts:['광합성', '호흡', '증산작용', '삼투'], answer:1, fb:'포도당과 산소로 에너지를 얻는 과정을 "호흡"이라고 한다.' },
+  { q:'식물의 호흡이 일어나는 세포 속 구조는?', opts:['엽록체', '미토콘드리아', '세포막', '핵'], answer:1, fb:'호흡은 세포 속 "미토콘드리아"에서 일어난다.' },
+  { q:'식물의 호흡이 일어나는 시간에 대한 설명으로 옳은 것은?', opts:['낮에만 일어난다', '밤에만 일어난다', '밤낮없이 항상 일어난다', '전혀 일어나지 않는다'], answer:2, fb:'호흡은 광합성과 달리 빛과 관계없이 밤낮없이 항상 일어난다.' },
+  { q:'광합성과 호흡의 기체 출입 방향에 대한 설명으로 옳은 것은?', opts:['둘 다 산소를 흡수한다', '광합성은 이산화탄소를 흡수하고, 호흡은 산소를 흡수한다', '둘 다 이산화탄소만 방출한다', '광합성과 호흡은 기체 출입이 없다'], answer:1, fb:'광합성은 이산화탄소를 흡수해 산소를 내보내고, 호흡은 반대로 산소를 흡수해 이산화탄소를 내보낸다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

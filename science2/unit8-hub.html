@@ -58,7 +58,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학2 · Ⅷ단원 · 교과서 280쪽 ~ 312쪽</div>
+    <div class="eyebrow">과학2 · Ⅷ단원</div>
     <h1>별과 우주</h1>
     <p class="lead">별까지의 거리는 어떻게 잴까? 별의 밝기와 색은 무엇을 알려줄까? 우리은하 너머 우주는 어떤 모습일까? 별과 우주의 세계를 탐구하는 단원이다.</p>
   </section>
@@ -90,15 +90,15 @@
 
 <script>
 const GROUP1 = [
-  { icon:'📐', page:'282쪽', title:'별까지의 거리', desc:'연주시차 시뮬레이션', href:'unit8/star-distance.html', done:true },
-  { icon:'✨', page:'284쪽', title:'별의 밝기와 등급', desc:'등급 슬라이더 + 겉보기/절대등급 비교', href:'unit8/star-brightness.html', done:true },
-  { icon:'🌡️', page:'288쪽', title:'별의 색과 표면 온도', desc:'온도-색 슬라이더 + 실제 별 예시', href:'unit8/star-color-temperature.html', done:true },
+  { icon:'📐', title:'별까지의 거리', desc:'연주시차 시뮬레이션', href:'unit8/star-distance.html', done:true },
+  { icon:'✨', title:'별의 밝기와 등급', desc:'등급 슬라이더 + 겉보기/절대등급 비교', href:'unit8/star-brightness.html', done:true },
+  { icon:'🌡️', title:'별의 색과 표면 온도', desc:'온도-색 슬라이더 + 실제 별 예시', href:'unit8/star-color-temperature.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'🌌', page:'294쪽', title:'우리은하의 구조와 크기', desc:'옆/위 시점 전환 + 태양계 위치', href:'unit8/galaxy-structure.html', done:true },
-  { icon:'🪐', page:'296쪽', title:'우리은하의 구성 천체', desc:'성단·성운 카드 갤러리', href:'unit8/galaxy-objects.html', done:true },
-  { icon:'💥', page:'300쪽', title:'팽창하는 우주', desc:'풍선 비유 애니메이션 + 적색편이', href:'unit8/expanding-universe.html', done:true },
-  { icon:'🚀', page:'304쪽', title:'우주 탐사', desc:'인류 우주 탐사 역사 타임라인', href:'unit8/space-exploration.html', done:true },
+  { icon:'🌌', title:'우리은하의 구조와 크기', desc:'옆/위 시점 전환 + 태양계 위치', href:'unit8/galaxy-structure.html', done:true },
+  { icon:'🪐', title:'우리은하의 구성 천체', desc:'성단·성운 카드 갤러리', href:'unit8/galaxy-objects.html', done:true },
+  { icon:'💥', title:'팽창하는 우주', desc:'풍선 비유 애니메이션 + 적색편이', href:'unit8/expanding-universe.html', done:true },
+  { icon:'🚀', title:'우주 탐사', desc:'인류 우주 탐사 역사 타임라인', href:'unit8/space-exploration.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -106,8 +106,7 @@ function renderGroup(id, items){
     const inner = `
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

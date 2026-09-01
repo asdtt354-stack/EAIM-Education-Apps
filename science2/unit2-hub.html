@@ -51,7 +51,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학2 · Ⅱ단원 · 교과서 54쪽 ~ 90쪽</div>
+    <div class="eyebrow">과학2 · Ⅱ단원</div>
     <h1>지권의 변화</h1>
     <p class="lead">우리가 딛고 선 땅속은 어떻게 생겼을까? 대륙은 왜 움직이고, 화산과 지진은 왜 일어날까? 지구 내부와 표면의 끊임없는 변화를 탐구하는 단원이다.</p>
   </section>
@@ -73,14 +73,14 @@
 
 <script>
 const GROUP1 = [
-  { icon:'🌍', page:'56쪽', title:'지권의 층상 구조', desc:'지구 단면도 클릭식 탐색', href:'unit2/earth-layers.html', done:true },
-  { icon:'🪨', page:'60쪽', title:'암석의 분류와 이용', desc:'화성암/퇴적암/변성암 탭 + 암석 순환', href:'unit2/rock-classification.html', done:true },
-  { icon:'🌱', page:'64쪽', title:'광물과 토양', desc:'조암광물 카드 + 토양 층상구조 탐색', href:'unit2/minerals-and-soil.html', done:true },
+  { icon:'🌍', title:'지권의 층상 구조', desc:'지구 단면도 클릭식 탐색', href:'unit2/earth-layers.html', done:true },
+  { icon:'🪨', title:'암석의 분류와 이용', desc:'화성암/퇴적암/변성암 탭 + 암석 순환', href:'unit2/rock-classification.html', done:true },
+  { icon:'🌱', title:'광물과 토양', desc:'조암광물 카드 + 토양 층상구조 탐색', href:'unit2/minerals-and-soil.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'🗺️', page:'74쪽', title:'대륙 이동과 판구조론', desc:'판게아→현재 대륙 이동 슬라이더', href:'unit2/continental-drift.html', done:true },
-  { icon:'🌋', page:'78쪽', title:'판의 경계와 화산·지진', desc:'발산형/수렴형/보존형 경계 탭', href:'unit2/plate-boundaries.html', done:true },
-  { icon:'⛰️', page:'84쪽', title:'풍화 작용과 지형 변화', desc:'물리적/화학적 풍화 + 지형 갤러리', href:'unit2/weathering.html', done:true },
+  { icon:'🗺️', title:'대륙 이동과 판구조론', desc:'판게아→현재 대륙 이동 슬라이더', href:'unit2/continental-drift.html', done:true },
+  { icon:'🌋', title:'판의 경계와 화산·지진', desc:'발산형/수렴형/보존형 경계 탭', href:'unit2/plate-boundaries.html', done:true },
+  { icon:'⛰️', title:'풍화 작용과 지형 변화', desc:'물리적/화학적 풍화 + 지형 갤러리', href:'unit2/weathering.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -88,8 +88,7 @@ function renderGroup(id, items){
     const inner = `
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

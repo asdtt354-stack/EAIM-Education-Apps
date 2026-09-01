@@ -51,7 +51,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학2 · Ⅳ단원 · 교과서 136쪽 ~ 164쪽</div>
+    <div class="eyebrow">과학2 · Ⅳ단원</div>
     <h1>물질의 구성</h1>
     <p class="lead">물질을 계속 쪼개면 무엇이 남을까? 원소, 원자, 이온이라는 아주 작은 세계로 들어가 물질의 기본 단위를 탐구하는 단원이다.</p>
   </section>
@@ -73,14 +73,14 @@
 
 <script>
 const GROUP1 = [
-  { icon:'🔥', page:'138쪽', title:'원소', desc:'불꽃반응 색 카드 + 금속/비금속', href:'unit4/elements.html', done:true },
-  { icon:'🔤', page:'142쪽', title:'원소 기호', desc:'표기 규칙 + 클릭식 플래시카드', href:'unit4/element-symbols.html', done:true },
-  { icon:'🧬', page:'144쪽', title:'화합물', desc:'화합물 카드 + 나트륨+염소=소금 예시', href:'unit4/compounds.html', done:true },
+  { icon:'🔥', title:'원소', desc:'불꽃반응 색 카드 + 금속/비금속', href:'unit4/elements.html', done:true },
+  { icon:'🔤', title:'원소 기호', desc:'표기 규칙 + 클릭식 플래시카드', href:'unit4/element-symbols.html', done:true },
+  { icon:'🧬', title:'화합물', desc:'화합물 카드 + 나트륨+염소=소금 예시', href:'unit4/compounds.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'⚛️', page:'152쪽', title:'원자의 구조', desc:'원자번호 슬라이더로 보는 원자 모형', href:'unit4/atomic-structure.html', done:true },
-  { icon:'⚡', page:'156쪽', title:'이온', desc:'원자→양이온/음이온 변환 애니메이션', href:'unit4/ions.html', done:true },
-  { icon:'🧪', page:'160쪽', title:'이온화식과 이온의 검출', desc:'이온화식 + 앙금생성반응 시뮬레이션', href:'unit4/ionic-equations.html', done:true },
+  { icon:'⚛️', title:'원자의 구조', desc:'원자번호 슬라이더로 보는 원자 모형', href:'unit4/atomic-structure.html', done:true },
+  { icon:'⚡', title:'이온', desc:'원자→양이온/음이온 변환 애니메이션', href:'unit4/ions.html', done:true },
+  { icon:'🧪', title:'이온화식과 이온의 검출', desc:'이온화식 + 앙금생성반응 시뮬레이션', href:'unit4/ionic-equations.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -88,8 +88,7 @@ function renderGroup(id, items){
     const inner = `
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

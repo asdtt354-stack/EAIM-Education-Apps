@@ -51,7 +51,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학2 · Ⅵ단원 · 교과서 200쪽 ~ 236쪽</div>
+    <div class="eyebrow">과학2 · Ⅵ단원</div>
     <h1>동물과 에너지</h1>
     <p class="lead">우리가 먹은 음식은 어떻게 에너지가 될까? 소화·순환·호흡·배설, 네 가지 계통이 어떻게 힘을 합치는지 살펴보는 단원이다.</p>
   </section>
@@ -73,14 +73,14 @@
 
 <script>
 const GROUP1 = [
-  { icon:'🍽️', page:'202쪽', title:'영양소', desc:'5대 영양소 + 검출 반응 실험', href:'unit6/nutrients.html', done:true },
-  { icon:'🫃', page:'206쪽', title:'소화계의 구조와 기능', desc:'실제 인체 이미지로 보는 음식물의 여행', href:'unit6/digestive-system.html', done:true },
-  { icon:'❤️', page:'212쪽', title:'순환계의 구조와 기능', desc:'실제 심장/혈관 이미지 + 순환 경로 탭', href:'unit6/circulatory-system.html', done:true },
+  { icon:'🍽️', title:'영양소', desc:'5대 영양소 + 검출 반응 실험', href:'unit6/nutrients.html', done:true },
+  { icon:'🫃', title:'소화계의 구조와 기능', desc:'실제 인체 이미지로 보는 음식물의 여행', href:'unit6/digestive-system.html', done:true },
+  { icon:'❤️', title:'순환계의 구조와 기능', desc:'실제 심장/혈관 이미지 + 순환 경로 탭', href:'unit6/circulatory-system.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'🫁', page:'222쪽', title:'호흡계의 구조와 기능', desc:'실제 폐 이미지 + 들숨·날숨 원리', href:'unit6/respiratory-system.html', done:true },
-  { icon:'🫘', page:'226쪽', title:'배설계의 구조와 기능', desc:'실제 콩팥 이미지 + 노폐물 생성 과정', href:'unit6/excretory-system.html', done:true },
-  { icon:'⚡', page:'230쪽', title:'소화, 순환, 호흡, 배설과 에너지', desc:'4계통 통합 에너지 생성 사이클', href:'unit6/energy-integration.html', done:true },
+  { icon:'🫁', title:'호흡계의 구조와 기능', desc:'실제 폐 이미지 + 들숨·날숨 원리', href:'unit6/respiratory-system.html', done:true },
+  { icon:'🫘', title:'배설계의 구조와 기능', desc:'실제 콩팥 이미지 + 노폐물 생성 과정', href:'unit6/excretory-system.html', done:true },
+  { icon:'⚡', title:'소화, 순환, 호흡, 배설과 에너지', desc:'4계통 통합 에너지 생성 사이클', href:'unit6/energy-integration.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -88,8 +88,7 @@ function renderGroup(id, items){
     const inner = `
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

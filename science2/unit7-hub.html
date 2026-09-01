@@ -51,7 +51,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학2 · Ⅶ단원 · 교과서 242쪽 ~ 274쪽</div>
+    <div class="eyebrow">과학2 · Ⅶ단원</div>
     <h1>전기와 자기</h1>
     <p class="lead">전류, 전압, 저항의 관계부터 전류가 만드는 자기장까지, 전기와 자기 현상의 원리를 탐구하는 단원이다.</p>
   </section>
@@ -73,14 +73,14 @@
 
 <script>
 const GROUP1 = [
-  { icon:'⚡', page:'244쪽', title:'전류와 전압', desc:'스위치 켜기 회로 시뮬레이션', href:'unit7/current-voltage.html', done:true },
-  { icon:'🚧', page:'248쪽', title:'저항', desc:'도선 길이/굵기 슬라이더', href:'unit7/resistance.html', done:true },
-  { icon:'📐', page:'252쪽', title:'옴의 법칙', desc:'전압/저항 슬라이더 + V-I 그래프', href:'unit7/ohms-law.html', done:true },
-  { icon:'🔗', page:'256쪽', title:'저항의 연결', desc:'직렬/병렬 탭 + 합성저항 자동계산', href:'unit7/resistor-connections.html', done:true },
+  { icon:'⚡', title:'전류와 전압', desc:'스위치 켜기 회로 시뮬레이션', href:'unit7/current-voltage.html', done:true },
+  { icon:'🚧', title:'저항', desc:'도선 길이/굵기 슬라이더', href:'unit7/resistance.html', done:true },
+  { icon:'📐', title:'옴의 법칙', desc:'전압/저항 슬라이더 + V-I 그래프', href:'unit7/ohms-law.html', done:true },
+  { icon:'🔗', title:'저항의 연결', desc:'직렬/병렬 탭 + 합성저항 자동계산', href:'unit7/resistor-connections.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'🧲', page:'262쪽', title:'전류가 만드는 자기장', desc:'나침반 회전 + 전자석 클립 실험', href:'unit7/magnetic-field.html', done:true },
-  { icon:'🌀', page:'266쪽', title:'전동기', desc:'자석-코일 회전 애니메이션', href:'unit7/electric-motor.html', done:true },
+  { icon:'🧲', title:'전류가 만드는 자기장', desc:'나침반 회전 + 전자석 클립 실험', href:'unit7/magnetic-field.html', done:true },
+  { icon:'🌀', title:'전동기', desc:'자석-코일 회전 애니메이션', href:'unit7/electric-motor.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -88,8 +88,7 @@ function renderGroup(id, items){
     const inner = `
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

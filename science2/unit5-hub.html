@@ -51,7 +51,7 @@
   </div>
 
   <section class="hero">
-    <div class="eyebrow">과학2 · Ⅴ단원 · 교과서 170쪽 ~ 194쪽</div>
+    <div class="eyebrow">과학2 · Ⅴ단원</div>
     <h1>식물과 에너지</h1>
     <p class="lead">식물은 어떻게 스스로 양분을 만들까? 그리고 그 양분으로 어떻게 에너지를 얻을까? 광합성과 호흡, 두 과정을 탐구하는 단원이다.</p>
   </section>
@@ -73,13 +73,13 @@
 
 <script>
 const GROUP1 = [
-  { icon:'☀️', page:'172쪽', title:'광합성', desc:'광합성 반응식 + 엽록체', href:'unit5/photosynthesis.html', done:true },
-  { icon:'🧪', page:'176쪽', title:'광합성 산물 확인', desc:'아이오딘 반응 + 검정말 기포 실험', href:'unit5/photosynthesis-products.html', done:true },
-  { icon:'🌡️', page:'180쪽', title:'광합성에 영향을 미치는 요인', desc:'빛/CO2/온도 3탭 그래프', href:'unit5/photosynthesis-factors.html', done:true },
+  { icon:'☀️', title:'광합성', desc:'광합성 반응식 + 엽록체', href:'unit5/photosynthesis.html', done:true },
+  { icon:'🧪', title:'광합성 산물 확인', desc:'아이오딘 반응 + 검정말 기포 실험', href:'unit5/photosynthesis-products.html', done:true },
+  { icon:'🌡️', title:'광합성에 영향을 미치는 요인', desc:'빛/CO2/온도 3탭 그래프', href:'unit5/photosynthesis-factors.html', done:true },
 ];
 const GROUP2 = [
-  { icon:'🌬️', page:'186쪽', title:'식물의 호흡', desc:'호흡 반응식 + 광합성 비교표', href:'unit5/plant-respiration.html', done:true },
-  { icon:'⚖️', page:'190쪽', title:'광합성과 호흡의 관계', desc:'하루 시간 슬라이더로 보는 기체 출입', href:'unit5/photosynthesis-respiration-relation.html', done:true },
+  { icon:'🌬️', title:'식물의 호흡', desc:'호흡 반응식 + 광합성 비교표', href:'unit5/plant-respiration.html', done:true },
+  { icon:'⚖️', title:'광합성과 호흡의 관계', desc:'하루 시간 슬라이더로 보는 기체 출입', href:'unit5/photosynthesis-respiration-relation.html', done:true },
 ];
 
 function renderGroup(id, items){
@@ -87,8 +87,7 @@ function renderGroup(id, items){
     const inner = `
       <div class="l-icon">${item.icon}</div>
       <div class="l-body">
-        <div class="l-page">${item.page}</div>
-        <div class="l-title">${item.title}</div>
+                <div class="l-title">${item.title}</div>
         <div class="l-desc">${item.desc}</div>
       </div>
       <div class="l-badge">${item.done ? '완료' : '준비중'}</div>

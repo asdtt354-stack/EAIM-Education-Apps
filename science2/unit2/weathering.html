@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>풍화 작용과 지형 변화 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#a3e635; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#bef264 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .compare-wrap { max-width:700px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px) { .compare-wrap { grid-template-columns:1fr; } }
+  .compare-card { border-radius:16px; padding:18px 20px; border:1.5px solid; }
+  .compare-card.physical { background:rgba(56,189,248,0.08); border-color:rgba(56,189,248,0.3); }
+  .compare-card.chemical { background:rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.3); }
+  .compare-card .cc-title { font-weight:800; font-size:0.94em; margin-bottom:8px; }
+  .compare-card p { margin:0 0 8px; font-size:0.82em; color:#ccc; line-height:1.65; }
+  .compare-card .cc-eg { font-size:0.76em; color:#999; }
+
+  .gallery-wrap { max-width:900px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:600px) { .gallery-wrap { grid-template-columns:1fr; } }
+  .g-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:16px; text-align:center; cursor:pointer; transition:all .25s; }
+  .g-card.open { border-color:var(--main-color); }
+  .g-card .g-icon { font-size:1.9em; margin-bottom:8px; }
+  .g-card .g-title { font-weight:800; font-size:0.9em; margin-bottom:6px; }
+  .g-card .g-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .g-card.open .g-detail { max-height:140px; margin-top:8px; padding-top:8px; border-top:1px dashed #2f2f31; }
+  .g-card .g-detail p { font-size:0.78em; color:#ccc; line-height:1.65; margin:0; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅱ. 지권의 변화<span class="sep">/</span>2. 지권의 변화<span class="sep">/</span><b>풍화 작용과 지형 변화</b></div>
+    <a class="hub-link" href="../unit2-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅱ-2-3 · 교과서 84쪽</div>
+    <h1>바위도 결국은<br>부서지고, 녹고, 무너진다</h1>
+    <p class="lead">단단해 보이는 암석도 오랜 시간에 걸쳐 잘게 부서지거나 성질이 변한다. 이 과정을 풍화 작용이라 하며, 두 가지 방식으로 나뉜다.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>풍화 작용을 물리적 풍화와 화학적 풍화로 구분하고, 풍화 작용으로 만들어지는 다양한 지형을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>풍화의 두 가지 방식</h2></div>
+  <div class="compare-wrap">
+    <div class="compare-card physical">
+      <div class="cc-title" style="color:#38bdf8">🧊 물리적 풍화(기계적 풍화)</div>
+      <p>암석의 성분은 그대로이면서 크기만 작게 부서지는 풍화이다. 온도 변화, 물이 얼었다 녹기를 반복하며 틈이 벌어지는 것이 대표적이다.</p>
+      <div class="cc-eg">예 · 겨울철 바위 틈에 물이 얼며 갈라지는 현상</div>
+    </div>
+    <div class="compare-card chemical">
+      <div class="cc-title" style="color:#a855f7">💧 화학적 풍화</div>
+      <p>빗물이나 지하수와의 화학 반응으로 암석의 성분 자체가 변하는 풍화이다.</p>
+      <div class="cc-eg">예 · 석회암이 이산화탄소가 녹은 빗물과 반응해 서서히 녹는 현상</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>풍화가 만든 지형</h2></div>
+  <div class="gallery-wrap" id="galleryWrap"></div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="plate-boundaries.html"><span class="k">이전 소단원</span><span class="t">← 판의 경계와 화산·지진</span></a>
+    <span class="nav-btn next disabled"><span class="t">과학2 Ⅱ단원 완료 🎉</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 지권의 변화 · Ⅱ단원 완료 🎉</footer>
+
+<script>
+const LANDFORMS = [
+  { icon:'🕳️', c:'#a855f7', title:'카르스트 지형(석회 동굴)', body:'석회암이 화학적 풍화로 오랜 시간 녹아 만들어진 동굴이나 지형이다.' },
+  { icon:'🪨', c:'#38bdf8', title:'토르', body:'물리적 풍화로 암석이 둥글둥글하게 깎여 남은 커다란 바위 지형이다.' },
+  { icon:'🧱', c:'#fb923c', title:'절리를 따른 풍화', body:'암석에 나 있는 틈(절리)을 따라 풍화가 먼저 진행되며 독특한 형태의 지형이 만들어진다.' },
+];
+let openIdx = null;
+function render(){
+  const wrap = document.getElementById('galleryWrap');
+  wrap.innerHTML = LANDFORMS.map((l,i) => `
+    <div class="g-card ${openIdx===i?'open':''}" style="--c:${l.c}" data-i="${i}">
+      <div class="g-icon">${l.icon}</div>
+      <div class="g-title">${l.title}</div>
+      <div class="g-detail"><p>${l.body}</p></div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.g-card').forEach(card => {
+    card.addEventListener('click', () => { const i=+card.dataset.i; openIdx = openIdx===i?null:i; render(); });
+  });
+}
+render();
+
+const QUIZ = [
+  { q:'암석의 성분은 그대로인 채 크기만 작게 부서지는 풍화를 무엇이라 하는가?', opts:['화학적 풍화', '물리적 풍화', '생물학적 풍화', '전기적 풍화'], answer:1, fb:'크기만 작아지는 풍화를 "물리적(기계적) 풍화"라고 한다.' },
+  { q:'빗물이나 지하수와의 화학 반응으로 암석의 성분 자체가 변하는 풍화는?', opts:['물리적 풍화', '화학적 풍화', '기계적 풍화', '동결 풍화'], answer:1, fb:'성분이 변하는 풍화를 "화학적 풍화"라고 한다.' },
+  { q:'석회암이 화학적 풍화로 서서히 녹아 만들어지는 동굴 지형은?', opts:['해식동굴', '카르스트 지형', '용암동굴', '빙하동굴'], answer:1, fb:'석회암이 화학적 풍화로 녹아 만들어지는 동굴을 "카르스트 지형"이라고 한다.' },
+  { q:'겨울철 바위 틈에 스며든 물이 얼었다 녹기를 반복하며 바위가 갈라지는 것은 어떤 풍화의 예인가?', opts:['화학적 풍화', '물리적 풍화', '생물학적 풍화', '풍화가 아니다'], answer:1, fb:'물이 얼고 녹으며 부피가 변해 바위를 갈라지게 하는 것은 "물리적 풍화"의 대표적인 예이다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

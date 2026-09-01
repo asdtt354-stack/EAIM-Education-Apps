@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>광합성에 영향을 미치는 요인 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#34d399; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#6ee7b7 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .tab-row { max-width:500px; margin:40px auto 0; display:flex; gap:8px; padding:0 20px; }
+  .tab-btn { flex:1; border:1.5px solid #2a2a2c; background:#141215; color:#999; padding:11px 6px; border-radius:12px; font-size:0.82em; font-weight:800; cursor:pointer; }
+  .tab-btn.on { border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, #141215); color:#fff; }
+
+  .sim-shell { max-width:560px; margin:16px auto 0; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:20px; text-align:center; }
+  #factorCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:400px; margin:16px auto 0; }
+  input[type="range"] { width:100%; height:6px; }
+
+  .info-card { max-width:620px; margin:16px auto 0; padding:0 20px; }
+  .info-inner { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:16px; padding:16px 20px; text-align:center; font-size:0.84em; color:#ddd; line-height:1.75; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅴ. 식물과 에너지<span class="sep">/</span>1. 광합성<span class="sep">/</span><b>광합성에 영향을 미치는 요인</b></div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-3 · 교과서 180쪽</div>
+    <h1>너무 뜨거워도<br>광합성은 오히려 줄어든다</h1>
+    <p class="lead">빛, 이산화탄소, 온도는 광합성 속도에 영향을 준다. 그런데 셋 다 "많을수록 무조건 좋은" 것은 아니다. 탭을 눌러 각 요인이 광합성량에 어떤 곡선을 그리는지 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>빛의 세기, 이산화탄소 농도, 온도가 광합성량에 미치는 영향을 그래프로 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="tab-row" id="tabRow"></div>
+
+  <div class="sim-shell">
+    <div class="sim-card">
+      <canvas id="factorCanvas" width="440" height="220"></canvas>
+      <div class="slider-row"><input type="range" id="factorSlider" min="0" max="100" value="40"></div>
+    </div>
+  </div>
+
+  <div class="info-card"><div class="info-inner" id="infoInner"></div></div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="photosynthesis-products.html"><span class="k">이전 소단원</span><span class="t">← 광합성 산물 확인</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">식물의 호흡 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 식물과 에너지</footer>
+
+<script>
+const FACTORS = {
+  light: { c:'#fbbf24', label:'☀️ 빛의 세기', unit:'%',
+    fn: x => Math.min(100, x*2.2),
+    note:'빛이 강해질수록 광합성량이 늘어나다가, 어느 지점(광포화점)부터는 더 이상 늘어나지 않고 일정해진다.' },
+  co2: { c:'#38bdf8', label:'💨 이산화탄소 농도', unit:'%',
+    fn: x => Math.min(100, x*1.8),
+    note:'이산화탄소 농도가 높아질수록 광합성량이 늘어나다가, 어느 지점부터는 더 이상 늘어나지 않고 일정해진다.' },
+  temp: { c:'#f43f5e', label:'🌡️ 온도', unit:'°C',
+    fn: x => Math.max(0, 100 - Math.pow((x-55)/22, 2)*30),
+    note:'온도가 적정 수준까지는 광합성량이 늘어나지만, 너무 높아지면 효소가 제 기능을 못해 오히려 광합성량이 줄어든다.' },
+};
+let currentFactor = 'light';
+
+function renderTabs(){
+  const row = document.getElementById('tabRow'); row.innerHTML='';
+  Object.entries(FACTORS).forEach(([key,f]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn'+(key===currentFactor?' on':'');
+    btn.style.setProperty('--c', f.c);
+    btn.textContent = f.label;
+    btn.onclick = () => { currentFactor = key; renderTabs(); renderInfo(); draw(); };
+    row.appendChild(btn);
+  });
+}
+function renderInfo(){
+  document.getElementById('infoInner').textContent = FACTORS[currentFactor].note;
+}
+
+const canvas = document.getElementById('factorCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const padL=44, padR=14, padT=16, padB=28;
+
+function draw(){
+  const f = FACTORS[currentFactor];
+  const x = +document.getElementById('factorSlider').value;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#333'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
+  ctx.fillStyle='#666'; ctx.font='10px sans-serif';
+  ctx.fillText('광합성량', 4, padT+2);
+  ctx.fillText(f.label+' →', W-padR-70, H-8);
+
+  const xFor = v => padL + (v/100)*(W-padL-padR);
+  const yFor = v => (H-padB) - (v/100)*(H-padB-padT);
+
+  ctx.strokeStyle=f.c; ctx.lineWidth=2.4; ctx.beginPath();
+  for (let v=0;v<=100;v+=1){
+    const px=xFor(v), py=yFor(f.fn(v));
+    if (v===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  const curY = f.fn(x);
+  const cx = xFor(x), cy = yFor(curY);
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle='#fff'; ctx.shadowColor=f.c; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+
+  ctx.fillStyle='#fff'; ctx.font='11px sans-serif';
+  ctx.fillText(`현재 광합성량: ${curY.toFixed(0)}%`, padL, padT+16);
+}
+document.getElementById('factorSlider').addEventListener('input', draw);
+renderTabs(); renderInfo(); draw();
+
+const QUIZ = [
+  { q:'빛의 세기가 강해질수록 광합성량은 어떻게 변하는가?', opts:['계속 무한히 증가한다', '늘어나다가 어느 지점부터 일정해진다', '항상 일정하다', '점점 줄어든다'], answer:1, fb:'빛이 강해질수록 광합성량이 늘다가, 광포화점 이후에는 더 이상 늘지 않고 일정해진다.' },
+  { q:'이산화탄소 농도가 광합성량에 미치는 영향으로 옳은 것은?', opts:['농도가 높을수록 항상 광합성량이 줄어든다', '농도가 높아질수록 늘다가 어느 지점부터 일정해진다', '농도와 광합성량은 관계없다', '농도가 낮을수록 광합성량이 늘어난다'], answer:1, fb:'이산화탄소 농도도 빛과 비슷하게, 높아질수록 늘다가 일정 지점부터 더 늘지 않는다.' },
+  { q:'온도가 너무 높아지면 광합성량이 오히려 줄어드는 까닭은?', opts:['빛이 부족해지기 때문에', '광합성에 필요한 효소가 제 기능을 하지 못하기 때문에', '이산화탄소가 사라지기 때문에', '식물이 잠들기 때문에'], answer:1, fb:'온도가 너무 높으면 광합성에 관여하는 효소가 변성되어 제 기능을 하지 못해 광합성량이 오히려 줄어든다.' },
+  { q:'광합성에 영향을 미치는 세 가지 환경 요인은?', opts:['빛의 세기, 이산화탄소 농도, 온도', '습도, 바람, 소리', '흙의 색깔, 물의 온도, 바람', '중력, 자기장, 압력'], answer:0, fb:'광합성 속도에 영향을 주는 대표적인 환경 요인은 빛의 세기, 이산화탄소 농도, 온도이다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>광합성 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#34d399; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#6ee7b7 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .eq-wrap { max-width:700px; margin:0 auto; padding:0 20px; }
+  .eq-card { background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.28); border-radius:18px; padding:24px 20px; text-align:center; }
+  .eq-row { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; font-size:0.9em; font-weight:800; }
+  .eq-item { padding:10px 14px; border-radius:10px; background:#121012; }
+  .eq-item.material { color:#38bdf8; }
+  .eq-item.light { color:#fbbf24; }
+  .eq-item.product { color:#34d399; }
+  .eq-arrow { color:#666; font-size:1.2em; }
+  .eq-note { margin-top:16px; font-size:0.82em; color:#a7f3d0; line-height:1.7; }
+
+  .leaf-wrap { max-width:640px; margin:0 auto; padding:0 20px; display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+  .leaf-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:20px; text-align:center; flex-shrink:0; }
+  #leafCanvas { background:#0f1720; border-radius:14px; }
+  .leaf-detail { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; flex:1; min-width:220px; }
+  .leaf-detail h3 { margin:0 0 8px; font-size:1.02em; color:#34d399; }
+  .leaf-detail p { font-size:0.82em; color:#bbb; line-height:1.75; margin:0; }
+
+  .meaning-wrap { max-width:620px; margin:30px auto 0; padding:0 20px; }
+  .meaning-card { background:#121012; border:1px solid #262022; border-radius:16px; padding:18px 22px; }
+  .meaning-card ul { margin:0; padding-left:18px; font-size:0.85em; color:#ddd; line-height:1.9; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅴ. 식물과 에너지<span class="sep">/</span>1. 광합성<span class="sep">/</span><b>광합성</b></div>
+    <a class="hub-link" href="../unit5-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅴ-1-1 · 교과서 172쪽</div>
+    <h1>식물은<br>빛으로 밥을 짓는다</h1>
+    <p class="lead">동물은 음식을 먹어야 하지만, 식물은 빛에너지를 이용해 스스로 양분을 만든다. 이 과정을 광합성이라고 한다. 재료가 어떻게 생성물로 바뀌는지 살펴보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>광합성이 일어나는 장소와 광합성의 재료·생성물을 알고, 광합성 반응을 반응식으로 나타낼 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>광합성 반응</h2></div>
+  <div class="eq-wrap">
+    <div class="eq-card">
+      <div class="eq-row">
+        <span class="eq-item material">이산화탄소</span>
+        <span class="eq-arrow">+</span>
+        <span class="eq-item material">물</span>
+        <span class="eq-arrow">+</span>
+        <span class="eq-item light">☀️ 빛에너지</span>
+        <span class="eq-arrow">→</span>
+        <span class="eq-item product">포도당</span>
+        <span class="eq-arrow">+</span>
+        <span class="eq-item product">산소</span>
+      </div>
+      <div class="eq-note">식물은 잎에서 이산화탄소와 물을 재료로, 빛에너지를 이용해 포도당(양분)과 산소를 만든다.</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>광합성이 일어나는 곳</h2></div>
+  <div class="leaf-wrap">
+    <div class="leaf-card"><canvas id="leafCanvas" width="140" height="160"></canvas></div>
+    <div class="leaf-detail">
+      <h3>🍃 엽록체</h3>
+      <p>잎 세포 안에 들어 있는 초록색 알갱이로, 이 안에 광합성 색소인 엽록소가 들어 있어 빛에너지를 흡수한다. 광합성은 바로 이 엽록체 안에서 일어난다.</p>
+    </div>
+  </div>
+
+  <div class="meaning-wrap">
+    <div class="meaning-card">
+      <ul>
+        <li>광합성으로 만들어진 <b>포도당</b>은 식물이 자라고 살아가는 데 필요한 에너지원이 된다.</li>
+        <li>광합성으로 나오는 <b>산소</b>는 지구 대기 중 산소의 주요 공급원이며, 대부분의 생물이 호흡에 이용한다.</li>
+        <li>광합성으로 만들어진 양분은 먹이사슬을 통해 다른 생물에게도 전달되는, 생태계 에너지의 출발점이다.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">광합성 산물 확인 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 식물과 에너지</footer>
+
+<script>
+const canvas = document.getElementById('leafCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// 잎 모양
+ctx.fillStyle = '#166534';
+ctx.beginPath();
+ctx.moveTo(W/2, 15);
+ctx.quadraticCurveTo(W-15, H/2, W/2, H-15);
+ctx.quadraticCurveTo(15, H/2, W/2, 15);
+ctx.fill();
+ctx.strokeStyle = '#4ade80'; ctx.lineWidth=1;
+ctx.beginPath(); ctx.moveTo(W/2,20); ctx.lineTo(W/2,H-20); ctx.stroke();
+
+// 엽록체(초록 점들)
+for (let i=0;i<24;i++){
+  const x = 35 + (i%4)*22 + (Math.random()*6-3);
+  const y = 35 + Math.floor(i/4)*20 + (Math.random()*6-3);
+  ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2);
+  ctx.fillStyle = '#4ade80'; ctx.fill();
+}
+ctx.fillStyle = '#666'; ctx.font='10px sans-serif';
+ctx.fillText('엽록체', 10, H-6);
+
+const QUIZ = [
+  { q:'식물이 빛에너지를 이용해 양분을 만드는 과정을 무엇이라 하는가?', opts:['호흡', '광합성', '증산작용', '삼투'], answer:1, fb:'식물이 빛에너지로 양분을 만드는 과정을 "광합성"이라고 한다.' },
+  { q:'광합성의 재료로 쓰이는 두 가지 물질은?', opts:['산소와 포도당', '이산화탄소와 물', '질소와 산소', '물과 포도당'], answer:1, fb:'광합성의 재료는 "이산화탄소"와 "물"이다.' },
+  { q:'광합성으로 만들어지는 생성물은?', opts:['이산화탄소와 물', '포도당과 산소', '질소와 수소', '이산화탄소와 산소'], answer:1, fb:'광합성으로 "포도당"과 "산소"가 만들어진다.' },
+  { q:'광합성이 실제로 일어나는 세포 속 구조는?', opts:['핵', '엽록체', '세포막', '미토콘드리아'], answer:1, fb:'엽록소를 가진 "엽록체"에서 광합성이 일어난다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

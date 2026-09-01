@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대륙 이동과 판구조론 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#38bdf8; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#7dd3fc 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:560px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #continentCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .slider-row { max-width:400px; margin:16px auto 0; }
+  input[type="range"] { width:100%; height:6px; accent-color:var(--main-color); }
+  .slider-scale { display:flex; justify-content:space-between; font-size:0.7em; color:#888; margin-top:4px; }
+  .era-val { font-size:1.05em; font-weight:900; color:var(--main-color); margin-top:12px; }
+
+  .evidence-wrap { max-width:780px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  @media (max-width:560px) { .evidence-wrap { grid-template-columns:1fr; } }
+  .ev-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:16px 18px; }
+  .ev-card .ev-icon { font-size:1.6em; margin-bottom:6px; }
+  .ev-card .ev-title { font-weight:800; font-size:0.88em; margin-bottom:6px; }
+  .ev-card .ev-desc { font-size:0.78em; color:#999; line-height:1.65; }
+
+  .plate-note-wrap { max-width:620px; margin:30px auto 0; padding:0 20px; }
+  .plate-note { background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.28); border-radius:16px; padding:18px 22px; font-size:0.85em; color:#cdeefd; line-height:1.8; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅱ. 지권의 변화<span class="sep">/</span>2. 지권의 변화<span class="sep">/</span><b>대륙 이동과 판구조론</b></div>
+    <a class="hub-link" href="../unit2-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅱ-2-1 · 교과서 74쪽</div>
+    <h1>대륙은 지금도<br>아주 천천히 움직이고 있다</h1>
+    <p class="lead">약 2억 5천만 년 전, 지구의 모든 대륙은 판게아라는 하나의 초대륙이었다. 시간 슬라이더를 움직여 대륙이 갈라져 오늘날의 모습이 되는 과정을 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>대륙 이동설의 증거를 알고, 판구조론에 따라 지구 표면이 여러 판으로 이루어져 움직인다는 사실을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>판게아에서 오늘날까지</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="continentCanvas" width="360" height="220"></canvas>
+      <div class="slider-row">
+        <input type="range" id="timeSlider" min="0" max="100" value="0">
+        <div class="slider-scale"><span>약 2억 5천만 년 전</span><span>오늘날</span></div>
+      </div>
+      <div class="era-val" id="eraVal">🌍 판게아 (하나의 초대륙)</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>대륙 이동의 증거</h2></div>
+  <div class="evidence-wrap">
+    <div class="ev-card"><div class="ev-icon">🧩</div><div class="ev-title">해안선 모양 일치</div><div class="ev-desc">남아메리카 동쪽 해안선과 아프리카 서쪽 해안선이 퍼즐처럼 들어맞는다.</div></div>
+    <div class="ev-card"><div class="ev-icon">🦎</div><div class="ev-title">화석 분포</div><div class="ev-desc">멀리 떨어진 대륙에서 같은 종류의 고생물 화석(예: 메소사우루스)이 함께 발견된다.</div></div>
+    <div class="ev-card"><div class="ev-icon">🧊</div><div class="ev-title">빙하 흔적</div><div class="ev-desc">현재는 열대·온대 지역인 여러 대륙에서 같은 시기의 빙하 흔적이 발견된다.</div></div>
+    <div class="ev-card"><div class="ev-icon">🗻</div><div class="ev-title">지질 구조의 연속성</div><div class="ev-desc">서로 떨어진 대륙의 산맥과 지층이 이어 붙이면 자연스럽게 연결된다.</div></div>
+  </div>
+
+  <div class="plate-note-wrap">
+    <div class="plate-note">🌐 <b>판구조론</b>: 지구의 표면은 여러 개의 딱딱한 판으로 나뉘어 있으며, 이 판들은 맨틀의 대류에 의해 아주 천천히(1년에 몇 cm 정도) 움직인다. 대륙은 이 판 위에 실려 함께 이동한다.</div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <a class="nav-btn" href="minerals-and-soil.html"><span class="k">이전 소단원</span><span class="t">← 광물과 토양</span></a>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">판의 경계와 화산·지진 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 지권의 변화</footer>
+
+<script>
+const canvas = document.getElementById('continentCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height, cx=W/2, cy=H/2;
+
+// 각 대륙 조각의 최종(오늘날) 위치와 판게아 시절(중앙 근접) 위치를 단순화해 보간
+const CONTINENTS = [
+  { name:'북아메리카', color:'#38bdf8', pangeaX:-40, pangeaY:-30, todayX:-120, todayY:-50, w:50, h:36 },
+  { name:'남아메리카', color:'#a855f7', pangeaX:-30, pangeaY:20, todayX:-90, todayY:60, w:36, h:50 },
+  { name:'아프리카', color:'#fb923c', pangeaX:10, pangeaY:10, todayX:10, todayY:40, w:44, h:50 },
+  { name:'유라시아', color:'#34d399', pangeaX:20, pangeaY:-35, todayX:70, todayY:-55, w:70, h:40 },
+  { name:'남극·오세아니아', color:'#f43f5e', pangeaX:0, pangeaY:45, todayX:40, todayY:85, w:60, h:30 },
+];
+
+function draw(){
+  const t = +document.getElementById('timeSlider').value / 100;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = 'rgba(56,189,248,0.06)';
+  ctx.fillRect(0,0,W,H);
+
+  CONTINENTS.forEach(c => {
+    const x = cx + c.pangeaX + (c.todayX-c.pangeaX)*t;
+    const y = cy + c.pangeaY + (c.todayY-c.pangeaY)*t;
+    ctx.fillStyle = c.color;
+    ctx.globalAlpha = 0.85;
+    roundRect(ctx, x-c.w/2, y-c.h/2, c.w, c.h, 10);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  const eraVal = document.getElementById('eraVal');
+  if (t < 0.15) eraVal.textContent = '🌍 판게아 (하나의 초대륙)';
+  else if (t < 0.85) eraVal.textContent = '🌏 대륙이 서서히 갈라지는 중';
+  else eraVal.textContent = '🌎 오늘날의 대륙 배치';
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+document.getElementById('timeSlider').addEventListener('input', draw);
+draw();
+
+const QUIZ = [
+  { q:'약 2억 5천만 년 전, 지구의 모든 대륙이 하나로 뭉쳐 있던 초대륙의 이름은?', opts:['유라시아', '판게아', '곤드와나', '로라시아'], answer:1, fb:'하나로 뭉쳐 있던 초대륙을 "판게아"라고 한다.' },
+  { q:'남아메리카와 아프리카 해안선이 퍼즐처럼 들어맞는 것은 무엇의 증거인가?', opts:['화산 활동', '대륙 이동', '지진 발생', '태양의 활동'], answer:1, fb:'해안선 모양의 일치는 대륙이 원래 하나로 붙어 있었다는 "대륙 이동"의 증거이다.' },
+  { q:'멀리 떨어진 여러 대륙에서 같은 종류의 고생물 화석이 함께 발견되는 것을 무엇의 증거로 보는가?', opts:['대륙 이동', '화산 폭발', '지구 자전', '태양의 흑점'], answer:0, fb:'서로 떨어진 대륙에서 같은 화석이 발견되는 것도 대륙 이동의 중요한 증거이다.' },
+  { q:'판구조론에서 대륙과 해양을 포함한 지구 표면이 여러 개로 나뉘어 있다고 보는 단위는?', opts:['층', '광물', '판', '지각판만 예외'], answer:2, fb:'지구 표면은 여러 개의 "판"으로 나뉘어 있으며, 이 판들이 서서히 움직인다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전류와 전압 - EAIM 과학 수업</title>
+<style>
+  :root { --main-color:#fbbf24; --bg-dark:#0a0708; --accent:#a855f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg-dark); color:#fff; font-family:'Pretendard',-apple-system,sans-serif; min-height:100vh; }
+  a { color:inherit; }
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(10,7,8,0.92); backdrop-filter:blur(10px); border-bottom:1px solid #262022; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .crumb { font-size:0.78em; color:#888; } .crumb b{ color:#ccc; font-weight:600; } .crumb .sep{ margin:0 6px; color:#444; }
+  .hub-link { font-size:0.72em; color:#aaa; text-decoration:none; padding:6px 12px; border:1px solid #3a3a3c; border-radius:8px; }
+  .hub-link:hover { border-color:var(--accent); color:#fff; }
+  .hero { padding:56px 20px 30px; text-align:center; max-width:760px; margin:0 auto; }
+  .hero .eyebrow { font-size:0.74em; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 { font-size:clamp(1.7em,4vw,2.5em); margin:0 0 14px; background:linear-gradient(100deg,#fff 30%,#fde68a 60%,var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.3; }
+  .hero p.lead { color:#aaa; font-size:0.98em; line-height:1.7; margin:0 auto; max-width:560px; }
+  .goal-box { max-width:620px; margin:26px auto 0; text-align:left; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.28); border-radius:14px; padding:16px 20px; }
+  .goal-box .label { font-size:0.7em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+  .goal-box p { margin:0; font-size:0.86em; line-height:1.65; color:#e5d8fb; }
+
+  .section-head { max-width:900px; margin:50px auto 18px; padding:0 20px; }
+  .section-head .num { font-size:0.72em; font-weight:800; color:var(--accent); letter-spacing:1px; margin-bottom:4px; }
+  .section-head h2 { margin:0; font-size:1.2em; }
+
+  .sim-wrap { max-width:460px; margin:0 auto; padding:0 20px; }
+  .sim-card { background:#121012; border:1px solid #262022; border-radius:20px; padding:22px; text-align:center; }
+  #circuitCanvas { background:#0f1720; border-radius:14px; max-width:100%; }
+  .go-btn { border:none; font-weight:800; padding:11px 22px; border-radius:12px; font-size:0.86em; cursor:pointer; margin-top:14px; }
+  .go-btn.off { background:#374151; color:#ccc; }
+  .go-btn.on { background:var(--main-color); color:#04222b; }
+  .sim-note { font-size:0.8em; color:#999; margin-top:10px; line-height:1.6; }
+
+  .compare-wrap { max-width:700px; margin:0 auto; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px) { .compare-wrap { grid-template-columns:1fr; } }
+  .compare-card { background:#121012; border:1.5px solid #262022; border-radius:16px; padding:18px; }
+  .compare-card .cc-title { font-weight:800; font-size:0.92em; margin-bottom:10px; }
+  .compare-card .cc-row { display:flex; justify-content:space-between; font-size:0.8em; color:#ccc; padding:6px 0; border-bottom:1px dashed #262022; }
+  .compare-card .cc-row b { color:#eee; }
+
+  .quiz-wrap { max-width:760px; margin:56px auto 40px; padding:0 20px; }
+  .quiz-wrap h2 { font-size:1.2em; color:#fff; margin-bottom:4px; } .quiz-wrap .sub { color:#888; font-size:0.82em; margin-bottom:22px; }
+  .q-card { background:#121012; border:1px solid #262022; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .q-card .q-text { font-size:0.92em; font-weight:700; margin-bottom:12px; color:#eee; }
+  .q-opts { display:flex; flex-direction:column; gap:8px; }
+  .q-opt { text-align:left; background:#1a1a1c; border:1.5px solid #2f2f31; color:#ccc; padding:10px 14px; border-radius:9px; font-size:0.85em; cursor:pointer; }
+  .q-opt.correct { border-color:#34d399; background:rgba(52,211,153,0.12); color:#a7f3d0; }
+  .q-opt.wrong { border-color:#f43f5e; background:rgba(244,63,94,0.12); color:#fda4af; }
+  .q-opt:disabled { cursor:default; }
+  .q-fb { margin-top:10px; font-size:0.82em; line-height:1.6; color:#bbb; display:none; padding-top:10px; border-top:1px dashed #2f2f31; }
+
+  .lesson-nav { max-width:760px; margin:0 auto 60px; padding:0 20px; display:flex; justify-content:space-between; gap:12px; }
+  .nav-btn { flex:1; text-decoration:none; padding:14px 18px; border-radius:12px; border:1px solid #2a2a2c; background:#121012; color:#ccc; font-size:0.82em; }
+  .nav-btn .k { display:block; font-size:0.72em; color:#777; margin-bottom:4px; } .nav-btn .t { font-weight:800; color:#fff; }
+  .nav-btn.next { text-align:right; } .nav-btn.disabled { opacity:0.4; pointer-events:none; }
+  footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crumb"><b>과학2</b><span class="sep">/</span>Ⅶ. 전기와 자기<span class="sep">/</span>1. 전류, 전압, 저항<span class="sep">/</span><b>전류와 전압</b></div>
+    <a class="hub-link" href="../unit7-hub.html">← 단원 목록으로</a>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow">Ⅶ-1-1 · 교과서 244쪽</div>
+    <h1>스위치를 켜는 순간<br>전자가 일제히 움직인다</h1>
+    <p class="lead">전기 회로에서 전하가 흐르는 것을 전류, 전류를 흐르게 하는 힘을 전압이라고 한다. 스위치를 눌러 회로를 연결하고, 전류가 흐르는 모습을 직접 확인해 보자.</p>
+    <div class="goal-box"><div class="label">학습 목표</div><p>전류와 전압의 뜻을 알고, 각각을 측정하는 단위와 방법을 설명할 수 있다.</p></div>
+  </section>
+
+  <div class="section-head"><div class="num">01</div><h2>회로에 전류 흘려보기</h2></div>
+  <div class="sim-wrap">
+    <div class="sim-card">
+      <canvas id="circuitCanvas" width="300" height="200"></canvas>
+      <button class="go-btn off" id="switchBtn" onclick="toggleSwitch()">🔌 스위치 켜기</button>
+      <div class="sim-note">스위치를 켜면 전지에서 나온 전류가 도선을 따라 흐르고, 전구가 밝게 빛난다.</div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="num">02</div><h2>전류 vs 전압</h2></div>
+  <div class="compare-wrap">
+    <div class="compare-card">
+      <div class="cc-title" style="color:#38bdf8">⚡ 전류</div>
+      <div class="cc-row"><span>뜻</span><b>전하의 흐름</b></div>
+      <div class="cc-row"><span>단위</span><b>A(암페어)</b></div>
+      <div class="cc-row"><span>측정 기구</span><b>전류계</b></div>
+      <div class="cc-row"><span>회로 연결</span><b>직렬 연결</b></div>
+    </div>
+    <div class="compare-card">
+      <div class="cc-title" style="color:#fbbf24">🔋 전압</div>
+      <div class="cc-row"><span>뜻</span><b>전류를 흐르게 하는 능력</b></div>
+      <div class="cc-row"><span>단위</span><b>V(볼트)</b></div>
+      <div class="cc-row"><span>측정 기구</span><b>전압계</b></div>
+      <div class="cc-row"><span>회로 연결</span><b>병렬 연결</b></div>
+    </div>
+  </div>
+
+  <div class="quiz-wrap">
+    <h2>스스로 확인하기</h2>
+    <div class="sub">아래 문제를 풀며 오늘 배운 내용을 점검해 보자.</div>
+    <div id="quizArea"></div>
+  </div>
+
+  <div class="lesson-nav">
+    <span class="nav-btn disabled"><span class="k">이전 소단원</span><span class="t">← 단원 시작</span></span>
+    <span class="nav-btn next disabled"><span class="k">다음 소단원</span><span class="t">저항 →</span></span>
+  </div>
+
+  <footer>EAIM 과학 수업 · 전기와 자기</footer>
+
+<script>
+const canvas = document.getElementById('circuitCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+let switchOn = false, phase = 0;
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const left=50, right=250, top=40, bottom=160;
+
+  // 도선(사각형 경로)
+  ctx.strokeStyle = switchOn ? '#fbbf24' : '#4a4a4c'; ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(left,top); ctx.lineTo(right,top);
+  ctx.lineTo(right,bottom);
+  ctx.lineTo(left+40,bottom); // 스위치 자리 전까지
+  ctx.stroke();
+  // 스위치(열림/닫힘)
+  ctx.beginPath();
+  ctx.moveTo(left+40,bottom);
+  if (switchOn) { ctx.lineTo(left,bottom); }
+  else { ctx.lineTo(left+20,bottom-18); }
+  ctx.stroke();
+  if (!switchOn) { ctx.beginPath(); ctx.moveTo(left+20,bottom-18); ctx.lineTo(left,bottom); ctx.strokeStyle='#4a4a4c'; ctx.stroke(); }
+
+  ctx.strokeStyle = switchOn ? '#fbbf24' : '#4a4a4c';
+  ctx.beginPath(); ctx.moveTo(left,bottom); ctx.lineTo(left,top); ctx.stroke();
+
+  // 전지 표시
+  ctx.fillStyle='#888'; ctx.font='11px sans-serif';
+  ctx.fillRect(left-4, top+60, 8, 20);
+  ctx.fillText('전지', left-18, top+95);
+
+  // 전구
+  const bulbX = (left+right)/2, bulbY = top;
+  ctx.beginPath(); ctx.arc(bulbX,bulbY,16,0,Math.PI*2);
+  ctx.fillStyle = switchOn ? '#fde68a' : '#333';
+  if (switchOn) { ctx.shadowColor='#fde68a'; ctx.shadowBlur=20; }
+  ctx.fill(); ctx.shadowBlur=0;
+  ctx.strokeStyle='#666'; ctx.stroke();
+
+  // 전류(점) 흐름 애니메이션
+  if (switchOn) {
+    phase += 0.03;
+    const path = [[left,top],[right,top],[right,bottom],[left,bottom],[left,top]];
+    for (let i=0;i<4;i++){
+      const t = (phase + i*0.25) % 1;
+      const segIdx = Math.floor(t*4);
+      const segT = (t*4)%1;
+      const [x0,y0] = path[segIdx], [x1,y1] = path[segIdx+1];
+      const x = x0+(x1-x0)*segT, y = y0+(y1-y0)*segT;
+      ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2);
+      ctx.fillStyle='#38bdf8'; ctx.fill();
+    }
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+function toggleSwitch(){
+  switchOn = !switchOn;
+  const btn = document.getElementById('switchBtn');
+  btn.className = 'go-btn ' + (switchOn?'on':'off');
+  btn.textContent = switchOn ? '🔌 스위치 끄기' : '🔌 스위치 켜기';
+}
+
+const QUIZ = [
+  { q:'전기 회로에서 전하의 흐름을 무엇이라 하는가?', opts:['전압', '전류', '저항', '전력'], answer:1, fb:'전하의 흐름을 "전류"라고 한다.' },
+  { q:'전류를 흐르게 하는 능력을 무엇이라 하는가?', opts:['전류', '전압', '저항', '주파수'], answer:1, fb:'전류를 흐르게 하는 능력을 "전압"이라고 한다.' },
+  { q:'전류의 단위는 무엇인가?', opts:['V(볼트)', 'A(암페어)', 'Ω(옴)', 'W(와트)'], answer:1, fb:'전류의 단위는 "A(암페어)"이다.' },
+  { q:'전류계는 회로에 어떻게 연결하는가?', opts:['병렬 연결', '직렬 연결', '연결하지 않는다', '전지에만 연결'], answer:1, fb:'전류계는 측정하려는 부분에 "직렬"로 연결한다.' },
+];
+function renderQuiz(){
+  const area = document.getElementById('quizArea'); area.innerHTML='';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div'); card.className='q-card';
+    const optsHtml=item.opts.map((o,oi)=>`<button class="q-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('');
+    card.innerHTML=`<div class="q-text">Q${qi+1}. ${item.q}</div><div class="q-opts">${optsHtml}</div><div class="q-fb" id="fb-${qi}"></div>`;
+    area.appendChild(card);
+  });
+  area.querySelectorAll('.q-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const qi=+btn.dataset.qi, oi=+btn.dataset.oi, item=QUIZ[qi];
+      area.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(s=>{
+        s.disabled=true;
+        if(+s.dataset.oi===item.answer) s.classList.add('correct');
+        else if(+s.dataset.oi===oi) s.classList.add('wrong');
+      });
+      const fb=document.getElementById(`fb-${qi}`); fb.style.display='block';
+      fb.textContent=(oi===item.answer?'✅ 정답! ':'❌ 다시 생각해 보자. ')+item.fb;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

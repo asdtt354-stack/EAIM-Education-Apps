@@ -101,6 +101,31 @@
       }, err => { console.warn('피드백 조회 오류:', err); cb([]); });
   }
 
-  window.EAIM_TEACHER = { initTeacherLink, getTeacherUid, connectTeacherManually, submitScienceResult, subscribeMyFeedback };
+  function renderConnectionBadge() {
+    try {
+      // my-record.html처럼 자체적으로 연결 상태를 보여주는 페이지는 중복 표시하지 않는다.
+      if (document.getElementById('connectedBadge')) return;
+      const topbar = document.querySelector('.topbar');
+      if (!topbar) return;
+
+      const uid = getTeacherUid();
+      const badge = document.createElement('div');
+      badge.style.cssText = 'max-width:760px;margin:14px auto 0;padding:8px 20px;text-align:center;font-size:0.76em;';
+      badge.innerHTML = uid
+        ? '<span style="color:#34d399;">✅ 선생님과 연결되어 있어요 — 지금 푸는 문제 결과가 대시보드로 전송돼요.</span>'
+        : '<span style="color:#fbbf24;">⚠️ 아직 선생님과 연결되지 않았어요. QR을 먼저 스캔해야 결과가 대시보드로 전송돼요. (개인 학습만 하실 거면 그냥 계속하셔도 돼요)</span>';
+      topbar.insertAdjacentElement('afterend', badge);
+    } catch (e) {}
+  }
+  function autoRenderBadge() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderConnectionBadge);
+    } else {
+      renderConnectionBadge();
+    }
+  }
+
+  window.EAIM_TEACHER = { initTeacherLink, getTeacherUid, connectTeacherManually, submitScienceResult, subscribeMyFeedback, renderConnectionBadge };
   initTeacherLink();
+  autoRenderBadge();
 })();

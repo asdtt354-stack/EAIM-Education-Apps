@@ -44,6 +44,17 @@
     return localStorage.getItem(TEACHER_KEY) || '';
   }
 
+  // 학생이 QR을 거치지 않고, 선생님이 알려준 코드/링크를 직접 붙여넣어 연결할 때 쓴다.
+  function connectTeacherManually(input) {
+    if (!input) return false;
+    let uid = String(input).trim();
+    const match = uid.match(/[?&]t=([^&\s]+)/);
+    if (match) uid = match[1];
+    if (!uid) return false;
+    localStorage.setItem(TEACHER_KEY, uid);
+    return true;
+  }
+
   function getStudentName() {
     if (window.EAIM && typeof window.EAIM.getStudentName === 'function') {
       return window.EAIM.getStudentName();
@@ -70,6 +81,26 @@
     }
   }
 
-  window.EAIM_TEACHER = { initTeacherLink, getTeacherUid, submitScienceResult };
+  // 학생용: 내 이름으로 온 선생님 피드백을 실시간으로 구독한다.
+  function subscribeMyFeedback(cb) {
+    const uid = getTeacherUid();
+    if (!uid || !ready) { cb([]); return null; }
+    const name = getStudentName();
+    return db.collection('teachers').doc(uid).collection('scienceRecords')
+      .where('studentName', '==', name)
+      .onSnapshot(snap => {
+        const list = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(r => r.feedback && r.feedback.trim());
+        list.sort((a, b) => {
+          const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+          const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+          return tb - ta;
+        });
+        cb(list);
+      }, err => { console.warn('피드백 조회 오류:', err); cb([]); });
+  }
+
+  window.EAIM_TEACHER = { initTeacherLink, getTeacherUid, connectTeacherManually, submitScienceResult, subscribeMyFeedback };
   initTeacherLink();
 })();

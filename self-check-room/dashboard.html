@@ -47,8 +47,22 @@
   .score-low { color:#f43f5e; font-weight:800; }
   .empty-note { text-align:center; color:#666; padding:40px 20px; font-size:0.86em; }
   .weak-tag { display:inline-block; background:#1a1a1c; color:#fda4af; padding:2px 7px; border-radius:6px; font-size:0.78em; margin:1px; }
+  .fb-cell { display:flex; gap:6px; align-items:center; min-width:200px; }
+  .fb-cell input { flex:1; background:#141215; border:1.5px solid #2c313a; color:#eee; padding:6px 9px; border-radius:7px; font-size:0.8em; }
+  .fb-cell input.saved { border-color:#34d399; }
+  .fb-cell button { border:none; background:var(--main-color); color:#04222b; font-weight:800; padding:6px 10px; border-radius:7px; font-size:0.76em; cursor:pointer; flex-shrink:0; }
+  .fb-saved-check { color:#34d399; font-size:0.78em; margin-left:4px; display:none; }
 
   footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+
+  .present-btn { border:none; background:var(--main-color); color:#04222b; font-weight:800; padding:9px 16px; border-radius:9px; font-size:0.78em; cursor:pointer; margin-top:6px; }
+
+  .present-overlay { display:none; position:fixed; inset:0; z-index:200; background:#07090c; align-items:center; justify-content:center; flex-direction:column; padding:20px; }
+  .present-overlay.open { display:flex; }
+  .present-overlay .po-title { font-size:1.6em; font-weight:900; margin-bottom:8px; }
+  .present-overlay .po-sub { color:#999; font-size:1em; margin-bottom:30px; }
+  .present-overlay #qrcodeCanvasBig { background:#fff; padding:24px; border-radius:24px; }
+  .present-overlay .po-close { margin-top:30px; border:1.5px solid #2c313a; background:#141215; color:#ccc; padding:10px 22px; border-radius:10px; font-size:0.85em; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -70,6 +84,14 @@
       <p>이 QR을 학생들에게 보여주세요. 스캔한 학생의 셀프체크룸 결과가 이 화면에 실시간으로 모입니다.</p>
       <div id="qrcodeCanvas"></div>
       <div class="qr-url" id="qrUrlText"></div>
+      <div><button class="present-btn" onclick="openPresentMode()">🖥️ 발표용 QR만 크게 보기 (학생 정보 안 보임)</button></div>
+    </div>
+
+    <div class="present-overlay" id="presentOverlay">
+      <div class="po-title">📱 QR을 스캔해서 접속하세요</div>
+      <div class="po-sub">셀프체크룸으로 바로 들어갑니다</div>
+      <div id="qrcodeCanvasBig"></div>
+      <button class="po-close" onclick="closePresentMode()">✕ 발표 모드 닫고 결과 보기</button>
     </div>
 
     <div class="filter-row">
@@ -83,7 +105,7 @@
 
     <table>
       <thead>
-        <tr><th>학생</th><th>과목</th><th>단원</th><th>점수</th><th>헷갈린 부분</th><th>시각</th></tr>
+        <tr><th>학생</th><th>과목</th><th>단원</th><th>점수</th><th>헷갈린 부분</th><th>시각</th><th>피드백</th></tr>
       </thead>
       <tbody id="resultBody"></tbody>
     </table>
@@ -108,6 +130,7 @@ const db = firebase.firestore();
 let teacherUid = null;
 let allRecords = [];
 let unsub = null;
+let currentQrUrl = '';
 
 function doLogin(){
   const provider = new firebase.auth.GoogleAuthProvider();
@@ -135,6 +158,17 @@ function renderQR(){
   const box = document.getElementById('qrcodeCanvas');
   box.innerHTML = '';
   new QRCode(box, { text: url, width: 220, height: 220, colorDark:'#07090c', colorLight:'#ffffff' });
+  currentQrUrl = url;
+}
+
+function openPresentMode(){
+  const box = document.getElementById('qrcodeCanvasBig');
+  box.innerHTML = '';
+  new QRCode(box, { text: currentQrUrl, width: 320, height: 320, colorDark:'#07090c', colorLight:'#ffffff' });
+  document.getElementById('presentOverlay').classList.add('open');
+}
+function closePresentMode(){
+  document.getElementById('presentOverlay').classList.remove('open');
 }
 
 function subscribeRecords(){
@@ -142,7 +176,7 @@ function subscribeRecords(){
   unsub = db.collection('teachers').doc(teacherUid).collection('scienceRecords')
     .orderBy('createdAt', 'desc').limit(300)
     .onSnapshot(snap => {
-      allRecords = snap.docs.map(d => d.data());
+      allRecords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderTable();
     }, err => console.warn('결과 실시간 조회 오류', err));
 }
@@ -162,6 +196,7 @@ function renderTable(){
     const subjectLabel = r.subject === 'science1' ? '과학1' : (r.subject === 'science2' ? '과학2' : r.subject);
     const weakHtml = (r.weakTopics || []).map(w => `<span class="weak-tag">${w}</span>`).join('') || '<span style="color:#555">-</span>';
     const time = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleString('ko-KR') : '-';
+    const fbVal = (r.feedback || '').replace(/"/g, '&quot;');
     return `<tr>
       <td>${r.studentName || '이름 미입력'}</td>
       <td>${subjectLabel}</td>
@@ -169,8 +204,28 @@ function renderTable(){
       <td class="${scoreClass}">${r.correct}/${r.total}</td>
       <td>${weakHtml}</td>
       <td style="color:#777;font-size:0.85em">${time}</td>
+      <td>
+        <div class="fb-cell">
+          <input type="text" id="fb-${r.id}" value="${fbVal}" placeholder="한 줄 피드백 남기기...">
+          <button onclick="saveFeedback('${r.id}')">저장</button>
+          <span class="fb-saved-check" id="fbcheck-${r.id}">✓</span>
+        </div>
+      </td>
     </tr>`;
   }).join('');
+}
+
+function saveFeedback(id){
+  const input = document.getElementById('fb-' + id);
+  const text = input.value.trim();
+  db.collection('teachers').doc(teacherUid).collection('scienceRecords').doc(id)
+    .update({ feedback: text, feedbackAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => {
+      input.classList.add('saved');
+      const check = document.getElementById('fbcheck-' + id);
+      if (check) { check.style.display = 'inline'; setTimeout(() => check.style.display = 'none', 1800); }
+    })
+    .catch(e => alert('저장 실패: ' + e.message));
 }
 </script>
 </body>

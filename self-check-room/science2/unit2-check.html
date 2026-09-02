@@ -78,6 +78,9 @@
   .action-btn.download-btn { background:#0d9488; color:#fff; }
   .action-btn:disabled { opacity:0.6; cursor:wait; }
   .retry-btn { background:transparent; border:1.5px solid #444; color:#aaa; }
+  .action-btn.submit-btn { background:#a855f7; color:#fff; }
+  .action-btn.submit-btn.done { background:#166534; }
+  .submit-status { text-align:center; font-size:0.8em; margin-top:8px; min-height:18px; }
 
   footer { text-align:center; padding:40px 20px 50px; color:#555; font-size:0.75em; }
 
@@ -180,8 +183,10 @@ renderQuiz();
 
 /* 서술형: 소단원 중 2개를 무작위로 골라 제시 */
 let writtenDone = false;
+let currentWrittenKeys = [];
 function renderWritten(){
   const wKeys = [...SUBUNIT_KEYS].sort(()=>Math.random()-0.5).slice(0,2);
+  currentWrittenKeys = wKeys;
   const area = document.getElementById('writtenArea');
   area.innerHTML = '';
   wKeys.forEach((key, idx) => {
@@ -247,13 +252,15 @@ function showSummary(){
       <div class="comment-box">💬 ${comment}</div>
       <div class="written-note">✍️ 서술형 문제는 자동 채점되지 않아요. 위에서 작성한 내용과 모범답안을 비교해 스스로 점검해 보자.</div>
       <div class="action-row">
+        ${(window.EAIM_TEACHER && EAIM_TEACHER.getTeacherUid()) ? `<button class="action-btn submit-btn" id="submitBtn" onclick="EAIM_TEACHER.submitWithUI(window.__submitPayload,'submitBtn','submitStatus')">📤 선생님께 제출하기</button>` : ''}
         <button class="action-btn download-btn" id="downloadBtn" onclick="downloadResultPDF('${name}')">📥 PDF 다운로드</button>
         <button class="action-btn print-btn" onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button>
         <button class="action-btn retry-btn" onclick="location.reload()">↺ 다른 문제로 다시 풀기</button>
       </div>
+      <div class="submit-status" id="submitStatus"></div>
     </div>
   `;
-  if (window.EAIM_TEACHER) EAIM_TEACHER.submitScienceResult({ subject:'science2', unitKey:'unit2', unitLabel:'Ⅱ. 지권의 변화', correct: totalCorrect, total: totalQ, weakTopics });
+  window.__submitPayload = { subject:'science2', unitKey:'unit2', unitLabel:'Ⅱ. 지권의 변화', correct: totalCorrect, total: totalQ, weakTopics , writtenAnswers: currentWrittenKeys.map((key, idx) => { const ta = document.querySelector(`#writtenArea textarea[data-idx="${idx}"]`); const sub = EAIM_QUIZ_DATA[key]; return { topic: sub.label, question: sub.written.q, answer: (ta && ta.value.trim()) || '(작성하지 않음)' }; }) };
   wrap.scrollIntoView({ behavior:'smooth' });
 }
 

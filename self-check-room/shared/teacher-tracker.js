@@ -62,9 +62,9 @@
     return '이름 미입력';
   }
 
-  async function submitScienceResult({ subject, unitKey, unitLabel, correct, total, weakTopics }) {
+  async function submitScienceResult({ subject, unitKey, unitLabel, correct, total, weakTopics, writtenAnswers }) {
     const uid = getTeacherUid();
-    if (!uid || !ready) return;
+    if (!uid || !ready) return false;
     try {
       await db.collection('teachers').doc(uid).collection('scienceRecords').add({
         studentName: getStudentName(),
@@ -74,10 +74,29 @@
         correct: correct || 0,
         total: total || 0,
         weakTopics: weakTopics || [],
+        writtenAnswers: writtenAnswers || [],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      return true;
     } catch (e) {
       console.warn('결과 전송 실패(오프라인이거나 네트워크 문제일 수 있음):', e);
+      return false;
+    }
+  }
+
+  // 학생이 "제출하기" 버튼을 누르면, 버튼 상태와 안내 문구까지 알아서 바꿔주는 헬퍼.
+  async function submitWithUI(payload, buttonId, statusId) {
+    const btn = document.getElementById(buttonId);
+    const status = document.getElementById(statusId);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 제출 중...'; }
+    if (status) { status.textContent = ''; }
+    const ok = await submitScienceResult(payload);
+    if (ok) {
+      if (btn) { btn.textContent = '✅ 제출 완료'; btn.classList.add('done'); }
+      if (status) { status.textContent = '✅ 선생님께 정상적으로 제출됐어요.'; status.style.color = '#34d399'; }
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '📤 다시 제출하기'; }
+      if (status) { status.textContent = '⚠️ 제출에 실패했어요. 인터넷 연결을 확인하고 다시 눌러주세요.'; status.style.color = '#f43f5e'; }
     }
   }
 
@@ -125,7 +144,7 @@
     }
   }
 
-  window.EAIM_TEACHER = { initTeacherLink, getTeacherUid, connectTeacherManually, submitScienceResult, subscribeMyFeedback, renderConnectionBadge };
+  window.EAIM_TEACHER = { initTeacherLink, getTeacherUid, connectTeacherManually, submitScienceResult, submitWithUI, subscribeMyFeedback, renderConnectionBadge };
   initTeacherLink();
   autoRenderBadge();
 })();

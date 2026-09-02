@@ -28,13 +28,33 @@
   .g-card .g-desc { font-size:0.8em; color:#999; }
 
   footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
+
+  .qr-modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:20px; }
+  .qr-modal-overlay.open { display:flex; }
+  .qr-modal-box { background:#0d0f14; border:1.5px solid var(--main-color); border-radius:24px; padding:32px 28px; text-align:center; max-width:360px; width:100%; position:relative; }
+  .qr-modal-box .qr-close { position:absolute; top:14px; right:16px; background:none; border:none; color:#888; font-size:1.3em; cursor:pointer; }
+  .qr-modal-box .qr-title { font-size:1.1em; font-weight:900; margin-bottom:4px; }
+  .qr-modal-box .qr-sub { font-size:0.8em; color:#999; margin-bottom:20px; }
+  .qr-modal-box #qrcodeCanvas { background:#fff; padding:14px; border-radius:16px; display:inline-block; }
+  .qr-modal-box .qr-url { margin-top:18px; font-size:0.72em; color:#777; word-break:break-all; }
 </style>
 </head>
 <body>
 
   <div class="topbar">
     <div class="crumb"><b>🔍 셀프체크룸</b></div>
+    <button class="hub-link" style="cursor:pointer" onclick="openQR()">📱 QR로 접속하기</button>
     <a class="hub-link" href="../index.html">← 처음으로</a>
+  </div>
+
+  <div class="qr-modal-overlay" id="qrOverlay" onclick="if(event.target===this) closeQR()">
+    <div class="qr-modal-box">
+      <button class="qr-close" onclick="closeQR()">✕</button>
+      <div class="qr-title">📱 QR로 접속하기</div>
+      <div class="qr-sub">학생들이 이 QR을 스캔하면 셀프체크룸으로 바로 들어와요</div>
+      <div id="qrcodeCanvas"></div>
+      <div class="qr-url" id="qrUrlText"></div>
+    </div>
   </div>
 
   <section class="hero">
@@ -65,5 +85,20 @@
   </div>
 
   <footer>EAIM 과학 수업 · 셀프체크룸</footer>
+
+<script>
+function openQR(){
+  const url = window.location.href.split('#')[0];
+  document.getElementById('qrUrlText').textContent = url;
+  const box = document.getElementById('qrcodeCanvas');
+  box.innerHTML = '';
+  new QRCode(box, { text: url, width: 220, height: 220, colorDark:'#07090c', colorLight:'#ffffff' });
+  document.getElementById('qrOverlay').classList.add('open');
+}
+function closeQR(){
+  document.getElementById('qrOverlay').classList.remove('open');
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>

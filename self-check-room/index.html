@@ -46,6 +46,7 @@
 
   <div class="topbar">
     <div class="crumb"><b>🔍 셀프체크룸</b></div>
+    <a class="hub-link" href="dashboard.html">👩‍🏫 선생님 대시보드</a>
     <button class="hub-link" style="cursor:pointer" onclick="openQR('index.html','셀프체크룸 전체')">📱 QR로 접속하기</button>
     <a class="hub-link" href="../index.html">← 처음으로</a>
   </div>
@@ -109,6 +110,9 @@ function closeQR(){
   document.getElementById('qrOverlay').classList.remove('open');
 }
 </script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="shared/teacher-tracker.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>

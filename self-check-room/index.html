@@ -21,11 +21,14 @@
 
   .grade-wrap { max-width:700px; margin:50px auto 60px; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   @media (max-width:520px) { .grade-wrap { grid-template-columns:1fr; } }
-  .g-card { background:#0d0f14; border:1.5px solid #1a1e24; border-radius:20px; padding:32px 24px; text-align:center; transition:all .25s; }
+  .g-card { background:#0d0f14; border:1.5px solid #1a1e24; border-radius:20px; padding:32px 24px 22px; text-align:center; transition:all .25s; }
   .g-card:hover { border-color:var(--main-color); transform:translateY(-4px); }
   .g-card .g-icon { font-size:2.4em; margin-bottom:12px; }
+  .g-card .g-link { display:block; }
   .g-card .g-title { font-size:1.15em; font-weight:900; margin-bottom:6px; }
-  .g-card .g-desc { font-size:0.8em; color:#999; }
+  .g-card .g-desc { font-size:0.8em; color:#999; margin-bottom:16px; }
+  .g-card .g-qr-btn { border:1px solid #2c313a; background:#161a20; color:#aaa; font-size:0.72em; font-weight:700; padding:7px 14px; border-radius:8px; cursor:pointer; }
+  .g-card .g-qr-btn:hover { border-color:var(--main-color); color:#fff; }
 
   footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
 
@@ -43,7 +46,7 @@
 
   <div class="topbar">
     <div class="crumb"><b>🔍 셀프체크룸</b></div>
-    <button class="hub-link" style="cursor:pointer" onclick="openQR()">📱 QR로 접속하기</button>
+    <button class="hub-link" style="cursor:pointer" onclick="openQR('index.html','셀프체크룸 전체')">📱 QR로 접속하기</button>
     <a class="hub-link" href="../index.html">← 처음으로</a>
   </div>
 
@@ -51,7 +54,7 @@
     <div class="qr-modal-box">
       <button class="qr-close" onclick="closeQR()">✕</button>
       <div class="qr-title">📱 QR로 접속하기</div>
-      <div class="qr-sub">학생들이 이 QR을 스캔하면 셀프체크룸으로 바로 들어와요</div>
+      <div class="qr-sub" id="qrModalSub">학생들이 이 QR을 스캔하면 셀프체크룸으로 바로 들어와요</div>
       <div id="qrcodeCanvas"></div>
       <div class="qr-url" id="qrUrlText"></div>
     </div>
@@ -64,16 +67,22 @@
   </section>
 
   <div class="grade-wrap">
-    <a class="g-card" href="science1/index.html">
-      <div class="g-icon">📗</div>
-      <div class="g-title">과학1</div>
-      <div class="g-desc">중등과학1 단원별 확인</div>
-    </a>
-    <a class="g-card" href="science2/index.html">
-      <div class="g-icon">📘</div>
-      <div class="g-title">과학2</div>
-      <div class="g-desc">중등과학2 단원별 확인</div>
-    </a>
+    <div class="g-card">
+      <a class="g-link" href="science1/index.html">
+        <div class="g-icon">📗</div>
+        <div class="g-title">과학1</div>
+        <div class="g-desc">중등과학1 단원별 확인</div>
+      </a>
+      <button class="g-qr-btn" onclick="openQR('science1/index.html','과학1')">📱 과학1 QR</button>
+    </div>
+    <div class="g-card">
+      <a class="g-link" href="science2/index.html">
+        <div class="g-icon">📘</div>
+        <div class="g-title">과학2</div>
+        <div class="g-desc">중등과학2 단원별 확인</div>
+      </a>
+      <button class="g-qr-btn" onclick="openQR('science2/index.html','과학2')">📱 과학2 QR</button>
+    </div>
   </div>
 
   <div class="grade-wrap" style="grid-template-columns:1fr; max-width:400px;">
@@ -87,8 +96,9 @@
   <footer>EAIM 과학 수업 · 셀프체크룸</footer>
 
 <script>
-function openQR(){
-  const url = window.location.href.split('#')[0];
+function openQR(path, label){
+  const url = new URL(path, window.location.href).href;
+  document.getElementById('qrModalSub').textContent = `학생들이 이 QR을 스캔하면 ${label} 화면으로 바로 들어와요`;
   document.getElementById('qrUrlText').textContent = url;
   const box = document.getElementById('qrcodeCanvas');
   box.innerHTML = '';

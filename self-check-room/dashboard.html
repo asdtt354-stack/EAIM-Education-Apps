@@ -51,6 +51,15 @@
   .fb-cell input { flex:1; background:#141215; border:1.5px solid #2c313a; color:#eee; padding:6px 9px; border-radius:7px; font-size:0.8em; }
   .fb-cell input.saved { border-color:#34d399; }
   .fb-cell button { border:none; background:var(--main-color); color:#04222b; font-weight:800; padding:6px 10px; border-radius:7px; font-size:0.76em; cursor:pointer; flex-shrink:0; }
+
+  .emoji-bar { background:#0d0f14; border:1.5px solid #1a1e24; border-radius:14px; padding:12px 14px; margin-bottom:14px; }
+  .emoji-bar .eb-label { font-size:0.72em; color:#888; margin-bottom:8px; }
+  .emoji-bar .eb-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .emoji-bar .eb-emoji { border:1px solid #2c313a; background:#141518; font-size:1.1em; padding:5px 9px; border-radius:8px; cursor:pointer; }
+  .emoji-bar .eb-emoji:hover { border-color:var(--main-color); background:#1a1e24; }
+  .emoji-bar .eb-phrase { border:1px solid #2c313a; background:#141518; color:#ccc; font-size:0.76em; padding:6px 10px; border-radius:8px; cursor:pointer; }
+  .emoji-bar .eb-phrase:hover { border-color:var(--accent); color:#fff; }
+  .emoji-bar .eb-hint { font-size:0.7em; color:#666; margin-top:8px; }
   .fb-saved-check { color:#34d399; font-size:0.78em; margin-left:4px; display:none; }
 
   footer { text-align:center; padding:10px 20px 50px; color:#555; font-size:0.75em; }
@@ -104,6 +113,31 @@
       <div class="po-sub">셀프체크룸으로 바로 들어갑니다</div>
       <div id="qrcodeCanvasBig"></div>
       <button class="po-close" onclick="closePresentMode()">✕ 발표 모드 닫고 결과 보기</button>
+    </div>
+
+    <div class="emoji-bar">
+      <div class="eb-label">💬 피드백 입력창을 먼저 클릭한 다음, 아래를 눌러 바로 삽입해 보세요</div>
+      <div class="eb-row">
+        <button class="eb-emoji" onclick="insertEmoji('👍')">👍</button>
+        <button class="eb-emoji" onclick="insertEmoji('😊')">😊</button>
+        <button class="eb-emoji" onclick="insertEmoji('🎉')">🎉</button>
+        <button class="eb-emoji" onclick="insertEmoji('💯')">💯</button>
+        <button class="eb-emoji" onclick="insertEmoji('✨')">✨</button>
+        <button class="eb-emoji" onclick="insertEmoji('👏')">👏</button>
+        <button class="eb-emoji" onclick="insertEmoji('🌟')">🌟</button>
+        <button class="eb-emoji" onclick="insertEmoji('💪')">💪</button>
+        <button class="eb-emoji" onclick="insertEmoji('🔥')">🔥</button>
+        <button class="eb-emoji" onclick="insertEmoji('🤔')">🤔</button>
+        <button class="eb-emoji" onclick="insertEmoji('📚')">📚</button>
+        <button class="eb-emoji" onclick="insertEmoji('❤️')">❤️</button>
+      </div>
+      <div class="eb-row" style="margin-top:8px;">
+        <button class="eb-phrase" onclick="insertEmoji('정말 잘했어요! 👏')">정말 잘했어요! 👏</button>
+        <button class="eb-phrase" onclick="insertEmoji('완벽해요! 💯')">완벽해요! 💯</button>
+        <button class="eb-phrase" onclick="insertEmoji('조금만 더 힘내요 💪')">조금만 더 힘내요 💪</button>
+        <button class="eb-phrase" onclick="insertEmoji('다시 한번 확인해볼까요? 🤔')">다시 한번 확인해볼까요? 🤔</button>
+      </div>
+      <div class="eb-hint">누른 이모지/문구는 마지막으로 클릭했던 피드백 칸에 이어서 추가돼요.</div>
     </div>
 
     <div class="filter-row">
@@ -255,6 +289,33 @@ function openWrittenModal(id){
 }
 function closeWrittenModal(){
   document.getElementById('writtenModalOverlay').classList.remove('open');
+}
+
+let activeFbInput = null;
+document.addEventListener('focusin', (e) => {
+  if (e.target && e.target.matches('.fb-cell input')) {
+    activeFbInput = e.target;
+  }
+});
+
+function insertEmoji(text){
+  let target = activeFbInput;
+  if (!target || !document.body.contains(target)) {
+    // 클릭했던 칸이 없거나 이미 화면에서 사라졌으면(재렌더 등), 화면에 보이는 첫 번째 피드백 칸을 사용
+    target = document.querySelector('.fb-cell input');
+  }
+  if (!target) { alert('먼저 학생 결과가 있어야 피드백을 남길 수 있어요.'); return; }
+
+  const start = target.selectionStart ?? target.value.length;
+  const end = target.selectionEnd ?? target.value.length;
+  const before = target.value.slice(0, start);
+  const after = target.value.slice(end);
+  const needsSpace = before && !before.endsWith(' ') ? ' ' : '';
+  target.value = before + needsSpace + text + after;
+  target.focus();
+  const newPos = (before + needsSpace + text).length;
+  target.setSelectionRange(newPos, newPos);
+  activeFbInput = target;
 }
 
 function saveFeedback(id){
